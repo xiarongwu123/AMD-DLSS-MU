@@ -16,7 +16,7 @@ public static class Core
     public const string Repository = "https://github.com/danielblnc/DLSS-NR-on-AMD";
     public const string InstallerName = "dlssnr_on_amd_setup.exe";
     public const string DllName = "nvngx_dlssnr.dll";
-    public const string ReviewedTag = "v0.2.17";
+    public const string ReviewedTag = "v0.3.0";
     public const string RequiredDll = "310.8.0.0";
     public const string BundledDllResource = "nvngx_dlssnr.dll";
     public static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
