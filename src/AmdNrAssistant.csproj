@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>AMD-NR-Assistant</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\assets\nvngx_dlssnr.dll" LogicalName="AmdNrAssistant.nvngx_dlssnr.dll" />
+    <EmbeddedResource Include="..\assets\amd_dlss_mu_logo.png" LogicalName="AmdNrAssistant.amd_dlss_mu_logo.png" />
+  </ItemGroup>
+</Project>
