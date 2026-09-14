@@ -50,7 +50,7 @@ public sealed partial class MainForm
         }
         sideRows.Controls.Add(nav, 0, 1);
         var ready = new RoundedPanel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(243, 246, 248), Padding = new Padding(16), Radius = 18 };
-        ready.Controls.Add(Localize(new Label { Dock = DockStyle.Fill, ForeColor = muted, AutoSize = false }, "● 就绪\n\nAMD DLSS MU\nv1.0.6", "● Ready\n\nAMD DLSS MU\nv1.0.6"));
+        ready.Controls.Add(Localize(new Label { Dock = DockStyle.Fill, ForeColor = muted, AutoSize = false }, "● 就绪\n\nAMD DLSS MU\nv1.0.7", "● Ready\n\nAMD DLSS MU\nv1.0.7"));
         sideRows.Controls.Add(ready, 0, 3); side.Controls.Add(sideRows); root.Controls.Add(side, 0, 0);
         var main = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, Margin = new Padding(0) };
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 62)); main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));

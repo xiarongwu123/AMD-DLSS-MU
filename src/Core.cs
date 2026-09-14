@@ -10,6 +10,7 @@ namespace AmdNrAssistant;
 public record ReleaseInfo(string Tag, string Url, string Sha256, long Size);
 public record Change(string Name, bool Existed, string OriginalHash, string NewHash, bool Changed);
 public record Journal(string Target, string Release, string Phase, List<Change> Changes);
+public record InstallCheck(bool Ready, string Message, string? ProxyName, bool HasConfig, bool HasWeights);
 
 public static class Core
 {
@@ -19,6 +20,15 @@ public static class Core
     public const string ReviewedTag = "v0.3.0";
     public const string RequiredDll = "310.8.0.0";
     public const string BundledDllResource = "nvngx_dlssnr.dll";
+    // v0.3.0 is the release currently reviewed by this assistant. These values
+    // are used only for an already-downloaded local installer when GitHub is
+    // unreachable; the normal path still verifies the live GitHub API response.
+    public const string ReviewedInstallerSha256 = "26bb910cfe5dba85cb5e0fd050eaa6f79a73f0068026082afd4cf2c98cdd54dd";
+    public const long ReviewedInstallerSize = 7585035;
+    // Names accepted by the upstream installer as the game's proxy DLL.
+    // The installer chooses one of these; the presence of nvngx_dlssnr.dll alone
+    // does not mean that the proxy was installed or that the game will load it.
+    public static readonly string[] ProxyNames = ["version.dll", "winmm.dll", "dbghelp.dll", "wininet.dll", "winhttp.dll", "dxgi.dll"];
     public static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
     public static string Hash(string path)
@@ -92,6 +102,104 @@ public static class Core
         var v = FileVersionInfo.GetVersionInfo(path);
         if (v.FileMajorPart != 310 || v.FileMinorPart != 8 || v.FileBuildPart != 0 || v.FilePrivatePart != 0)
             throw new IOException("需要 DLL 版本 310.8.0.0；当前文件版本为 " + v.FileVersion);
+    }
+
+    public static void ValidateInstaller(string path)
+    {
+        if (!string.Equals(Path.GetFileName(path), InstallerName, StringComparison.OrdinalIgnoreCase))
+            throw new IOException("安装器文件名不正确：" + InstallerName);
+        RejectLinks(path);
+        CheckPe(path, false);
+    }
+
+    public static InstallCheck CheckInstalled(string directory)
+    {
+        directory = Path.GetFullPath(directory);
+        var dll = Path.Combine(directory, DllName);
+        var config = Path.Combine(directory, "dlssnr_on_amd.ini");
+        var weights = Path.Combine(directory, "dlssnr_on_amd_weights.bin");
+        var proxy = FindProxy(directory);
+        var hasConfig = HasContent(config);
+        var hasWeights = HasContent(weights);
+        if (!File.Exists(dll))
+            return new InstallCheck(false, "安装器完成后未找到 nvngx_dlssnr.dll；请确认它与游戏 EXE 在同一目录。", proxy, hasConfig, hasWeights);
+        try { ValidateDll(dll); }
+        catch (Exception error)
+        {
+            return new InstallCheck(false, "游戏目录中的 nvngx_dlssnr.dll 不是已核验的 310.8.0.0 版本：" + error.Message, proxy, hasConfig, hasWeights);
+        }
+        if (!hasConfig || !hasWeights)
+            return new InstallCheck(false, "官方安装器没有生成完整配置（缺少 dlssnr_on_amd.ini 或 dlssnr_on_amd_weights.bin）。请在安装器窗口中完成安装，并确认 DLL 版本为 310.8.0.0。", proxy, hasConfig, hasWeights);
+        if (proxy == null)
+            return new InstallCheck(false, "未找到官方安装器生成的代理 DLL。游戏必须加载 version.dll、winmm.dll、dbghelp.dll、wininet.dll、winhttp.dll 或 dxgi.dll 之一。", null, hasConfig, hasWeights);
+        return new InstallCheck(true, "安装器已生成代理 DLL、配置和权重文件。启动游戏后启用 FSR，再按 End 打开菜单。", proxy, hasConfig, hasWeights);
+    }
+
+    static bool HasContent(string path)
+    {
+        try { return File.Exists(path) && new FileInfo(path).Length > 0; }
+        catch { return false; }
+    }
+
+    static string? FindProxy(string directory)
+    {
+        foreach (var name in ProxyNames)
+        {
+            var path = Path.Combine(directory, name);
+            try
+            {
+                if (File.Exists(path) && new FileInfo(path).Length > 0)
+                {
+                    CheckPe(path, true);
+                    return name;
+                }
+            }
+            catch { }
+        }
+        return null;
+    }
+
+    public static string InstallerCacheDirectory => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AMD-NR-Assistant", "downloads");
+
+    public static string? FindCachedInstaller()
+    {
+        var candidates = new[]
+        {
+            Path.Combine(InstallerCacheDirectory, ReviewedTag, InstallerName),
+            Path.Combine(AppContext.BaseDirectory, InstallerName)
+        };
+        foreach (var path in candidates)
+        {
+            try
+            {
+                if (!File.Exists(path)) continue;
+                ValidateInstaller(path);
+                if (new FileInfo(path).Length != ReviewedInstallerSize) continue;
+                if (!string.Equals(Hash(path), ReviewedInstallerSha256, StringComparison.OrdinalIgnoreCase)) continue;
+                return path;
+            }
+            catch { }
+        }
+        return null;
+    }
+
+    public static void CacheInstaller(string installer)
+    {
+        ValidateInstaller(installer);
+        if (new FileInfo(installer).Length != ReviewedInstallerSize ||
+            !string.Equals(Hash(installer), ReviewedInstallerSha256, StringComparison.OrdinalIgnoreCase))
+            throw new IOException("官方安装器校验失败，未写入本地缓存。");
+        var directory = Path.Combine(InstallerCacheDirectory, ReviewedTag);
+        Directory.CreateDirectory(directory);
+        var target = Path.Combine(directory, InstallerName);
+        var temp = target + ".partial-" + Guid.NewGuid().ToString("N");
+        try
+        {
+            File.Copy(installer, temp, false);
+            File.Move(temp, target, true);
+        }
+        finally { if (File.Exists(temp)) File.Delete(temp); }
     }
 
     public static ReleaseInfo ParseRelease(string json)
