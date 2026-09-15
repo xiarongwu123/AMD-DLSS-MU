@@ -11,6 +11,8 @@ public record ReleaseInfo(string Tag, string Url, string Sha256, long Size);
 public record Change(string Name, bool Existed, string OriginalHash, string NewHash, bool Changed);
 public record Journal(string Target, string Release, string Phase, List<Change> Changes);
 public record InstallCheck(bool Ready, string Message, string? ProxyName, bool HasConfig, bool HasWeights);
+public record AlternativeChange(string RelativePath, bool Existed, string OriginalHash, string NewHash);
+public record AlternativeJournal(string Target, List<AlternativeChange> Changes);
 
 public static class Core
 {
@@ -387,5 +389,100 @@ public static class Core
         var path = Path.Combine(state, "journal.json");
         var j = JsonSerializer.Deserialize<Journal>(File.ReadAllText(path)) ?? throw new IOException("准备记录无效。");
         Save(path, j with { Phase = phase });
+    }
+
+    public static void StageAlternative(string directory, string packageDirectory,
+        string dll, string weights, string state)
+    {
+        directory = Path.GetFullPath(directory);
+        packageDirectory = Path.GetFullPath(packageDirectory);
+        RejectLinks(directory);
+        RejectLinks(packageDirectory);
+        ValidateDll(dll);
+
+        var opti = Directory.EnumerateFiles(packageDirectory, "OptiScaler.dll", SearchOption.AllDirectories)
+            .FirstOrDefault() ?? throw new IOException("所选目录缺少 OptiScaler.dll。");
+        var ini = Directory.EnumerateFiles(packageDirectory, "OptiScaler.ini", SearchOption.AllDirectories)
+            .FirstOrDefault() ?? throw new IOException("所选目录缺少 OptiScaler.ini。");
+        if (!BinaryContains(opti, "amd-presr") || !BinaryContains(opti, "dlssnr_amd"))
+            throw new IOException("该包不是已识别的 OptiScaler AMD Pre-SR 构建（缺少 amd-presr / dlssnr_amd 标识）。");
+        if (!string.Equals(Path.GetFileName(weights), "dlssnr_on_amd_weights.bin", StringComparison.OrdinalIgnoreCase) ||
+            new FileInfo(weights).Length < 1024 * 1024)
+            throw new IOException("权重文件名称或大小异常。");
+
+        var packageRoot = Path.GetDirectoryName(opti)!;
+        var sources = Directory.EnumerateFiles(packageRoot, "*", SearchOption.AllDirectories)
+            .Where(p => !string.Equals(Path.GetFileName(p), "nvngx_dlssnr.dll", StringComparison.OrdinalIgnoreCase) &&
+                        !string.Equals(Path.GetFileName(p), "dlssnr_on_amd_weights.bin", StringComparison.OrdinalIgnoreCase))
+            .Select(p => (Relative: Path.GetRelativePath(packageRoot, p), Source: p)).ToList();
+        sources.Add((DllName, dll));
+        sources.Add(("dlssnr_on_amd_weights.bin", weights));
+
+        Directory.CreateDirectory(state);
+        var changes = new List<AlternativeChange>();
+        foreach (var item in sources)
+        {
+            if (item.Relative.StartsWith("..") || Path.IsPathRooted(item.Relative))
+                throw new IOException("模式二包包含无效路径。");
+            var target = Path.Combine(directory, item.Relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            RejectLinks(target);
+            var existed = File.Exists(target);
+            var original = existed ? Hash(target) : "";
+            var next = Hash(item.Source);
+            var backup = Path.Combine(state, "backup", item.Relative);
+            if (existed)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(backup)!);
+                File.Copy(target, backup, false);
+            }
+            changes.Add(new AlternativeChange(item.Relative, existed, original, next));
+        }
+        var manifestPath = Path.Combine(state, "optiscaler-fallback.json");
+        File.WriteAllText(manifestPath,
+            JsonSerializer.Serialize(new AlternativeJournal(directory, changes), JsonOptions));
+        try
+        {
+            foreach (var item in sources)
+                File.Copy(item.Source, Path.Combine(directory, item.Relative), true);
+        }
+        catch
+        {
+            RollbackAlternative(state);
+            throw;
+        }
+    }
+
+    public static void RollbackAlternative(string state)
+    {
+        var path = Path.Combine(state, "optiscaler-fallback.json");
+        var journal = JsonSerializer.Deserialize<AlternativeJournal>(File.ReadAllText(path))
+            ?? throw new IOException("模式二恢复记录无效。");
+        foreach (var change in journal.Changes.AsEnumerable().Reverse())
+        {
+            var target = Path.Combine(journal.Target, change.RelativePath);
+            var current = File.Exists(target) ? Hash(target) : "";
+            if (current == change.OriginalHash) continue;
+            if (current != change.NewHash)
+                throw new IOException("文件已被其他程序修改，停止恢复：" + change.RelativePath);
+            if (change.Existed)
+                File.Copy(Path.Combine(state, "backup", change.RelativePath), target, true);
+            else if (File.Exists(target))
+                File.Delete(target);
+        }
+    }
+
+    static bool BinaryContains(string path, string marker)
+    {
+        var needle = System.Text.Encoding.ASCII.GetBytes(marker);
+        var bytes = File.ReadAllBytes(path);
+        for (var i = 0; i <= bytes.Length - needle.Length; i++)
+        {
+            var match = true;
+            for (var j = 0; j < needle.Length; j++)
+                if (bytes[i + j] != needle[j]) { match = false; break; }
+            if (match) return true;
+        }
+        return false;
     }
 }

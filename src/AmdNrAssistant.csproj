@@ -6,7 +6,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>AMD-NR-Assistant</AssemblyName>
+    <AssemblyName>AMD-DLSS-MU</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup Condition="Exists('..\assets\nvngx_dlssnr.dll')">

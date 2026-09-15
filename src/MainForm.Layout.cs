@@ -66,7 +66,7 @@ public sealed partial class MainForm
     void BuildLibrary()
     {
         var rows = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3, ColumnCount = 1 };
-        rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 118)); rows.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
+        rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 118)); rows.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 142));
         var toolbar = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2 };
         toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 316));
         toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 54)); toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
@@ -82,9 +82,16 @@ public sealed partial class MainForm
         games.Padding = new Padding(0); games.BackColor = BackColor;
         var footer = new TableLayoutPanel { Dock = DockStyle.Fill, BackColor = Color.White, ColumnCount = 2, Padding = new Padding(16) };
         footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); footer.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 314));
-        var details = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2 };
+        var details = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3 };
         selected.AutoSize = status.AutoSize = false; selected.AutoEllipsis = status.AutoEllipsis = true; selected.Dock = status.Dock = DockStyle.Fill;
-        details.Controls.Add(selected, 0, 0); details.Controls.Add(status, 0, 1); footer.Controls.Add(details, 0, 0);
+        details.Controls.Add(selected, 0, 0); details.Controls.Add(status, 0, 1);
+        installMode.Items.Add("模式一（推荐）— 官方运行时");
+        installMode.Items.Add("模式二（备用）— 模式一失效时使用");
+        installMode.SelectedIndex = 0;
+        installMode.SelectedIndexChanged += (_, _) => status.Text = installMode.SelectedIndex == 1
+            ? (english ? "Fallback mode: use when Mode 1 cannot hook or has no effect." : "备用模式：当模式一无法挂接或没有效果时使用。")
+            : (english ? "Recommended mode: official AMD runtime." : "推荐模式：官方 AMD 运行时。");
+        details.Controls.Add(installMode, 0, 2); footer.Controls.Add(details, 0, 0);
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
         foreach (var b in new[] { restore, install }) { b.AutoSize = false; b.Size = new Size(148, 44); buttons.Controls.Add(b); }
         install.BackColor = Color.FromArgb(91, 177, 0); install.ForeColor = Color.White; restore.BackColor = Color.FromArgb(240, 244, 247);
@@ -143,6 +150,11 @@ public sealed partial class MainForm
     {
         foreach (var (control, zh, englishText) in translations) control.Text = en ? englishText : zh;
         install.Text = en ? "Configure" : "一键配置"; restore.Text = en ? "Restore" : "恢复配置";
+        var selectedIndex = installMode.SelectedIndex;
+        installMode.Items.Clear();
+        installMode.Items.Add(en ? "Mode 1 (recommended) — official runtime" : "模式一（推荐）— 官方运行时");
+        installMode.Items.Add(en ? "Mode 2 (fallback) — use when Mode 1 fails" : "模式二（备用）— 模式一失效时使用");
+        installMode.SelectedIndex = Math.Max(0, selectedIndex);
         RefreshHome();
     }
 }

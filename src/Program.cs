@@ -907,6 +907,18 @@ public sealed class CoverPictureBox : PictureBox
 
 public sealed partial class MainForm : Form
 {
+    enum InstallMode
+    {
+        Official,
+        OptiScalerFallback
+    }
+
+    readonly ComboBox installMode = new()
+    {
+        DropDownStyle = ComboBoxStyle.DropDownList,
+        Width = 300
+    };
+
     readonly FlowLayoutPanel games = new()
     {
         Dock = DockStyle.Fill,
@@ -968,6 +980,11 @@ public sealed partial class MainForm : Form
 
     string? selectedGame;
     string? transactionState;
+
+    InstallMode SelectedInstallMode =>
+        installMode.SelectedIndex == 1
+            ? InstallMode.OptiScalerFallback
+            : InstallMode.Official;
 
     RoundedPanel? selectedCard;
 
@@ -1299,6 +1316,12 @@ public sealed partial class MainForm : Form
 
         try
         {
+            if (SelectedInstallMode == InstallMode.OptiScalerFallback)
+            {
+                await InstallOptiScalerFallbackAsync();
+                return;
+            }
+
             var gameDirectory = Path.GetDirectoryName(
                 Path.GetFullPath(selectedGame))!;
 
@@ -1590,7 +1613,18 @@ public sealed partial class MainForm : Form
 
         try
         {
-            Core.Rollback(transactionState);
+            var alternativeManifest = Path.Combine(
+                transactionState,
+                "optiscaler-fallback.json");
+
+            if (File.Exists(alternativeManifest))
+            {
+                Core.RollbackAlternative(transactionState);
+            }
+            else
+            {
+                Core.Rollback(transactionState);
+            }
 
             transactionState = null;
 
@@ -1607,6 +1641,77 @@ public sealed partial class MainForm : Form
             UpdateButtons();
             await Task.CompletedTask;
         }
+    }
+
+    async Task InstallOptiScalerFallbackAsync()
+    {
+        if (selectedGame is null)
+        {
+            return;
+        }
+
+        var warning = english
+            ? "Mode 2 is an experimental fallback. Use it only when Mode 1 cannot hook or has no effect. It requires a user-supplied OptiScaler AMD Pre-SR package and locally generated weights. Continue?"
+            : "模式二是实验性备用方案，仅建议在模式一无法挂接或没有效果时使用。需要用户自行提供 OptiScaler AMD Pre-SR 包和本地生成的权重。是否继续？";
+
+        if (MessageBox.Show(this, warning, Text,
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+        {
+            return;
+        }
+
+        using var packageDialog = new FolderBrowserDialog
+        {
+            Description = english
+                ? "Select the extracted OptiScaler-AMD-PreSR-Multipass package folder"
+                : "选择已解压的 OptiScaler-AMD-PreSR-Multipass 包目录"
+        };
+        if (packageDialog.ShowDialog(this) != DialogResult.OK) return;
+
+        using var weightsDialog = new OpenFileDialog
+        {
+            Filter = "DLSS NR weights (dlssnr_on_amd_weights.bin)|dlssnr_on_amd_weights.bin",
+            Title = english ? "Select locally generated weights" : "选择本地生成的权重文件"
+        };
+        if (weightsDialog.ShowDialog(this) != DialogResult.OK) return;
+
+        using var dllDialog = new OpenFileDialog
+        {
+            Filter = "DLSS Neural Rendering (nvngx_dlssnr.dll)|nvngx_dlssnr.dll",
+            Title = english ? "Select your legitimate DLSS NR DLL" : "选择你合法取得的 DLSS NR DLL"
+        };
+        if (dllDialog.ShowDialog(this) != DialogResult.OK) return;
+
+        var state = Path.Combine(workRoot, Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(state);
+        var gameDirectory = Path.GetDirectoryName(Path.GetFullPath(selectedGame))!;
+
+        status.Text = english
+            ? "Validating and installing Mode 2…"
+            : "正在校验并安装模式二…";
+
+        Core.ValidateDll(dllDialog.FileName);
+        Core.StageAlternative(
+            gameDirectory,
+            packageDialog.SelectedPath,
+            dllDialog.FileName,
+            weightsDialog.FileName,
+            state);
+
+        transactionState = state;
+        status.Text = english
+            ? "Mode 2 configured. Enable FSR and press Insert in game."
+            : "模式二已配置。进入游戏启用 FSR，按 Insert 打开菜单。";
+
+        MessageBox.Show(this,
+            english
+                ? "Mode 2 has been configured. This fallback is intended for games where Mode 1 fails. Enable FSR, then press Insert."
+                : "模式二已配置。该备用方案用于模式一失效的游戏。请启用 FSR，并按 Insert 打开菜单。",
+            Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+        RefreshHome();
+        UpdateButtons();
+        await Task.CompletedTask;
     }
 
     void UpdateButtons()
