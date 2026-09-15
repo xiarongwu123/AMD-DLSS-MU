@@ -404,6 +404,10 @@ public static class Core
             .FirstOrDefault() ?? throw new IOException("所选目录缺少 OptiScaler.dll。");
         var ini = Directory.EnumerateFiles(packageDirectory, "OptiScaler.ini", SearchOption.AllDirectories)
             .FirstOrDefault() ?? throw new IOException("所选目录缺少 OptiScaler.ini。");
+        RejectLinks(opti); RejectLinks(ini); RejectLinks(weights);
+        CheckPe(opti, true);
+        if (!string.Equals(Path.GetDirectoryName(opti), Path.GetDirectoryName(ini), StringComparison.OrdinalIgnoreCase))
+            throw new IOException("OptiScaler.dll 与配置必须在同一包目录。");
         if (!BinaryContains(opti, "amd-presr") || !BinaryContains(opti, "dlssnr_amd"))
             throw new IOException("该包不是已识别的 OptiScaler AMD Pre-SR 构建（缺少 amd-presr / dlssnr_amd 标识）。");
         if (!string.Equals(Path.GetFileName(weights), "dlssnr_on_amd_weights.bin", StringComparison.OrdinalIgnoreCase) ||
@@ -411,10 +415,21 @@ public static class Core
             throw new IOException("权重文件名称或大小异常。");
 
         var packageRoot = Path.GetDirectoryName(opti)!;
-        var sources = Directory.EnumerateFiles(packageRoot, "*", SearchOption.AllDirectories)
+        if (Directory.EnumerateDirectories(packageRoot).Any())
+            throw new IOException("当前仅支持平铺 AMD Pre-SR 包；含子目录的包尚未验证，未写入游戏。");
+        var sources = Directory.EnumerateFiles(packageRoot, "*", SearchOption.TopDirectoryOnly)
             .Where(p => !string.Equals(Path.GetFileName(p), "nvngx_dlssnr.dll", StringComparison.OrdinalIgnoreCase) &&
                         !string.Equals(Path.GetFileName(p), "dlssnr_on_amd_weights.bin", StringComparison.OrdinalIgnoreCase))
             .Select(p => (Relative: Path.GetRelativePath(packageRoot, p), Source: p)).ToList();
+        sources = sources.Where(f => Path.GetExtension(f.Relative).Equals(".dll", StringComparison.OrdinalIgnoreCase) || f.Relative.Equals("OptiScaler.ini", StringComparison.OrdinalIgnoreCase)).ToList();
+        foreach (var f in sources)
+        {
+            RejectLinks(f.Source);
+            if (!GameManagement.IsTracked(f.Relative)) throw new IOException("包中有未支持的组件：" + f.Relative);
+            if (Path.GetExtension(f.Relative).Equals(".dll", StringComparison.OrdinalIgnoreCase)) CheckPe(f.Source, true);
+        }
+        if (!sources.Any(f => ProxyNames.Contains(f.Relative, StringComparer.OrdinalIgnoreCase)))
+            sources.Add(("dxgi.dll", opti));
         sources.Add((DllName, dll));
         sources.Add(("dlssnr_on_amd_weights.bin", weights));
 
@@ -425,8 +440,9 @@ public static class Core
             if (item.Relative.StartsWith("..") || Path.IsPathRooted(item.Relative))
                 throw new IOException("模式二包包含无效路径。");
             var target = Path.Combine(directory, item.Relative);
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             RejectLinks(target);
+            RejectLinks(item.Source);
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             var existed = File.Exists(target);
             var original = existed ? Hash(target) : "";
             var next = Hash(item.Source);

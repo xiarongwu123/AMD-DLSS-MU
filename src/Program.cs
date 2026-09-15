@@ -10,10 +10,19 @@ namespace AmdNrAssistant;
 internal static class Program
 {
     [STAThread]
-    static void Main()
+    static void Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
-        Application.Run(new MainForm());
+        if (args.Length == 1 && args[0] == "--apply-update")
+        {
+            try { AutoUpdate.ApplyAsync().GetAwaiter().GetResult(); }
+            catch (Exception e) { MessageBox.Show("更新未完成：" + e.Message + "\n旧版本备份保留在程序目录。", "AMD-DLSS-MU 更新"); }
+            return;
+        }
+        var form = new MainForm();
+        if (args.Length == 2 && args[0] == "--update-health")
+            form.Shown += (_, _) => { try { AutoUpdate.ConfirmStartup(args[1]); } catch { /* Updater will roll back without a health acknowledgement. */ } };
+        Application.Run(form);
     }
 }
 
@@ -997,6 +1006,7 @@ public sealed partial class MainForm : Form
 
     async Task ScanGamesAsync()
     {
+        if (busy) return;
         scan.Enabled = false;
         progress.Visible = true;
 
@@ -1196,11 +1206,11 @@ public sealed partial class MainForm : Form
         {
             Text = ready
                 ? english
-                    ? "DLSS 5 configured · press End"
-                    : "已配置 DLSS 5 · 按 End"
+                    ? "Files present · runtime unverified"
+                    : "组件存在 · 生效未验证"
                 : english
-                    ? "DLSS 5 ready to configure"
-                    : "可配置 DLSS 5 · 待安装",
+                    ? "Compatibility unverified"
+                    : "兼容性待检测",
 
             Location = new Point(14, 381),
             Width = 202,
@@ -1211,6 +1221,7 @@ public sealed partial class MainForm : Form
 
         void Pick(object? sender, EventArgs eventArgs)
         {
+            if (busy) return;
             if (selectedCard is not null)
             {
                 selectedCard.BorderColor = default;
@@ -1240,7 +1251,7 @@ public sealed partial class MainForm : Form
                     ? "You can now click Configure."
                     : "现在可以点击“一键配置”。";
 
-            install.Enabled = transactionState is null;
+            UpdateButtons();
         }
 
         foreach (var control in new Control[]
@@ -1265,6 +1276,7 @@ public sealed partial class MainForm : Form
         object? sender,
         EventArgs eventArgs)
     {
+        if (busy) return;
         using var dialog = new OpenFileDialog
         {
             Filter = "游戏程序 (*.exe)|*.exe",
@@ -1294,7 +1306,7 @@ public sealed partial class MainForm : Form
                 ? "You can now click Configure."
                 : "现在可以点击“一键配置”。";
 
-            install.Enabled = transactionState is null;
+            UpdateButtons();
         }
         catch (Exception exception)
         {
@@ -1309,13 +1321,23 @@ public sealed partial class MainForm : Form
             return;
         }
 
+        if (busy) return;
+        var targetExe = selectedGame;
+        busy = true;
+        libraryPage.Enabled = false;
         install.Enabled = false;
         restore.Enabled = false;
 
         string? state = null;
+        bool completed = false;
 
         try
         {
+            var compatibility = await Task.Run(() => GameManagement.Check(targetExe));
+            if (compatibility.Blocked) throw new IOException(string.Join("\n", compatibility.Details));
+            if (GameManagement.Read(targetExe) is { Phase: not "restored" })
+                throw new IOException("请先恢复此游戏，再安装或切换模式。");
+            if (MessageBox.Show(this, compatibility.Summary + "\n\n" + string.Join("\n", compatibility.Details) + "\n\n是否继续安装？", "兼容性检查", MessageBoxButtons.YesNo, MessageBoxIcon.Information) != DialogResult.Yes) return;
             if (SelectedInstallMode == InstallMode.OptiScalerFallback)
             {
                 await InstallOptiScalerFallbackAsync();
@@ -1438,6 +1460,8 @@ public sealed partial class MainForm : Form
 
             status.Text = "正在准备游戏目录…";
 
+            GameManagement.Begin(targetExe, 0);
+
             Core.Stage(
                 gameDirectory,
                 installerPath,
@@ -1538,6 +1562,8 @@ public sealed partial class MainForm : Form
 
             transactionState = state;
 
+            completed = true;
+
             RefreshHome();
 
             status.Text =
@@ -1591,6 +1617,14 @@ public sealed partial class MainForm : Form
         }
         finally
         {
+            try
+            {
+                if (GameManagement.Read(targetExe) is { Phase: "installing" })
+                    GameManagement.Finish(targetExe, completed);
+            }
+            catch (Exception e) { status.Text = "安装记录未完成，请保留现场：" + e.Message; }
+            busy = false;
+            libraryPage.Enabled = true;
             UpdateButtons();
         }
     }
@@ -1606,6 +1640,16 @@ public sealed partial class MainForm : Form
 
     async Task RestoreAsync()
     {
+        if (selectedGame != null && GameManagement.Read(selectedGame) is { Phase: not "restored" })
+        {
+            var exe = selectedGame;
+            if (MessageBox.Show(this, "恢复此游戏安装前的组件并移除本次新增文件？备份将保留。", "恢复配置", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+            busy = true; libraryPage.Enabled = false;
+            try { await Task.Run(() => GameManagement.Restore(exe)); status.Text = "已恢复安装前配置，可以选择其他模式。"; }
+            catch (Exception e) { status.Text = e.Message; }
+            finally { busy = false; libraryPage.Enabled = true; UpdateButtons(); RefreshHome(); }
+            return;
+        }
         if (transactionState is null)
         {
             return;
@@ -1691,12 +1735,15 @@ public sealed partial class MainForm : Form
             : "正在校验并安装模式二…";
 
         Core.ValidateDll(dllDialog.FileName);
+        GameManagement.Begin(selectedGame, 1);
         Core.StageAlternative(
             gameDirectory,
             packageDialog.SelectedPath,
             dllDialog.FileName,
             weightsDialog.FileName,
             state);
+
+        GameManagement.Finish(selectedGame, true);
 
         transactionState = state;
         status.Text = english
@@ -1716,11 +1763,13 @@ public sealed partial class MainForm : Form
 
     void UpdateButtons()
     {
-        install.Enabled =
-            selectedGame is not null &&
-            transactionState is null;
-
-        restore.Enabled =
-            transactionState is not null;
+        try
+        {
+            var record = selectedGame == null ? null : GameManagement.Read(selectedGame);
+            transactionState = null;
+            install.Enabled = !busy && selectedGame != null && (record == null || record.Phase == "restored");
+            restore.Enabled = !busy && record is { Phase: not "restored" };
+        }
+        catch (Exception e) { install.Enabled = restore.Enabled = false; status.Text = e.Message; }
     }
 }

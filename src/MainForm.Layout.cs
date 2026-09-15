@@ -50,23 +50,24 @@ public sealed partial class MainForm
         }
         sideRows.Controls.Add(nav, 0, 1);
         var ready = new RoundedPanel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(243, 246, 248), Padding = new Padding(16), Radius = 18 };
-        ready.Controls.Add(Localize(new Label { Dock = DockStyle.Fill, ForeColor = muted, AutoSize = false }, "● 就绪\n\nAMD DLSS MU\nv1.0.7", "● Ready\n\nAMD DLSS MU\nv1.0.7"));
+        ready.Controls.Add(Localize(new Label { Dock = DockStyle.Fill, ForeColor = muted, AutoSize = false }, "● 就绪\n\nAMD DLSS MU\nv" + AutoUpdate.DisplayVersion, "● Ready\n\nAMD DLSS MU\nv" + AutoUpdate.DisplayVersion));
         sideRows.Controls.Add(ready, 0, 3); side.Controls.Add(sideRows); root.Controls.Add(side, 0, 0);
         var main = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, Margin = new Padding(0) };
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 62)); main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         var top = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
         top.Controls.Add(Action("中文 / EN", "EN / 中文", (_, _) => { english = !english; ApplyLanguage(english); }));
+        top.Controls.Add(Action("检查更新", "Check updates", async (_, _) => await CheckAppUpdateAsync(false)));
         main.Controls.Add(top, 0, 0); main.Controls.Add(pageHost, 0, 1); root.Controls.Add(main, 1, 0); Controls.Add(root);
         BuildLibrary(); BuildHome();
         aboutPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(32), BackColor = Color.White };
         aboutPanel.Controls.Add(Localize(new Label { Dock = DockStyle.Fill, Font = new Font(Font.FontFamily, 14), ForeColor = ink }, "关于 AMD DLSS MU\n\n由 codeXia 开发\n\n价格：免费\n\n有问题请联系微信 13657964696", "About AMD DLSS MU\n\nDeveloped by codeXia\n\nPrice: Free\n\nWeChat: 13657964696"));
         pageHost.Controls.Add(aboutPanel); SwitchPage(0);
-        Shown += async (_, _) => await ScanGamesAsync(); FormClosed += (_, _) => lifetime.Cancel();
+        Shown += async (_, _) => { await ScanGamesAsync(); await CheckAppUpdateAsync(true); }; FormClosed += (_, _) => lifetime.Cancel();
     }
     void BuildLibrary()
     {
         var rows = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3, ColumnCount = 1 };
-        rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 118)); rows.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 142));
+        rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 118)); rows.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 200));
         var toolbar = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2 };
         toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 316));
         toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 54)); toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
@@ -92,10 +93,13 @@ public sealed partial class MainForm
             ? (english ? "Fallback mode: use when Mode 1 cannot hook or has no effect." : "备用模式：当模式一无法挂接或没有效果时使用。")
             : (english ? "Recommended mode: official AMD runtime." : "推荐模式：官方 AMD 运行时。");
         details.Controls.Add(installMode, 0, 2); footer.Controls.Add(details, 0, 0);
-        var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
+        var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, AutoScroll = true };
         foreach (var b in new[] { restore, install }) { b.AutoSize = false; b.Size = new Size(148, 44); buttons.Controls.Add(b); }
         install.BackColor = Color.FromArgb(91, 177, 0); install.ForeColor = Color.White; restore.BackColor = Color.FromArgb(240, 244, 247);
         install.Click += async (_, _) => await InstallAsync(); restore.Click += async (_, _) => await RestoreAsync();
+        buttons.Controls.Add(Action("兼容性 / 记录", "Compatibility", async (_, _) => await InspectSelectedAsync(false)));
+        buttons.Controls.Add(Action("刷新运行状态", "Runtime status", async (_, _) => await InspectSelectedAsync(true)));
+        buttons.Controls.Add(Action("导出诊断", "Diagnostics", async (_, _) => await ExportDiagnosticAsync()));
         footer.Controls.Add(buttons, 1, 0); rows.Controls.Add(toolbar, 0, 0); rows.Controls.Add(games, 0, 1); rows.Controls.Add(footer, 0, 2);
         libraryPage.Controls.Add(rows); pageHost.Controls.Add(libraryPage);
     }
@@ -132,6 +136,17 @@ public sealed partial class MainForm
         while (recentCards.Controls.Count > 0) { var c = recentCards.Controls[0]; recentCards.Controls.Remove(c); c.Dispose(); }
         var file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AMD-NR-Assistant", "configured-games.txt");
         var paths = File.Exists(file) ? File.ReadAllLines(file).Where(File.Exists).Distinct(StringComparer.OrdinalIgnoreCase).Reverse().ToList() : new List<string>();
+        if (Directory.Exists(GameManagement.Root))
+            foreach (var recordPath in Directory.EnumerateFiles(GameManagement.Root, "record.json", SearchOption.AllDirectories))
+            {
+                try
+                {
+                    Core.RejectLinks(recordPath);
+                    var record = System.Text.Json.JsonSerializer.Deserialize<GameRecord>(File.ReadAllText(recordPath));
+                    if (record != null && record.Phase != "restored" && File.Exists(record.Exe) && !paths.Contains(record.Exe, StringComparer.OrdinalIgnoreCase)) paths.Insert(0, record.Exe);
+                }
+                catch { /* Corrupt records remain available to diagnostics; do not break the library. */ }
+            }
         foreach (var path in paths)
         {
             var game = libraryGames.FirstOrDefault(g => string.Equals(g.ExePath, path, StringComparison.OrdinalIgnoreCase) || (!string.IsNullOrEmpty(g.InstallDirectory) && path.StartsWith(g.InstallDirectory + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)));
@@ -143,6 +158,7 @@ public sealed partial class MainForm
     void BrowseFolder() { using var d = new FolderBrowserDialog(); if (d.ShowDialog(this) == DialogResult.OK) AddPath(d.SelectedPath); }
     void AddPath(string path)
     {
+        if (busy) return;
         if (Directory.Exists(path)) { var exe = GameScanner.FindGameExe(path); if (exe == null) { SelectGameManually(this, EventArgs.Empty); return; } path = exe; }
         try { Core.ValidateGame(path); selectedGame = path; selected.Text = Path.GetFileNameWithoutExtension(path); SwitchPage(1); UpdateButtons(); } catch (Exception e) { MessageBox.Show(this, e.Message, Text); }
     }
