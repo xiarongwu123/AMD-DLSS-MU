@@ -7,11 +7,20 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>AMD-DLSS-MU</AssemblyName>
-    <Version>1.2.1</Version>
-    <AssemblyVersion>1.2.1.0</AssemblyVersion>
-    <FileVersion>1.2.1.0</FileVersion>
+    <Version>1.3.0</Version>
+    <AssemblyVersion>1.3.0.0</AssemblyVersion>
+    <FileVersion>1.3.0.0</FileVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\assets\wechat-xrwCoder.jpg" LogicalName="AmdNrAssistant.WeChatQr" />
+    <PackageReference Include="SharpCompress" Version="0.48.1" />
+    <EmbeddedResource Include="..\assets\AMD-DLSS-MU.addon64" LogicalName="AmdNrAssistant.LivePanel" />
+    <EmbeddedResource Include="..\native\LICENSE-Swapper" LogicalName="Licenses.DLSS5-Swapper" />
+    <EmbeddedResource Include="..\native\LICENSE-SharpCompress.txt" LogicalName="Licenses.SharpCompress" />
+    <EmbeddedResource Include="..\native\vendor\LICENSE-ReShade.md" LogicalName="Licenses.ReShade" />
+    <EmbeddedResource Include="..\native\vendor\LICENSE-ImGui.txt" LogicalName="Licenses.ImGui" />
+  </ItemGroup>
   <ItemGroup Condition="Exists('..\assets\nvngx_dlssnr.dll')">
     <EmbeddedResource Include="..\assets\nvngx_dlssnr.dll" LogicalName="AmdNrAssistant.nvngx_dlssnr.dll" />
   </ItemGroup>

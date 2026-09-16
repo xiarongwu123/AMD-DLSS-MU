@@ -1,4 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
-  <ItemGroup><Compile Include="../src/Core.cs" Link="Core.cs"/><Compile Include="../src/GameManagement.cs" Link="GameManagement.cs"/></ItemGroup>
+  <ItemGroup><Compile Include="../src/Core.cs" Link="Core.cs"/><Compile Include="../src/GameManagement.cs" Link="GameManagement.cs"/>
+    <Compile Include="../src/Diagnostics.cs" Link="Diagnostics.cs"/>
+    <Compile Include="../src/OptiInstaller.cs" Link="OptiInstaller.cs"/>
+    <Compile Include="../src/LivePanel.cs" Link="LivePanel.cs"/>
+    <PackageReference Include="SharpCompress" Version="0.48.1" />
+  </ItemGroup>
 </Project>

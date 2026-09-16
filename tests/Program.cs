@@ -13,6 +13,8 @@ var proxy = Path.Combine(dir, "version.dll"); File.WriteAllText(proxy, "original
 GameManagement.Begin(a, 0); File.WriteAllText(proxy, "installed"); File.WriteAllText(Path.Combine(dir, "dlssnr_on_amd.ini"), "new"); GameManagement.Finish(a, true);
 Assert(GameManagement.Read(a)?.Mode == 0 && GameManagement.Read(a)?.Phase == "installed", "persistent record");
 Assert(GameManagement.Read(b) == null, "per-game isolation");
+Assert(GameManagement.ModeName(2).Contains("模式二"), "OptiScaler retains ID 2 but displays Mode 2");
+Assert(GameManagement.ModeName(1).Contains("Retired"), "legacy Pre-SR is not relabeled as OptiScaler");
 File.WriteAllText(proxy, "external edit"); Reject(() => GameManagement.Restore(a), "modified target blocks complete restore");
 Assert(File.Exists(Path.Combine(dir, "dlssnr_on_amd.ini")), "preflight prevents partial removal");
 File.WriteAllText(proxy, "installed"); var backup = Path.Combine(GameManagement.State(a), "version.dll.backup"); File.WriteAllText(backup, "corrupt");
@@ -49,3 +51,50 @@ GameManagement.Restore(d, true);
 Assert(!File.Exists(ini) && Directory.EnumerateFiles(GameManagement.State(d), "*.ini", SearchOption.AllDirectories).Any(p => File.ReadAllText(p) == "user changed settings"), "edited settings archived then removed");
 GameManagement.Restore(d, true); Assert(GameManagement.Read(d)?.Phase == "restored", "edited settings restore is repeatable");
 Console.WriteLine($"Final: {count} assertions passed.");
+var eGame = Game("nested" + Guid.NewGuid().ToString("N")); var ed = Path.GetDirectoryName(eGame)!;
+GameManagement.Begin(eGame, 2, "OptiScaler 0.9.4");
+Directory.CreateDirectory(Path.Combine(ed, "D3D12_Optiscaler"));
+var nested = Path.Combine(ed, "D3D12_Optiscaler", "D3D12Core.dll"); File.WriteAllText(nested, "owned");
+GameManagement.Finish(eGame, true);
+var addon = Path.Combine(ed, "AMD-DLSS-MU.addon64"); File.WriteAllText(addon, "overlay"); GameManagement.RegisterAddon(eGame, "AMD-DLSS-MU.addon64");
+Assert(GameManagement.Read(eGame)!.Files.Any(f => f.Name.EndsWith("D3D12Core.dll")), "adding overlay preserves existing manifest");
+GameManagement.Restore(eGame); Assert(!File.Exists(nested) && !File.Exists(addon), "restore removes nested payload and addon");
+Assert(!GameManagement.IsTracked("Licenses/../../outside.txt") && !GameManagement.IsTracked("Licenses\\..\\outside.txt"), "nested manifest traversal rejected on both separators");
+var before = "; keep\r\n[Menu]\r\nScale=auto\r\n[Other]\r\nScale=2\r\n";
+var after = OptiInstaller.SetIni(before, "Menu", "Scale", "1.2");
+Assert(after.Contains("; keep\r\n") && after.Contains("Scale=1.2") && after.Contains("[Other]\r\nScale=2"), "INI writes only intended section");
+Reject(() => OptiInstaller.SetIni("[Menu]\nScale=1\nScale=2", "Menu", "Scale", "1"), "duplicate INI keys rejected");
+Reject(() => OptiInstaller.SetIni("[Menu]\nOther=1", "Menu", "Scale", "1"), "unknown config schema rejected");
+var configPath = Path.Combine(ed, "OptiScaler.ini"); File.WriteAllText(configPath, before);
+LivePanel.SaveConfig(eGame, configPath, before, after);
+Assert(File.ReadAllText(configPath) == after && Directory.EnumerateFiles(GameManagement.State(eGame), "OptiScaler.ini", SearchOption.AllDirectories).Any(p => File.ReadAllText(p) == before), "config saved with original backup");
+Reject(() => LivePanel.SaveConfig(eGame, configPath, before, "stale"), "concurrent config edits rejected");
+var redacted = Diagnostics.Redact("C:\\Users\\secret\\Game\\test.dll\ntoken=abcdef\nemail=a@example.com", eGame);
+Assert(!redacted.Contains("secret") && !redacted.Contains("abcdef") && !redacted.Contains("a@example.com"), "diagnostic redacts paths credentials and email");
+Diagnostics.Record(eGame, "download", "failed", "Timeout before installation");
+var report = JsonDocument.Parse(Diagnostics.Export(eGame));
+Assert(report.RootElement.GetProperty("Activity").GetProperty("Text").GetString()!.Contains("Timeout before installation"), "download failures survive before installation records");
+Assert(report.RootElement.GetProperty("Logs").EnumerateArray().All(l => l.GetProperty("Status").GetString() == "missing"), "missing logs explicit in export");
+var log = Path.Combine(ed, "OptiScaler.log"); File.WriteAllText(log, new string('a', 150000));
+var excerpt = Diagnostics.ReadTail(ed, "OptiScaler.log", eGame);
+Assert(excerpt.Status == "tail-truncated" && excerpt.Text.Length <= 65536, "large logs bounded");
+Console.WriteLine($"Expanded: {count} assertions passed.");
+if (args.Length == 1)
+{
+    var extracted = Path.Combine(root, "real-opti"); OptiInstaller.ExtractVerified(args[0], extracted);
+    Assert(OptiInstaller.Payload.All(n => File.Exists(Path.Combine(extracted, n))), "real pinned archive has all expected payload files");
+    var configured = OptiInstaller.Configure(File.ReadAllText(Path.Combine(extracted, "OptiScaler.ini")), eGame, false);
+    Assert(configured.Contains("LogToFile=true") && configured.Contains("ShortcutKey=0x2D"), "real upstream config accepts logging and menu settings");
+    var realGame = Game("opti" + Guid.NewGuid().ToString("N"));
+    using (var pe = new BinaryWriter(File.Open(realGame, FileMode.Create)))
+    { pe.Write((ushort)0x5a4d); pe.BaseStream.Position = 0x3c; pe.Write(64); pe.BaseStream.Position = 64; pe.Write(0x4550); pe.Write((ushort)0x8664); pe.BaseStream.SetLength(128); }
+    OptiInstaller.Install(realGame, extracted, false);
+    var installedDir = Path.GetDirectoryName(realGame)!;
+    Assert(GameManagement.Read(realGame)?.Mode == 2 && File.Exists(Path.Combine(installedDir, "dxgi.dll")), "OptiScaler installs with stable storage ID 2 (display Mode 2)");
+    GameManagement.Restore(realGame);
+    Assert(!File.Exists(Path.Combine(installedDir, "dxgi.dll")) && !File.Exists(Path.Combine(installedDir, "D3D12_Optiscaler", "D3D12Core.dll")), "real package restore removes proxy and nested dependency");
+    File.WriteAllText(Path.Combine(installedDir, "dxgi.dll"), "unrelated plugin");
+    Reject(() => OptiInstaller.Install(realGame, extracted, false), "real install refuses existing foreign proxy");
+    Assert(File.ReadAllText(Path.Combine(installedDir, "dxgi.dll")) == "unrelated plugin", "foreign proxy preserved");
+    Console.WriteLine($"All integration assertions: {count}");
+}

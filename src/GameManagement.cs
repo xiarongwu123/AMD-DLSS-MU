@@ -13,6 +13,15 @@ public record Compatibility(bool Blocked, string Summary, string[] Details);
 
 public static class GameManagement
 {
+    // Storage IDs do not follow the current UI order; retain legacy recovery compatibility.
+    public static string ModeName(int mode) => mode switch
+    {
+        0 => "模式一 / Mode 1 · AMD",
+        1 => "旧版 Pre-SR（已移除，仅保留恢复） / Retired Pre-SR",
+        2 => "模式二 / Mode 2 · OptiScaler",
+        3 => "F8 实时面板 / Live panel",
+        _ => "未知模式 / Unknown"
+    };
     internal static string? StorageOverride { get; set; }
     public static string Root => StorageOverride ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AMD-NR-Assistant", "games");
     public static string State(string exe) => Path.Combine(Root, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(Path.GetFullPath(exe).ToUpperInvariant()))));
@@ -34,21 +43,32 @@ public static class GameManagement
     }
     public static readonly string[] Loaders = Core.ProxyNames.Concat(new[] { "d3d11.dll", "d3d12.dll", "nvngx.dll", "OptiScaler.dll", "dlss5-neural.addon64" }).Distinct().ToArray();
     public static bool IsTracked(string name) => Tracked(name);
-    static bool Tracked(string name) => !name.EndsWith(".log", StringComparison.OrdinalIgnoreCase) && (Loaders.Contains(name, StringComparer.OrdinalIgnoreCase) ||
+    static bool Tracked(string name) => SafeRelative(name) && (name.Replace('\\', '/').StartsWith("Licenses/", StringComparison.OrdinalIgnoreCase) && new[] { ".txt", ".md" }.Contains(Path.GetExtension(name).ToLowerInvariant()) ||
+        name.Replace('\\', '/').Equals("D3D12_Optiscaler/D3D12Core.dll", StringComparison.OrdinalIgnoreCase) ||
+        name.Equals("AMD-DLSS-MU.addon64", StringComparison.OrdinalIgnoreCase) ||
+        !name.Contains('/') && !name.Contains('\\') && !name.EndsWith(".log", StringComparison.OrdinalIgnoreCase) && (Loaders.Contains(name, StringComparer.OrdinalIgnoreCase) ||
         name.Equals(Core.InstallerName, StringComparison.OrdinalIgnoreCase) ||
         name.StartsWith("nvngx_dlssnr", StringComparison.OrdinalIgnoreCase) ||
         name.StartsWith("dlssnr_", StringComparison.OrdinalIgnoreCase) ||
         name.StartsWith("OptiScaler", StringComparison.OrdinalIgnoreCase) ||
         name.StartsWith("amd_fidelityfx", StringComparison.OrdinalIgnoreCase) ||
         name.StartsWith("libxe", StringComparison.OrdinalIgnoreCase) ||
-        name.Equals("dlss-enabler-headless.dll", StringComparison.OrdinalIgnoreCase));
+        name.Equals("dlss-enabler-headless.dll", StringComparison.OrdinalIgnoreCase)));
+    static bool SafeRelative(string name) => !Path.IsPathRooted(name) && !name.Contains(':') &&
+        name.Replace('\\', '/').Split('/').All(p => p.Length > 0 && p != "." && p != "..");
     static Dictionary<string, string> Inventory(string exe)
     {
         var dir = Path.GetDirectoryName(exe)!;
-        return Directory.EnumerateFiles(dir).Where(p => Tracked(Path.GetFileName(p)))
-            .ToDictionary(p => Path.GetFileName(p), p => { Core.RejectLinks(p); return Core.Hash(p); }, StringComparer.OrdinalIgnoreCase);
+        var paths = Directory.EnumerateFiles(dir).ToList();
+        foreach (var name in new[] { "Licenses", "D3D12_Optiscaler" })
+        {
+            var subdir = Path.Combine(dir, name); Core.RejectLinks(subdir);
+            if (Directory.Exists(subdir)) paths.AddRange(Directory.EnumerateFiles(subdir));
+        }
+        return paths.Where(p => Tracked(Path.GetRelativePath(dir, p)))
+            .ToDictionary(p => Path.GetRelativePath(dir, p), p => { Core.RejectLinks(p); return Core.Hash(p); }, StringComparer.OrdinalIgnoreCase);
     }
-    public static void Begin(string exe, int mode)
+    public static void Begin(string exe, int mode, string? version = null)
     {
         EnsureClosed(exe);
         if (Read(exe) is { Phase: not "restored" }) throw new IOException("此游戏已有安装记录，请先恢复，再切换或重新安装。");
@@ -57,10 +77,11 @@ public static class GameManagement
         foreach (var f in files)
         {
             var backup = Path.Combine(folder, f.Key + ".backup"); Core.RejectLinks(backup);
+            Directory.CreateDirectory(Path.GetDirectoryName(backup)!);
             File.Copy(Path.Combine(Path.GetDirectoryName(exe)!, f.Key), backup, true);
             if (Core.Hash(backup) != f.Value) throw new IOException("备份校验失败。");
         }
-        Save(new(exe, mode, mode == 0 ? Core.ReviewedTag : "AMD Pre-SR / local package (unverified)", DateTime.UtcNow, "installing", files.Select(f => new ManagedFile(f.Key, f.Value, f.Value)).ToList()));
+        Save(new(exe, mode, version ?? (mode == 0 ? Core.ReviewedTag : "AMD Pre-SR / local package (unverified)"), DateTime.UtcNow, "installing", files.Select(f => new ManagedFile(f.Key, f.Value, f.Value)).ToList()));
     }
     public static void Finish(string exe, bool success)
     {
@@ -70,9 +91,17 @@ public static class GameManagement
         var names = before.Keys.Union(after.Keys, StringComparer.OrdinalIgnoreCase);
         Save(r with { Phase = success ? "installed" : "incomplete", Files = names.Select(n => new ManagedFile(n, before.GetValueOrDefault(n, ""), after.GetValueOrDefault(n, ""))).ToList() });
     }
+    public static void RegisterAddon(string exe, string name)
+    {
+        if (name != "AMD-DLSS-MU.addon64") throw new IOException("未知面板组件。");
+        var r = Read(exe) ?? throw new IOException("缺少安装记录。");
+        if (r.Files.Any(f => f.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) throw new IOException("面板已在记录中，请先恢复。");
+        var files = new List<ManagedFile>(r.Files) { new(name, "", Core.Hash(Target(exe, name))) };
+        Save(r with { Phase = "installed", Files = files });
+    }
     static string Target(string exe, string name)
     {
-        if (Path.GetFileName(name) != name || !Tracked(name)) throw new IOException("记录包含非法路径。");
+        if (!Tracked(name)) throw new IOException("记录包含非法路径。");
         var p = Path.Combine(Path.GetDirectoryName(exe)!, name); Core.RejectLinks(p); return p;
     }
     public static void Restore(string exe, bool preserveChangedSettings = false)
@@ -111,7 +140,7 @@ public static class GameManagement
         foreach (var f in r.Files.Where(f => f.Before != f.After))
         {
             var p = Target(exe, f.Name);
-            if (f.Before.Length > 0) File.Copy(Path.Combine(State(exe), f.Name + ".backup"), p, true);
+            if (f.Before.Length > 0) { Directory.CreateDirectory(Path.GetDirectoryName(p)!); File.Copy(Path.Combine(State(exe), f.Name + ".backup"), p, true); }
             else if (File.Exists(p)) File.Delete(p);
         }
         Save(r with { Phase = "restored" });
@@ -184,15 +213,15 @@ public static class GameManagement
         }
         return result.Count > 0 ? result.ToArray() : new[] { "未读取到显卡/驱动信息" };
     }
-    public static Compatibility Check(string exe, bool checkConflicts = true)
+    public static Compatibility Check(string exe, bool checkConflicts = true, bool amdNeural = true)
     {
         var details = new List<string>(); bool blocked = false;
         try { Core.ValidateGame(exe); details.Add("EXE：Windows x64"); } catch (Exception e) { blocked = true; details.Add(e.Message); }
         var hardware = Hardware(); details.AddRange(hardware);
-        if (hardware.Any(h => Regex.IsMatch(h, @"Radeon.*RX\s*[1-6]\d{3}", RegexOptions.IgnoreCase)) &&
+        if (amdNeural && hardware.Any(h => Regex.IsMatch(h, @"Radeon.*RX\s*[1-6]\d{3}", RegexOptions.IgnoreCase)) &&
             !hardware.Any(h => Regex.IsMatch(h, @"Radeon.*RX\s*[79]\d{3}", RegexOptions.IgnoreCase)))
         { blocked = true; details.Add("检测到的 Radeon RX 型号不在当前上游支持范围内。"); }
-        if (OperatingSystem.IsWindows() && !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000)) { blocked = true; details.Add("当前运行时要求 Windows 11。"); }
+        if (amdNeural && OperatingSystem.IsWindows() && !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000)) { blocked = true; details.Add("当前运行时要求 Windows 11。"); }
         details.Add("驱动显示的是 Windows 驱动版本；未自动等同 Adrenalin 版本，最低要求需人工核对。");
         var dir = Path.GetDirectoryName(exe)!;
         var names = Directory.EnumerateFileSystemEntries(dir).Select(Path.GetFileName).ToArray();
@@ -201,10 +230,10 @@ public static class GameManagement
         var record = Read(exe);
         if (proxy.Length > 0) details.Add("发现插件/代理：" + string.Join(", ", proxy));
         if (checkConflicts && proxy.Length > 0 && (record == null || record.Phase == "restored")) { blocked = true; details.Add("检测到旧安装或其他插件。点击“恢复配置”查看并备份移出候选文件后重试；未知组件请使用原安装器卸载。"); }
-        if (record is { Phase: not "restored" }) details.Add($"已记录模式 {record.Mode + 1}，状态 {record.Phase}；切换前请恢复。");
+        if (record is { Phase: not "restored" }) details.Add($"已记录：{ModeName(record.Mode)}，状态 {record.Phase}；切换前请恢复。");
         var evidence = names.Where(n => Regex.IsMatch(n ?? "", "d3d12|fidelityfx|fsr", RegexOptions.IgnoreCase)).ToArray();
         details.Add(evidence.Length > 0 ? "目录中发现 DX12/FSR 相关文件（不证明正在使用）：" + string.Join(", ", evidence) : "未找到 DX12/FSR 文件证据；可能静态链接或位于子目录。");
-        details.Add("显卡兼容、实际图形接口和游戏版本尚未实测；RX 9000 为上游主要测试对象，RX 7000 需验证。");
+        details.Add(amdNeural ? "显卡兼容、实际图形接口和游戏版本尚未实测；RX 9000 为上游主要测试对象，RX 7000 需验证。" : "OptiScaler 标准版：需要兼容的 DLSS/FSR/XeSS 输入；不代表 DLSS 5 神经渲染支持。");
         return new(blocked, blocked ? "不支持当前安装条件" : "未验证：基础检查通过", details.ToArray());
     }
     // Only lines observed after monitoring starts in this process session are eligible evidence.
@@ -226,7 +255,8 @@ public static class GameManagement
         }
         var log = Path.Combine(Path.GetDirectoryName(exe)!, "dlssnr_on_amd.log");
         var addonLog = Path.Combine(Path.GetDirectoryName(exe)!, "dlss5-neural.log");
-        if (File.Exists(addonLog)) log = addonLog;
+        if (Read(exe)?.Mode != 0 && !File.Exists(log) && File.Exists(addonLog)) log = addonLog;
+        if (Read(exe)?.Mode == 2) log = Path.Combine(Path.GetDirectoryName(exe)!, "OptiScaler.log");
         Core.RejectLinks(log);
         long length = File.Exists(log) ? new FileInfo(log).Length : 0;
         if (!Watch.TryGetValue(exe, out var watch) || watch.Start != since || length < watch.Offset)
@@ -259,7 +289,8 @@ public static class GameManagement
         return JsonSerializer.Serialize(new { Schema = 1, AppVersion = typeof(GameManagement).Assembly.GetName().Version?.ToString(), CapturedUtc = DateTime.UtcNow,
             Hardware = Hardware(), Compatibility = check.Summary, InstallationBlocked = check.Blocked,
             ConflictingFiles = Loaders.Where(n => File.Exists(Path.Combine(Path.GetDirectoryName(exe)!, n))).ToArray(),
-            Mode = record?.Mode + 1, record?.Version, record?.InstalledUtc, record?.Phase,
+            Mode = record?.Mode + 1, ModeLabel = record == null ? null : ModeName(record.Mode),
+            record?.Version, record?.InstalledUtc, record?.Phase,
             Files = files.Select(f => new { Component = f.Key, Sha256 = f.Value }), Integrity = integrity, LogCategories = categories,
             Note = "不包含原始日志、游戏目录、用户名、设备序列号；导出不会上传。" }, Core.JsonOptions);
     }

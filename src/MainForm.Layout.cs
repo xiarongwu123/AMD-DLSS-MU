@@ -57,12 +57,11 @@ public sealed partial class MainForm
         var top = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
         top.Controls.Add(Action("中文 / EN", "EN / 中文", (_, _) => { english = !english; ApplyLanguage(english); }));
         top.Controls.Add(Action("检查更新", "Check updates", async (_, _) => await CheckAppUpdateAsync(false)));
+        top.Controls.Add(Action("第三方许可", "Licenses", (_, _) => ShowLicenses()));
         main.Controls.Add(top, 0, 0); main.Controls.Add(pageHost, 0, 1); root.Controls.Add(main, 1, 0); Controls.Add(root);
         BuildLibrary(); BuildHome();
-        aboutPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(32), BackColor = Color.White };
-        aboutPanel.Controls.Add(Localize(new Label { Dock = DockStyle.Fill, Font = new Font(Font.FontFamily, 14), ForeColor = ink }, "关于 AMD DLSS MU\n\n由 codeXia 开发\n\n价格：免费\n\n有问题请联系微信 13657964696", "About AMD DLSS MU\n\nDeveloped by codeXia\n\nPrice: Free\n\nWeChat: 13657964696"));
-        pageHost.Controls.Add(aboutPanel); SwitchPage(0);
-        Shown += async (_, _) => { await ScanGamesAsync(); await CheckAppUpdateAsync(true); }; FormClosed += (_, _) => lifetime.Cancel();
+        BuildAbout(); SwitchPage(0);
+        Shown += async (_, _) => { await ScanGamesAsync(); await CheckAppUpdateAsync(true); }; FormClosed += (_, _) => { controlPanel?.Close(); lifetime.Cancel(); };
     }
     void BuildLibrary()
     {
@@ -87,10 +86,10 @@ public sealed partial class MainForm
         selected.AutoSize = status.AutoSize = false; selected.AutoEllipsis = status.AutoEllipsis = true; selected.Dock = status.Dock = DockStyle.Fill;
         details.Controls.Add(selected, 0, 0); details.Controls.Add(status, 0, 1);
         installMode.Items.Add("模式一（推荐）— 官方运行时");
-        installMode.Items.Add("模式二（备用）— 模式一失效时使用");
+        installMode.Items.Add("模式二 — OptiScaler 标准版（超分/帧生成）");
         installMode.SelectedIndex = 0;
         installMode.SelectedIndexChanged += (_, _) => status.Text = installMode.SelectedIndex == 1
-            ? (english ? "Fallback mode: use when Mode 1 cannot hook or has no effect." : "备用模式：当模式一无法挂接或没有效果时使用。")
+            ? (english ? "OptiScaler: automatic download and verification; not DLSS 5 neural rendering." : "OptiScaler 标准版：自动下载校验；不等于 DLSS 5 神经渲染。")
             : (english ? "Recommended mode: official AMD runtime." : "推荐模式：官方 AMD 运行时。");
         details.Controls.Add(installMode, 0, 2); footer.Controls.Add(details, 0, 0);
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, AutoScroll = true };
@@ -100,6 +99,7 @@ public sealed partial class MainForm
         buttons.Controls.Add(Action("兼容性 / 记录", "Compatibility", async (_, _) => await InspectSelectedAsync(false)));
         buttons.Controls.Add(Action("刷新运行状态", "Runtime status", async (_, _) => await InspectSelectedAsync(true)));
         buttons.Controls.Add(Action("导出诊断", "Diagnostics", async (_, _) => await ExportDiagnosticAsync()));
+        buttons.Controls.Add(Action("F8 控制面板", "F8 panel", (_, _) => OpenPanel()));
         footer.Controls.Add(buttons, 1, 0); rows.Controls.Add(toolbar, 0, 0); rows.Controls.Add(games, 0, 1); rows.Controls.Add(footer, 0, 2);
         libraryPage.Controls.Add(rows); pageHost.Controls.Add(libraryPage);
     }
@@ -169,7 +169,7 @@ public sealed partial class MainForm
         var selectedIndex = installMode.SelectedIndex;
         installMode.Items.Clear();
         installMode.Items.Add(en ? "Mode 1 (recommended) — official runtime" : "模式一（推荐）— 官方运行时");
-        installMode.Items.Add(en ? "Mode 2 (fallback) — use when Mode 1 fails" : "模式二（备用）— 模式一失效时使用");
+        installMode.Items.Add(en ? "Mode 2 — OptiScaler (upscaling / FG)" : "模式二 — OptiScaler 标准版（超分/帧生成）");
         installMode.SelectedIndex = Math.Max(0, selectedIndex);
         RefreshHome();
     }

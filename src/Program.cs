@@ -918,8 +918,9 @@ public sealed partial class MainForm : Form
 {
     enum InstallMode
     {
-        Official,
-        OptiScalerFallback
+        Official = 0,
+        // Persisted IDs are stable: 1 is the retired Pre-SR mode, 2 is OptiScaler.
+        OptiScalerStandard = 2
     }
 
     readonly ComboBox installMode = new()
@@ -992,7 +993,7 @@ public sealed partial class MainForm : Form
 
     InstallMode SelectedInstallMode =>
         installMode.SelectedIndex == 1
-            ? InstallMode.OptiScalerFallback
+            ? InstallMode.OptiScalerStandard
             : InstallMode.Official;
 
     RoundedPanel? selectedCard;
@@ -1323,6 +1324,8 @@ public sealed partial class MainForm : Form
 
         if (busy) return;
         var targetExe = selectedGame;
+        var chosenMode = SelectedInstallMode;
+        Diagnostics.Record(targetExe, "install", "start", chosenMode.ToString());
         busy = true;
         libraryPage.Enabled = false;
         install.Enabled = false;
@@ -1333,20 +1336,20 @@ public sealed partial class MainForm : Form
 
         try
         {
-            var compatibility = await Task.Run(() => GameManagement.Check(targetExe));
+            var compatibility = await Task.Run(() => GameManagement.Check(targetExe, true, chosenMode != InstallMode.OptiScalerStandard));
             if (compatibility.Blocked)
             {
                 status.Text = "安装检查未通过，请查看提示；旧组件冲突可点击“恢复配置”处理。";
+                Diagnostics.Record(targetExe, "compatibility", "blocked", string.Join("; ", compatibility.Details));
                 MessageBox.Show(this, string.Join("\n", compatibility.Details), "安装检查", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             if (GameManagement.Read(targetExe) is { Phase: not "restored" })
                 throw new IOException("请先恢复此游戏，再安装或切换模式。");
             if (MessageBox.Show(this, compatibility.Summary + "\n\n" + string.Join("\n", compatibility.Details) + "\n\n是否继续安装？", "兼容性检查", MessageBoxButtons.YesNo, MessageBoxIcon.Information) != DialogResult.Yes) return;
-            if (SelectedInstallMode == InstallMode.OptiScalerFallback)
+            if (chosenMode == InstallMode.OptiScalerStandard)
             {
-                await InstallOptiScalerFallbackAsync();
-                return;
+                await InstallOptiScalerStandardAsync(targetExe); return;
             }
 
             var gameDirectory = Path.GetDirectoryName(
@@ -1370,6 +1373,7 @@ public sealed partial class MainForm : Form
                 "正在释放并校验内置 DLSS 5 组件…";
 
             Core.ExtractBundledDll(bundledDll);
+            Diagnostics.Record(targetExe, "bundled-dll", "validated");
 
             ReleaseInfo release;
 
@@ -1407,6 +1411,7 @@ public sealed partial class MainForm : Form
 
                     status.Text =
                         "正在连接官方 GitHub 并核对安装器…";
+                    Diagnostics.Record(targetExe, "github-release-query", "start");
 
                     release = await Core.GetReleaseAsync(
                         client,
@@ -1414,6 +1419,7 @@ public sealed partial class MainForm : Form
 
                     status.Text =
                         $"正在下载官方安装器 {release.Tag}…";
+                    Diagnostics.Record(targetExe, "installer-download", "start", release.Tag);
 
                     await Core.DownloadAsync(
                         client,
@@ -1429,6 +1435,7 @@ public sealed partial class MainForm : Form
                           networkError is TaskCanceledException &&
                           !lifetime.IsCancellationRequested)
                 {
+                    Diagnostics.Record(targetExe, "network", "failed", networkError.ToString());
                     cachedInstaller =
                         Core.FindCachedInstaller();
 
@@ -1462,10 +1469,12 @@ public sealed partial class MainForm : Form
             }
 
             Core.ValidateDll(bundledDll);
+            Diagnostics.Record(targetExe, "installer-download", "validated", release.Tag);
 
             status.Text = "正在准备游戏目录…";
 
             GameManagement.Begin(targetExe, 0);
+            Diagnostics.Record(targetExe, "game-files", "staging");
 
             Core.Stage(
                 gameDirectory,
@@ -1495,6 +1504,7 @@ public sealed partial class MainForm : Form
                 throw new IOException(
                     "无法启动官方安装器。");
             }
+            Diagnostics.Record(targetExe, "external-installer", "started");
 
             Core.MarkPhase(
                 state,
@@ -1506,6 +1516,7 @@ public sealed partial class MainForm : Form
 
             await process.WaitForExitAsync(
                 lifetime.Token);
+            Diagnostics.Record(targetExe, "external-installer", "exited", "exitCode=" + process.ExitCode);
 
             Core.MarkPhase(
                 state,
@@ -1528,6 +1539,7 @@ public sealed partial class MainForm : Form
 
             if (!check.Ready)
             {
+                Diagnostics.Record(targetExe, "installed-files", "incomplete", check.Message);
                 status.Text = check.Message;
 
                 MessageBox.Show(
@@ -1568,6 +1580,7 @@ public sealed partial class MainForm : Form
             transactionState = state;
 
             completed = true;
+            Diagnostics.Record(targetExe, "installed-files", "complete", "游戏运行效果尚未验证。");
 
             RefreshHome();
 
@@ -1587,10 +1600,12 @@ public sealed partial class MainForm : Form
         }
         catch (OperationCanceledException)
         {
+            Diagnostics.Record(targetExe, "install", "cancelled");
             status.Text = "操作已取消。";
         }
         catch (Exception exception)
         {
+            Diagnostics.Record(targetExe, "install", "failed", exception.ToString());
             status.Text = exception.Message;
 
             if (state is not null &&
@@ -1686,79 +1701,6 @@ public sealed partial class MainForm : Form
         }
     }
 
-    async Task InstallOptiScalerFallbackAsync()
-    {
-        if (selectedGame is null)
-        {
-            return;
-        }
-
-        var warning = english
-            ? "Mode 2 is an experimental fallback. Use it only when Mode 1 cannot hook or has no effect. It requires a user-supplied OptiScaler AMD Pre-SR package and locally generated weights. Continue?"
-            : "模式二是实验性备用方案，仅建议在模式一无法挂接或没有效果时使用。需要用户自行提供 OptiScaler AMD Pre-SR 包和本地生成的权重。是否继续？";
-
-        if (MessageBox.Show(this, warning, Text,
-                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
-        {
-            return;
-        }
-
-        using var packageDialog = new FolderBrowserDialog
-        {
-            Description = english
-                ? "Select the extracted OptiScaler-AMD-PreSR-Multipass package folder"
-                : "选择已解压的 OptiScaler-AMD-PreSR-Multipass 包目录"
-        };
-        if (packageDialog.ShowDialog(this) != DialogResult.OK) return;
-
-        using var weightsDialog = new OpenFileDialog
-        {
-            Filter = "DLSS NR weights (dlssnr_on_amd_weights.bin)|dlssnr_on_amd_weights.bin",
-            Title = english ? "Select locally generated weights" : "选择本地生成的权重文件"
-        };
-        if (weightsDialog.ShowDialog(this) != DialogResult.OK) return;
-
-        using var dllDialog = new OpenFileDialog
-        {
-            Filter = "DLSS Neural Rendering (nvngx_dlssnr.dll)|nvngx_dlssnr.dll",
-            Title = english ? "Select your legitimate DLSS NR DLL" : "选择你合法取得的 DLSS NR DLL"
-        };
-        if (dllDialog.ShowDialog(this) != DialogResult.OK) return;
-
-        var state = Path.Combine(workRoot, Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(state);
-        var gameDirectory = Path.GetDirectoryName(Path.GetFullPath(selectedGame))!;
-
-        status.Text = english
-            ? "Validating and installing Mode 2…"
-            : "正在校验并安装模式二…";
-
-        Core.ValidateDll(dllDialog.FileName);
-        GameManagement.Begin(selectedGame, 1);
-        Core.StageAlternative(
-            gameDirectory,
-            packageDialog.SelectedPath,
-            dllDialog.FileName,
-            weightsDialog.FileName,
-            state);
-
-        GameManagement.Finish(selectedGame, true);
-
-        transactionState = state;
-        status.Text = english
-            ? "Mode 2 configured. Enable FSR and press Insert in game."
-            : "模式二已配置。进入游戏启用 FSR，按 Insert 打开菜单。";
-
-        MessageBox.Show(this,
-            english
-                ? "Mode 2 has been configured. This fallback is intended for games where Mode 1 fails. Enable FSR, then press Insert."
-                : "模式二已配置。该备用方案用于模式一失效的游戏。请启用 FSR，并按 Insert 打开菜单。",
-            Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-        RefreshHome();
-        UpdateButtons();
-        await Task.CompletedTask;
-    }
 
     void UpdateButtons()
     {

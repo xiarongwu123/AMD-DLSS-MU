@@ -4,3 +4,5 @@ publish/
 *.exe
 assets/*.dll
 .vs/
+assets/*.pdb
+assets/*.lib
