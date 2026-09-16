@@ -75,20 +75,37 @@ public static class GameManagement
         if (Path.GetFileName(name) != name || !Tracked(name)) throw new IOException("记录包含非法路径。");
         var p = Path.Combine(Path.GetDirectoryName(exe)!, name); Core.RejectLinks(p); return p;
     }
-    public static void Restore(string exe)
+    public static void Restore(string exe, bool preserveChangedSettings = false)
     {
         EnsureClosed(exe);
         var r = Read(exe) ?? throw new IOException("没有可恢复记录；旧版安装请使用原安装器卸载。");
         if (r.Phase == "installing") throw new IOException("检测到安装意外中断。无法确认外部安装器修改范围，请使用原安装器恢复并保留诊断记录。");
+        var changedSettings = new List<string>();
         // Check all files and all backups before the first mutation; a second attempt is safe.
         foreach (var f in r.Files)
         {
             var p = Target(exe, f.Name); var current = File.Exists(p) ? Core.Hash(p) : "";
-            if (current != f.Before && current != f.After) throw new IOException("文件已被其他程序修改，未执行恢复：" + f.Name);
+            if (current != f.Before && current != f.After)
+            {
+                if (preserveChangedSettings && f.After.Length > 0 && current.Length > 0 &&
+                    f.Before != f.After && Path.GetExtension(f.Name).Equals(".ini", StringComparison.OrdinalIgnoreCase))
+                    changedSettings.Add(p);
+                else throw new IOException("文件已被其他程序修改，未执行恢复：" + f.Name);
+            }
             if (f.Before.Length > 0)
             {
                 var backup = Path.Combine(State(exe), f.Name + ".backup"); Core.RejectLinks(backup);
                 if (!File.Exists(backup) || Core.Hash(backup) != f.Before) throw new IOException("备份损坏，未执行恢复：" + f.Name);
+            }
+        }
+        if (changedSettings.Count > 0)
+        {
+            var archive = Path.Combine(State(exe), "settings-" + Guid.NewGuid().ToString("N"));
+            Core.RejectLinks(archive); Directory.CreateDirectory(archive);
+            foreach (var p in changedSettings)
+            {
+                var copy = Path.Combine(archive, Path.GetFileName(p)); File.Copy(p, copy);
+                if (Core.Hash(copy) != Core.Hash(p)) throw new IOException("配置备份校验失败，未恢复。");
             }
         }
         foreach (var f in r.Files.Where(f => f.Before != f.After))
@@ -98,6 +115,49 @@ public static class GameManagement
             else if (File.Exists(p)) File.Delete(p);
         }
         Save(r with { Phase = "restored" });
+    }
+    // Without a before-install record these are candidates, not proof of ownership.
+    // The UI must display this exact snapshot and obtain consent before quarantine.
+    public static Dictionary<string, string> LegacyCandidates(string exe)
+    {
+        var names = Core.ProxyNames.Concat(new[] { Core.DllName, Core.InstallerName,
+            "dlssnr_on_amd.ini", "dlssnr_on_amd_weights.bin", "dlssnr_on_amd.log",
+            "OptiScaler.dll", "OptiScaler.ini", "dlssnr_on_amd_weights.bin", "dlss5-neural.addon64" }).Distinct();
+        var dir = Path.GetDirectoryName(Path.GetFullPath(exe))!;
+        Core.RejectLinks(dir);
+        return names.Where(n => File.Exists(Path.Combine(dir, n))).ToDictionary(n => n, n =>
+        { var p = Path.Combine(dir, n); Core.RejectLinks(p); return Core.Hash(p); }, StringComparer.OrdinalIgnoreCase);
+    }
+    public static string QuarantineLegacy(string exe, IReadOnlyDictionary<string, string> approved)
+    {
+        EnsureClosed(exe);
+        if (Read(exe) is { Phase: not "restored" }) throw new IOException("存在安装记录，请先按记录恢复。");
+        var actual = LegacyCandidates(exe);
+        if (approved.Count == 0 || approved.Count != actual.Count || approved.Any(f => !actual.TryGetValue(f.Key, out var hash) || hash != f.Value))
+            throw new IOException("文件清单已变化，请重新打开恢复配置确认。");
+        var archive = Path.Combine(State(exe), "legacy-" + Guid.NewGuid().ToString("N"));
+        Core.RejectLinks(archive); Directory.CreateDirectory(archive);
+        File.WriteAllText(Path.Combine(archive, "manifest.json"), JsonSerializer.Serialize(new { Exe = Path.GetFullPath(exe), Files = actual, Note = "用户确认隔离的文件；不代表已知原始安装状态。" }, Core.JsonOptions));
+        var moved = new List<string>();
+        try
+        {
+            foreach (var f in actual)
+            {
+                var p = Path.Combine(Path.GetDirectoryName(exe)!, f.Key); Core.RejectLinks(p);
+                if (Core.Hash(p) != f.Value) throw new IOException("文件已变化：" + f.Key);
+                File.Move(p, Path.Combine(archive, f.Key)); moved.Add(f.Key);
+            }
+        }
+        catch (Exception error)
+        {
+            foreach (var n in moved.AsEnumerable().Reverse())
+            {
+                var p = Path.Combine(Path.GetDirectoryName(exe)!, n);
+                try { Core.RejectLinks(p); if (!File.Exists(p)) File.Move(Path.Combine(archive, n), p); } catch { }
+            }
+            throw new IOException("清理未完成，已尝试回退。保留的备份：" + archive, error);
+        }
+        return archive;
     }
     public static DateTime? RunningSince(string exe)
     {
@@ -140,7 +200,7 @@ public static class GameManagement
         var proxy = Loaders.Where(n => File.Exists(Path.Combine(dir, n))).ToArray();
         var record = Read(exe);
         if (proxy.Length > 0) details.Add("发现插件/代理：" + string.Join(", ", proxy));
-        if (checkConflicts && proxy.Length > 0 && (record == null || record.Phase == "restored")) { blocked = true; details.Add("存在未托管代理。请先使用其原安装器卸载，不能覆盖或自动删除。"); }
+        if (checkConflicts && proxy.Length > 0 && (record == null || record.Phase == "restored")) { blocked = true; details.Add("检测到旧安装或其他插件。点击“恢复配置”查看并备份移出候选文件后重试；未知组件请使用原安装器卸载。"); }
         if (record is { Phase: not "restored" }) details.Add($"已记录模式 {record.Mode + 1}，状态 {record.Phase}；切换前请恢复。");
         var evidence = names.Where(n => Regex.IsMatch(n ?? "", "d3d12|fidelityfx|fsr", RegexOptions.IgnoreCase)).ToArray();
         details.Add(evidence.Length > 0 ? "目录中发现 DX12/FSR 相关文件（不证明正在使用）：" + string.Join(", ", evidence) : "未找到 DX12/FSR 文件证据；可能静态链接或位于子目录。");
@@ -183,7 +243,7 @@ public static class GameManagement
     public static bool HasCompletedFrames(string text) => Regex.IsMatch(text, @"\bframe [1-9][0-9]* processed \([0-9]+ skipped\)", RegexOptions.IgnoreCase);
     public static string Diagnostic(string exe)
     {
-        var check = Check(exe, false); var record = Read(exe);
+        var check = Check(exe); var record = Read(exe);
         var files = Inventory(exe);
         // Allowlisted error categories only: arbitrary log content, usernames and paths never leave the computer.
         var integrity = record?.Files.Select(f => new { Component = f.Name, MatchesInstalled = files.GetValueOrDefault(f.Name, "") == f.After }).ToArray();
@@ -197,7 +257,9 @@ public static class GameManagement
                 if (text.Contains(error, StringComparison.OrdinalIgnoreCase)) categories.Add(name + ": " + error + " (日志历史，非本次生效证据)");
         }
         return JsonSerializer.Serialize(new { Schema = 1, AppVersion = typeof(GameManagement).Assembly.GetName().Version?.ToString(), CapturedUtc = DateTime.UtcNow,
-            Hardware = Hardware(), Compatibility = check.Summary, Mode = record?.Mode + 1, record?.Version, record?.InstalledUtc, record?.Phase,
+            Hardware = Hardware(), Compatibility = check.Summary, InstallationBlocked = check.Blocked,
+            ConflictingFiles = Loaders.Where(n => File.Exists(Path.Combine(Path.GetDirectoryName(exe)!, n))).ToArray(),
+            Mode = record?.Mode + 1, record?.Version, record?.InstalledUtc, record?.Phase,
             Files = files.Select(f => new { Component = f.Key, Sha256 = f.Value }), Integrity = integrity, LogCategories = categories,
             Note = "不包含原始日志、游戏目录、用户名、设备序列号；导出不会上传。" }, Core.JsonOptions);
     }

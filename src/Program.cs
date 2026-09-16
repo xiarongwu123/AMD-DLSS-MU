@@ -1334,7 +1334,12 @@ public sealed partial class MainForm : Form
         try
         {
             var compatibility = await Task.Run(() => GameManagement.Check(targetExe));
-            if (compatibility.Blocked) throw new IOException(string.Join("\n", compatibility.Details));
+            if (compatibility.Blocked)
+            {
+                status.Text = "安装检查未通过，请查看提示；旧组件冲突可点击“恢复配置”处理。";
+                MessageBox.Show(this, string.Join("\n", compatibility.Details), "安装检查", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
             if (GameManagement.Read(targetExe) is { Phase: not "restored" })
                 throw new IOException("请先恢复此游戏，再安装或切换模式。");
             if (MessageBox.Show(this, compatibility.Summary + "\n\n" + string.Join("\n", compatibility.Details) + "\n\n是否继续安装？", "兼容性检查", MessageBoxButtons.YesNo, MessageBoxIcon.Information) != DialogResult.Yes) return;
@@ -1640,50 +1645,44 @@ public sealed partial class MainForm : Form
 
     async Task RestoreAsync()
     {
-        if (selectedGame != null && GameManagement.Read(selectedGame) is { Phase: not "restored" })
-        {
-            var exe = selectedGame;
-            if (MessageBox.Show(this, "恢复此游戏安装前的组件并移除本次新增文件？备份将保留。", "恢复配置", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
-            busy = true; libraryPage.Enabled = false;
-            try { await Task.Run(() => GameManagement.Restore(exe)); status.Text = "已恢复安装前配置，可以选择其他模式。"; }
-            catch (Exception e) { status.Text = e.Message; }
-            finally { busy = false; libraryPage.Enabled = true; UpdateButtons(); RefreshHome(); }
-            return;
-        }
-        if (transactionState is null)
-        {
-            return;
-        }
-
+        if (busy || selectedGame == null) return;
+        var target = selectedGame;
+        busy = true; libraryPage.Enabled = false; UpdateButtons();
         try
         {
-            var alternativeManifest = Path.Combine(
-                transactionState,
-                "optiscaler-fallback.json");
-
-            if (File.Exists(alternativeManifest))
+            if (GameManagement.Read(target) is { Phase: not "restored" } record)
             {
-                Core.RollbackAlternative(transactionState);
+                var files = string.Join("\n", record.Files.Where(f => f.Before != f.After).Select(f => (f.Before.Length == 0 ? "移除：" : "还原：") + f.Name));
+                if (MessageBox.Show(this, "将恢复安装前备份，移除本次新增组件。改动过的 INI 配置会先另存备份。\n\n" + files,
+                    "恢复配置", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+                await Task.Run(() => GameManagement.Restore(target, true));
+                status.Text = "已恢复安装前配置，本次新增组件已移除。备份保留在：" + GameManagement.State(target);
             }
             else
             {
-                Core.Rollback(transactionState);
+                var candidates = await Task.Run(() => GameManagement.LegacyCandidates(target));
+                if (candidates.Count == 0) { status.Text = "未发现可清理的组件。"; return; }
+                if (MessageBox.Show(this, "此游戏没有有效的安装前备份，无法保证还原原始状态。\n以下文件可能属于旧版 DLSS 或其他插件；移出后相关插件可能停止工作。\n\n" +
+                    string.Join("\n", candidates.Keys) + "\n\n确认将以上文件从游戏目录移到独立备份目录？如需撤销，可关闭游戏后从备份目录复制回原位置。",
+                    "恢复配置 — 旧组件清理", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+                var archive = await Task.Run(() => GameManagement.QuarantineLegacy(target, candidates));
+                status.Text = "候选组件已移出，可重新配置。备份：" + archive;
+                MessageBox.Show(this, "清理完成。文件及清单已保存到：\n" + archive + "\n\n如游戏异常，关闭游戏后将所需文件复制回游戏 EXE 目录。", "恢复配置");
             }
-
+            var configuredFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AMD-NR-Assistant", "configured-games.txt");
+            if (File.Exists(configuredFile))
+                File.WriteAllLines(configuredFile, File.ReadAllLines(configuredFile).Where(p => !string.Equals(p, target, StringComparison.OrdinalIgnoreCase)));
             transactionState = null;
-
-            status.Text = english
-                ? "Configuration restored."
-                : "配置已恢复。";
         }
         catch (Exception exception)
         {
             status.Text = exception.Message;
+            MessageBox.Show(this, exception.Message, "恢复未完成", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
         finally
         {
-            UpdateButtons();
-            await Task.CompletedTask;
+            busy = false; libraryPage.Enabled = true;
+            RefreshHome(); UpdateButtons();
         }
     }
 
@@ -1768,7 +1767,7 @@ public sealed partial class MainForm : Form
             var record = selectedGame == null ? null : GameManagement.Read(selectedGame);
             transactionState = null;
             install.Enabled = !busy && selectedGame != null && (record == null || record.Phase == "restored");
-            restore.Enabled = !busy && record is { Phase: not "restored" };
+            restore.Enabled = !busy && selectedGame != null;
         }
         catch (Exception e) { install.Enabled = restore.Enabled = false; status.Text = e.Message; }
     }
