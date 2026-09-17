@@ -12,6 +12,7 @@ public sealed partial class MainForm
     readonly List<(Control control, string zh, string en)> translations = new();
     readonly List<Button> navigation = new();
     List<GameCandidate> libraryGames = new();
+    readonly TextBox librarySearch = new() { BorderStyle = BorderStyle.None, Dock = DockStyle.Top, PlaceholderText = "搜索游戏 / Search games" };
     int activePage;
     readonly Color ink = Color.FromArgb(27, 40, 53);
     readonly Color muted = Color.FromArgb(112, 130, 146);
@@ -72,7 +73,7 @@ public sealed partial class MainForm
         toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 54)); toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
         toolbar.Controls.Add(Heading("游戏库", "Game library", 18), 0, 0);
         var shell = new RoundedPanel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(14, 12, 14, 10), Margin = new Padding(0, 0, 12, 4) };
-        var search = new TextBox { BorderStyle = BorderStyle.None, Dock = DockStyle.Top, PlaceholderText = "搜索游戏 / Search games" };
+        var search = librarySearch;
         search.TextChanged += (_, _) => { foreach (Control c in games.Controls) c.Visible = c.Tag is GameCandidate g && g.Title.Contains(search.Text, StringComparison.OrdinalIgnoreCase); };
         shell.Controls.Add(search); toolbar.Controls.Add(shell, 0, 1);
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
@@ -160,7 +161,33 @@ public sealed partial class MainForm
     {
         if (busy) return;
         if (Directory.Exists(path)) { var exe = GameScanner.FindGameExe(path); if (exe == null) { SelectGameManually(this, EventArgs.Empty); return; } path = exe; }
-        try { Core.ValidateGame(path); selectedGame = path; selected.Text = Path.GetFileNameWithoutExtension(path); SwitchPage(1); UpdateButtons(); } catch (Exception e) { MessageBox.Show(this, e.Message, Text); }
+        try
+        {
+            path = Path.GetFullPath(path);
+            Core.ValidateGame(path);
+            GameLibrary.AddManual(path);
+            librarySearch.Clear();
+            var game = libraryGames.FirstOrDefault(g => string.Equals(g.ExePath, path, StringComparison.OrdinalIgnoreCase));
+            if (game == null)
+            {
+                game = new GameCandidate { Title = Path.GetFileNameWithoutExtension(path), ExePath = path, InstallDirectory = Path.GetDirectoryName(path)! };
+                libraryGames.Add(game);
+                games.Controls.Add(CreateGameCard(game));
+            }
+            if (selectedCard != null) { selectedCard.BorderColor = default; selectedCard.Invalidate(); }
+            selectedGame = path;
+            selected.Text = (english ? "Selected: " : "已选择：") + game.Title;
+            SwitchPage(1);
+            var card = games.Controls.Cast<Control>().FirstOrDefault(c => c.Tag is GameCandidate g && string.Equals(g.ExePath, path, StringComparison.OrdinalIgnoreCase));
+            if (card != null)
+            {
+                games.ScrollControlIntoView(card);
+                if (card is RoundedPanel rounded) { selectedCard = rounded; rounded.BorderColor = Color.FromArgb(92, 178, 0); rounded.Invalidate(); }
+            }
+            status.Text = english ? "Added and saved. Select a mode and configure." : "已添加到游戏库并保存。请选择模式后配置。";
+            UpdateButtons();
+        }
+        catch (Exception e) { MessageBox.Show(this, e.Message, english ? "Could not add game" : "添加失败", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
     }
     void ApplyLanguage(bool en)
     {

@@ -155,6 +155,14 @@ public static class GameScanner
             }
         }
 
+        foreach (var entry in GameLibrary.DiscoverRegistered())
+        {
+            token.ThrowIfCancellationRequested();
+            var exe = entry.Exe ?? FindGameExe(entry.Directory);
+            if (exe != null && !found.ContainsKey(exe))
+                found[exe] = new GameCandidate { Title = entry.Title, ExePath = exe, InstallDirectory = entry.Directory };
+        }
+
         return found.Values
             .OrderBy(game => game.Title)
             .ToList();
@@ -207,6 +215,10 @@ public static class GameScanner
                          @"Program Files\GOG Galaxy\Games",
                          @"Program Files (x86)\GOG Galaxy\Games",
                          @"Ubisoft Game Launcher\games"
+                         , @"Program Files\Ubisoft\Ubisoft Game Launcher\games"
+                         , @"Program Files (x86)\Ubisoft\Ubisoft Game Launcher\games"
+                         , @"Program Files\EA Games"
+                         , @"Program Files\Rockstar Games"
                      })
             {
                 Add(Path.Combine(root, relative));
@@ -1007,11 +1019,9 @@ public sealed partial class MainForm : Form
 
     async Task ScanGamesAsync()
     {
-        if (busy) return;
+        if (busy || !scan.Enabled) return;
         scan.Enabled = false;
         progress.Visible = true;
-
-        games.Controls.Clear();
 
         status.Text = "正在扫描游戏目录…";
 
@@ -1020,24 +1030,38 @@ public sealed partial class MainForm : Form
             var list = await GameScanner.ScanAsync(
                 lifetime.Token);
 
+            // Merge after the asynchronous scan so games added during scanning are not lost.
+            var manualWarning = "";
+            try
+            {
+                foreach (var exe in GameLibrary.ReadManual().Where(File.Exists))
+                    if (!list.Any(g => string.Equals(g.ExePath, exe, StringComparison.OrdinalIgnoreCase)))
+                        list.Add(new GameCandidate { Title = Path.GetFileNameWithoutExtension(exe), ExePath = exe, InstallDirectory = Path.GetDirectoryName(exe)! });
+            }
+            catch (IOException e) { manualWarning = "；" + e.Message; }
             libraryGames = list;
+            selectedCard = null;
+            while (games.Controls.Count > 0) { var card = games.Controls[0]; games.Controls.Remove(card); card.Dispose(); }
 
             foreach (var game in list)
             {
-                games.Controls.Add(CreateGameCard(game));
+                var card = CreateGameCard(game);
+                card.Visible = game.Title.Contains(librarySearch.Text, StringComparison.OrdinalIgnoreCase);
+                games.Controls.Add(card);
             }
 
             status.Text = list.Count == 0
                 ? "没有找到游戏。可以使用“添加游戏”选择 EXE。"
                 : $"找到 {list.Count} 个游戏，正在加载封面…";
 
-            await LoadCoversAsync(list);
+            await LoadCoversAsync(list.ToArray());
 
             RefreshHome();
 
             status.Text = list.Count == 0
                 ? "没有找到游戏。可以使用“添加游戏”选择 EXE。"
                 : $"找到 {list.Count} 个游戏，点击卡片选择。";
+            status.Text += manualWarning;
         }
         catch (OperationCanceledException)
         {
@@ -1289,30 +1313,7 @@ public sealed partial class MainForm : Form
             return;
         }
 
-        try
-        {
-            Core.ValidateGame(dialog.FileName);
-
-            selectedGame = dialog.FileName;
-
-            selected.Text = english
-                ? "Selected: " +
-                  Path.GetFileNameWithoutExtension(
-                      dialog.FileName)
-                : "已选择：" +
-                  Path.GetFileNameWithoutExtension(
-                      dialog.FileName);
-
-            status.Text = english
-                ? "You can now click Configure."
-                : "现在可以点击“一键配置”。";
-
-            UpdateButtons();
-        }
-        catch (Exception exception)
-        {
-            status.Text = exception.Message;
-        }
+        AddPath(dialog.FileName);
     }
 
     async Task InstallAsync()

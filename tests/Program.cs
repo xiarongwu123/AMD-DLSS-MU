@@ -9,6 +9,25 @@ void Assert(bool ok, string name) { if (!ok) throw new Exception(name); count++;
 void Reject(Action act, string name) { try { act(); } catch (IOException) { Assert(true, name); return; } throw new Exception("Expected rejection: " + name); }
 string Game(string name) { var d = Path.Combine(root, name); Directory.CreateDirectory(d); var e = Path.Combine(d, name + ".exe"); File.WriteAllText(e, "fixture"); return e; }
 var a = Game("a" + Guid.NewGuid().ToString("N")); var b = Game("b" + Guid.NewGuid().ToString("N")); var dir = Path.GetDirectoryName(a)!;
+GameLibrary.StorageOverride = Path.Combine(root, "library", "manual-games.json");
+GameLibrary.AddManual(a);
+GameLibrary.AddManual(a);
+GameLibrary.AddManual(b);
+Assert(GameLibrary.ReadManual().Count == 2, "manual library persists and deduplicates additions");
+Assert(GameLibrary.ReadManual().Contains(a), "manual games available after reload");
+var manifest = Path.Combine(root, "custom.item");
+File.WriteAllText(manifest, JsonSerializer.Serialize(new { DisplayName = "Custom Epic Game", InstallLocation = dir, LaunchExecutable = Path.GetFileName(a) }));
+var epic = GameLibrary.ReadEpicManifest(manifest);
+Assert(epic?.Exe == a && epic.Title == "Custom Epic Game", "Epic custom install location and launch executable discovered");
+File.WriteAllText(manifest, JsonSerializer.Serialize(new { InstallLocation = dir, LaunchExecutable = "../" + Path.GetFileName(Path.GetDirectoryName(b)) + "/" + Path.GetFileName(b) }));
+Assert(GameLibrary.ReadEpicManifest(manifest)?.Exe == null, "Epic executable cannot escape install directory");
+File.WriteAllText(manifest, "{broken");
+Assert(GameLibrary.ReadEpicManifest(manifest) == null, "malformed Epic manifest skipped");
+File.WriteAllText(manifest, JsonSerializer.Serialize(new { InstallLocation = Path.Combine(root, "missing") }));
+Assert(GameLibrary.ReadEpicManifest(manifest) == null, "missing Epic install skipped");
+File.WriteAllText(GameLibrary.StorageOverride, "{broken");
+Reject(() => GameLibrary.AddManual(a), "corrupt manual library is not overwritten");
+Assert(File.ReadAllText(GameLibrary.StorageOverride) == "{broken", "corrupt library preserved for recovery");
 var proxy = Path.Combine(dir, "version.dll"); File.WriteAllText(proxy, "original");
 GameManagement.Begin(a, 0); File.WriteAllText(proxy, "installed"); File.WriteAllText(Path.Combine(dir, "dlssnr_on_amd.ini"), "new"); GameManagement.Finish(a, true);
 Assert(GameManagement.Read(a)?.Mode == 0 && GameManagement.Read(a)?.Phase == "installed", "persistent record");
