@@ -9,6 +9,16 @@ void Assert(bool ok, string name) { if (!ok) throw new Exception(name); count++;
 void Reject(Action act, string name) { try { act(); } catch (IOException) { Assert(true, name); return; } throw new Exception("Expected rejection: " + name); }
 string Game(string name) { var d = Path.Combine(root, name); Directory.CreateDirectory(d); var e = Path.Combine(d, name + ".exe"); File.WriteAllText(e, "fixture"); return e; }
 var a = Game("a" + Guid.NewGuid().ToString("N")); var b = Game("b" + Guid.NewGuid().ToString("N")); var dir = Path.GetDirectoryName(a)!;
+string ReleaseJson(string tag, string digest, long size) => JsonSerializer.Serialize(new {
+    draft = false, prerelease = false, tag_name = tag,
+    assets = new[] { new { name = Core.InstallerName,
+        browser_download_url = Core.Repository + "/releases/download/" + tag + "/" + Core.InstallerName,
+        digest = "sha256:" + digest, size } }
+});
+Assert(Core.ParseRelease(ReleaseJson("v0.3.1", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)).Tag == "v0.3.1", "accept pinned upstream v0.3.1");
+Reject(() => Core.ParseRelease(ReleaseJson("v0.3.0", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)), "reject old runtime release");
+Reject(() => Core.ParseRelease(ReleaseJson("v0.3.1", new string('0', 64), Core.ReviewedInstallerSize)), "reject replaced upstream asset");
+Reject(() => Core.ParseRelease(ReleaseJson("v0.3.1", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize + 1)), "reject changed upstream size");
 GameLibrary.StorageOverride = Path.Combine(root, "library", "manual-games.json");
 GameLibrary.AddManual(a);
 GameLibrary.AddManual(a);

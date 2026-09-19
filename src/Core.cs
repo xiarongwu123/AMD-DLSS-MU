@@ -19,14 +19,15 @@ public static class Core
     public const string Repository = "https://github.com/danielblnc/DLSS-NR-on-AMD";
     public const string InstallerName = "dlssnr_on_amd_setup.exe";
     public const string DllName = "nvngx_dlssnr.dll";
-    public const string ReviewedTag = "v0.3.0";
+    public const string ReviewedTag = "v0.3.1";
     public const string RequiredDll = "310.8.0.0";
     public const string BundledDllResource = "nvngx_dlssnr.dll";
-    // v0.3.0 is the release currently reviewed by this assistant. These values
-    // are used only for an already-downloaded local installer when GitHub is
-    // unreachable; the normal path still verifies the live GitHub API response.
-    public const string ReviewedInstallerSha256 = "26bb910cfe5dba85cb5e0fd050eaa6f79a73f0068026082afd4cf2c98cdd54dd";
-    public const long ReviewedInstallerSize = 7585035;
+    // Fixed asset shipped in the Windows EXE. This lets us distinguish a
+    // missing/quarantined asset from an upstream installer failure.
+    public const string BundledDllSha256 = "8270b350cd82de5ce89806872cdd6b6a9249b80836b91bbeb3573470744cc206";
+    // Pin both the online release and cached installer to the reviewed bytes.
+    public const string ReviewedInstallerSha256 = "cf7ada1486b499700a84846b342ca2b1defdb4db622843f812151f255f2ad63c";
+    public const long ReviewedInstallerSize = 7598347;
     // Names accepted by the upstream installer as the game's proxy DLL.
     // The installer chooses one of these; the presence of nvngx_dlssnr.dll alone
     // does not mean that the proxy was installed or that the game will load it.
@@ -66,6 +67,7 @@ public static class Core
 
     public static string ExtractBundledDll(string destination)
     {
+        RejectLinks(destination);
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         using var source = Assembly.GetExecutingAssembly().GetManifestResourceStream("AmdNrAssistant.nvngx_dlssnr.dll")
             ?? throw new IOException("内置 DLSS 5 DLL 资源缺失。");
@@ -79,6 +81,12 @@ public static class Core
             File.Move(temp, destination, true);
             try { ValidateDll(destination); }
             catch { try { File.Delete(destination); } catch { } throw; }
+            var hash = Hash(destination);
+            if (!string.Equals(hash, BundledDllSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                try { File.Delete(destination); } catch { }
+                throw new IOException("内置 DLSS DLL 哈希不匹配，可能被安全软件修改或构建资源错误。实际：" + hash);
+            }
             return destination;
         }
         finally { if (File.Exists(temp)) File.Delete(temp); }
@@ -212,7 +220,7 @@ public static class Core
             throw new IOException("GitHub 返回了草稿或预发布版本，未下载。");
         var tag = root.GetProperty("tag_name").GetString() ?? "";
         if (tag != ReviewedTag)
-            throw new IOException("官方最新版本为 " + tag + "，助手目前核对过的版本为 " + ReviewedTag + "。安装步骤可能已变化，请更新助手或使用官方说明。");
+            throw new IOException("返回的安装器版本为 " + tag + "，与已核验版本 " + ReviewedTag + " 不一致。");
         var assets = root.GetProperty("assets").EnumerateArray()
             .Where(a => a.GetProperty("name").GetString() == InstallerName).ToArray();
         if (assets.Length != 1) throw new IOException("未找到唯一的官方安装器资源。");
@@ -225,13 +233,15 @@ public static class Core
             throw new IOException("官方资源缺少 SHA-256 校验值，已停止下载。");
         long size = a.GetProperty("size").GetInt64();
         if (size < 1024 || size > 128 * 1024 * 1024) throw new IOException("安装器大小异常。");
+        if (size != ReviewedInstallerSize || !string.Equals(digest[7..], ReviewedInstallerSha256, StringComparison.OrdinalIgnoreCase))
+            throw new IOException("官方安装器资源已变化，与已核验的大小或 SHA-256 不一致，请更新助手。");
         return new ReleaseInfo(tag, url, digest[7..].ToLowerInvariant(), size);
     }
 
     public static async Task<ReleaseInfo> GetReleaseAsync(HttpClient client, CancellationToken token)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get,
-            "https://api.github.com/repos/danielblnc/DLSS-NR-on-AMD/releases/latest");
+            "https://api.github.com/repos/danielblnc/DLSS-NR-on-AMD/releases/tags/" + ReviewedTag);
         request.Headers.UserAgent.ParseAdd("AMD-NR-Assistant/0.1");
         request.Headers.Accept.ParseAdd("application/vnd.github+json");
         using var response = await client.SendAsync(request, token);

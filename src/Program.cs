@@ -1484,6 +1484,15 @@ public sealed partial class MainForm : Form
                 state,
                 release.Tag);
 
+            var stagedGameDll = Path.Combine(gameDirectory, Core.DllName);
+            if (!File.Exists(stagedGameDll))
+                throw new IOException("模式一准备阶段未找到 " + Core.DllName + "。可能被 Windows 安全软件隔离；请检查 Windows 安全中心的保护历史。");
+            var bundledHash = Core.Hash(bundledDll);
+            var stagedHash = Core.Hash(stagedGameDll);
+            if (!string.Equals(stagedHash, bundledHash, StringComparison.OrdinalIgnoreCase))
+                throw new IOException("模式一 DLL 写入游戏目录后哈希发生变化，未启动安装器。预期：" + bundledHash + "，实际：" + stagedHash);
+            Diagnostics.Record(targetExe, "game-files", "dll-staged", stagedHash);
+
             var stagedInstaller = Path.Combine(
                 gameDirectory,
                 Core.InstallerName);
@@ -1525,6 +1534,17 @@ public sealed partial class MainForm : Form
 
             var check =
                 Core.CheckInstalled(gameDirectory);
+
+            var finalDll = Path.Combine(gameDirectory, Core.DllName);
+            if (!File.Exists(finalDll))
+            {
+                Diagnostics.Record(targetExe, "installed-files", "dll-missing",
+                    "官方安装器退出后缺失；准备阶段哈希=" + Core.Hash(bundledDll));
+            }
+            else
+            {
+                Diagnostics.Record(targetExe, "installed-files", "dll-present", Core.Hash(finalDll));
+            }
 
             for (var attempt = 0;
                  !check.Ready && attempt < 6;
