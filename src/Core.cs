@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace AmdNrAssistant;
 
-public record ReleaseInfo(string Tag, string Url, string Sha256, long Size);
+public record ReleaseInfo(string Tag, string Url, string Sha256, long Size, string? ApiUrl = null);
 public record Change(string Name, bool Existed, string OriginalHash, string NewHash, bool Changed);
 public record Journal(string Target, string Release, string Phase, List<Change> Changes);
 public record InstallCheck(bool Ready, string Message, string? ProxyName, bool HasConfig, bool HasWeights);
@@ -235,7 +235,7 @@ public static class Core
         if (size < 1024 || size > 128 * 1024 * 1024) throw new IOException("安装器大小异常。");
         if (size != ReviewedInstallerSize || !string.Equals(digest[7..], ReviewedInstallerSha256, StringComparison.OrdinalIgnoreCase))
             throw new IOException("官方安装器资源已变化，与已核验的大小或 SHA-256 不一致，请更新助手。");
-        return new ReleaseInfo(tag, url, digest[7..].ToLowerInvariant(), size);
+        return new ReleaseInfo(tag, url, digest[7..].ToLowerInvariant(), size, DownloadSources.AssetApi("danielblnc/DLSS-NR-on-AMD", a));
     }
 
     public static async Task<ReleaseInfo> GetReleaseAsync(HttpClient client, CancellationToken token)
@@ -244,41 +244,26 @@ public static class Core
             "https://api.github.com/repos/danielblnc/DLSS-NR-on-AMD/releases/tags/" + ReviewedTag);
         request.Headers.UserAgent.ParseAdd("AMD-NR-Assistant/0.1");
         request.Headers.Accept.ParseAdd("application/vnd.github+json");
-        using var response = await client.SendAsync(request, token);
-        response.EnsureSuccessStatusCode();
-        return ParseRelease(await response.Content.ReadAsStringAsync(token));
-    }
-
-    public static async Task DownloadAsync(HttpClient client, ReleaseInfo release, string output,
-        IProgress<int> progress, CancellationToken token)
-    {
-        var partial = output + ".partial-" + Guid.NewGuid().ToString("N");
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
+        timeout.CancelAfter(TimeSpan.FromSeconds(15));
         try
         {
-            using var response = await client.GetAsync(release.Url, HttpCompletionOption.ResponseHeadersRead, token);
+            using var response = await client.SendAsync(request, timeout.Token);
             response.EnsureSuccessStatusCode();
-            if (response.RequestMessage?.RequestUri?.Scheme != "https") throw new IOException("下载没有使用 HTTPS。");
-            await using (var input = await response.Content.ReadAsStreamAsync(token))
-            await using (var file = new FileStream(partial, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true))
-            {
-                var buffer = new byte[81920];
-                long total = 0;
-                int read;
-                while ((read = await input.ReadAsync(buffer, token)) != 0)
-                {
-                    total += read;
-                    if (total > release.Size) throw new IOException("下载大小超出官方记录。");
-                    await file.WriteAsync(buffer.AsMemory(0, read), token);
-                    progress.Report((int)(total * 100 / release.Size));
-                }
-                if (total != release.Size) throw new IOException("安装器下载不完整。");
-            }
-            token.ThrowIfCancellationRequested();
-            if (Hash(partial) != release.Sha256) throw new IOException("安装器 SHA-256 校验失败，未放入游戏目录。");
-            File.Move(partial, output, true);
+            return ParseRelease(await response.Content.ReadAsStringAsync(timeout.Token));
         }
-        finally { if (File.Exists(partial)) File.Delete(partial); }
+        catch (Exception e) when (!token.IsCancellationRequested && e is HttpRequestException or OperationCanceledException)
+        {
+            // Metadata unavailable: use the fixed reviewed release and digest.
+            return new(ReviewedTag, Repository + "/releases/download/" + ReviewedTag + "/" + InstallerName,
+                ReviewedInstallerSha256, ReviewedInstallerSize);
+        }
     }
+
+    public static Task DownloadAsync(HttpClient client, ReleaseInfo release, string output,
+        IProgress<int> progress, CancellationToken token, Action<string>? status = null) =>
+        DownloadSources.DownloadAsync(client, release.Url, release.ApiUrl, release.Sha256, release.Size,
+            output, progress, token, status);
 
     static void Save(string path, Journal journal)
     {

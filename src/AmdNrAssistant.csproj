@@ -7,9 +7,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>AMD-DLSS-MU</AssemblyName>
-    <Version>1.3.2</Version>
-    <AssemblyVersion>1.3.2.0</AssemblyVersion>
-    <FileVersion>1.3.2.0</FileVersion>
+    <Version>1.3.3</Version>
+    <AssemblyVersion>1.3.3.0</AssemblyVersion>
+    <FileVersion>1.3.3.0</FileVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
@@ -21,9 +21,13 @@
     <EmbeddedResource Include="..\native\vendor\LICENSE-ReShade.md" LogicalName="Licenses.ReShade" />
     <EmbeddedResource Include="..\native\vendor\LICENSE-ImGui.txt" LogicalName="Licenses.ImGui" />
   </ItemGroup>
-  <ItemGroup Condition="Exists('..\assets\nvngx_dlssnr.dll')">
+  <ItemGroup>
     <EmbeddedResource Include="..\assets\nvngx_dlssnr.dll" LogicalName="AmdNrAssistant.nvngx_dlssnr.dll" />
   </ItemGroup>
+  <Target Name="RequireBundledDlssDll" BeforeTargets="AssignTargetPaths">
+    <Error Condition="!Exists('..\assets\nvngx_dlssnr.dll')"
+           Text="缺少 assets/nvngx_dlssnr.dll，已停止构建：发布版必须内置模式一 DLL。" />
+  </Target>
   <ItemGroup Condition="Exists('..\assets\amd_dlss_mu_logo.png')">
     <EmbeddedResource Include="..\assets\amd_dlss_mu_logo.png" LogicalName="AmdNrAssistant.amd_dlss_mu_logo.png" />
   </ItemGroup>

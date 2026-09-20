@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace AmdNrAssistant;
 
-public record AppRelease(string Tag, string Url, string Sha256, long Size, string Notes);
+public record AppRelease(string Tag, string Url, string Sha256, long Size, string Notes, string? ApiUrl = null);
 public record UpdatePlan(string Target, int ProcessId, string OriginalHash, string NewHash, long Size, string Version);
 
 public static class AutoUpdate
@@ -32,7 +32,7 @@ public static class AutoUpdate
         var size = asset.GetProperty("size").GetInt64();
         if (size < 1024 || size > 1024L * 1024 * 1024) throw new IOException("新版文件大小异常。");
         var notes = root.TryGetProperty("body", out var body) ? body.GetString() ?? "" : "";
-        return new(tag, url, digest[7..].ToLowerInvariant(), size, notes[..Math.Min(notes.Length, 4000)]);
+        return new(tag, url, digest[7..].ToLowerInvariant(), size, notes[..Math.Min(notes.Length, 4000)], DownloadSources.AssetApi("xiarongwu123/AMD-DLSS-MU", asset));
     }
     public static async Task<AppRelease?> CheckAsync(CancellationToken token)
     {
@@ -40,29 +40,16 @@ public static class AutoUpdate
         client.DefaultRequestHeaders.UserAgent.ParseAdd("AMD-DLSS-MU/" + DisplayVersion);
         return Parse(await client.GetStringAsync("https://api.github.com/repos/xiarongwu123/AMD-DLSS-MU/releases/latest", token), CurrentVersion);
     }
-    public static async Task<string> DownloadAsync(AppRelease release, IProgress<int> progress, CancellationToken token)
+    public static async Task<string> DownloadAsync(AppRelease release, IProgress<int> progress, CancellationToken token, Action<string>? status = null)
     {
         var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AMD-NR-Assistant", "updates", Guid.NewGuid().ToString("N"));
         Core.RejectLinks(folder); Directory.CreateDirectory(folder);
         var partial = Path.Combine(folder, "download.partial"); var result = Path.Combine(folder, "candidate.exe");
         try
         {
-            using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("AMD-DLSS-MU/" + DisplayVersion);
-            using var response = await client.GetAsync(release.Url, HttpCompletionOption.ResponseHeadersRead, token);
-            response.EnsureSuccessStatusCode();
-            if (response.RequestMessage?.RequestUri?.Scheme != "https") throw new IOException("更新下载必须使用 HTTPS。");
-            await using (var input = await response.Content.ReadAsStreamAsync(token))
-            await using (var output = new FileStream(partial, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true))
-            {
-                var buffer = new byte[81920]; long total = 0; int count;
-                while ((count = await input.ReadAsync(buffer, token)) > 0)
-                {
-                    total += count; if (total > release.Size) throw new IOException("更新包超过公布大小。");
-                    await output.WriteAsync(buffer.AsMemory(0, count), token); progress.Report((int)(total * 100 / release.Size));
-                }
-                if (total != release.Size) throw new IOException("更新包下载不完整。");
-            }
+            using var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+            await DownloadSources.DownloadAsync(client, release.Url, release.ApiUrl, release.Sha256,
+                release.Size, partial, progress, token, status);
             await Task.Run(() => Verify(partial, release.Sha256, release.Size, release.Tag[1..]), token);
             token.ThrowIfCancellationRequested(); File.Move(partial, result); return result;
         }

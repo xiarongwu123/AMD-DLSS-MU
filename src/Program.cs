@@ -1370,11 +1370,9 @@ public sealed partial class MainForm : Form
                 state,
                 Core.DllName);
 
-            status.Text =
-                "正在释放并校验内置 DLSS 5 组件…";
-
+            status.Text = "正在释放并校验内置 DLSS 5 组件…";
             Core.ExtractBundledDll(bundledDll);
-            Diagnostics.Record(targetExe, "bundled-dll", "validated");
+            Diagnostics.Record(targetExe, "bundled-dll", "validated", Core.Hash(bundledDll));
 
             ReleaseInfo release;
 
@@ -1407,7 +1405,7 @@ public sealed partial class MainForm : Form
                 {
                     using var client = new HttpClient
                     {
-                        Timeout = TimeSpan.FromSeconds(30)
+                        Timeout = Timeout.InfiniteTimeSpan
                     };
 
                     status.Text =
@@ -1426,8 +1424,9 @@ public sealed partial class MainForm : Form
                         client,
                         release,
                         installerPath,
-                        new Progress<int>(_ => { }),
-                        lifetime.Token);
+                        new Progress<int>(n => status.Text = $"正在下载模式一安装器：{n}%"),
+                        lifetime.Token,
+                        message => { status.Text = message; Diagnostics.Record(targetExe, "installer-download", "source", message); });
 
                     Core.CacheInstaller(installerPath);
                 }

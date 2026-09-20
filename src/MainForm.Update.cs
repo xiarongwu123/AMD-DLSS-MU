@@ -31,7 +31,7 @@ public sealed partial class MainForm
             string? candidate = null; Exception? error = null;
             dialog.Shown += async (_, _) =>
             {
-                try { candidate = await AutoUpdate.DownloadAsync(release, new Progress<int>(n => { bar.Value = n; label.Text = n == 100 ? "下载完成，正在校验…" : $"正在下载 {n}%"; }), cancel.Token); }
+                try { candidate = await AutoUpdate.DownloadAsync(release, new Progress<int>(n => { bar.Value = n; label.Text = n == 100 ? "下载完成，正在校验…" : $"正在下载 {n}%"; }), cancel.Token, message => label.Text = message); }
                 catch (Exception e) { error = e; }
                 finally { dialog.Close(); }
             };

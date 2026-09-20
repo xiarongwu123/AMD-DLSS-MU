@@ -5,6 +5,7 @@ var root = Path.Combine(Path.GetTempPath(), "amd-management-tests-" + Guid.NewGu
 Directory.CreateDirectory(root);
 GameManagement.StorageOverride = Path.Combine(root, "records");
 var count = 0;
+await DownloadTests.Run(root, Assert);
 void Assert(bool ok, string name) { if (!ok) throw new Exception(name); count++; Console.WriteLine("PASS " + name); }
 void Reject(Action act, string name) { try { act(); } catch (IOException) { Assert(true, name); return; } throw new Exception("Expected rejection: " + name); }
 string Game(string name) { var d = Path.Combine(root, name); Directory.CreateDirectory(d); var e = Path.Combine(d, name + ".exe"); File.WriteAllText(e, "fixture"); return e; }

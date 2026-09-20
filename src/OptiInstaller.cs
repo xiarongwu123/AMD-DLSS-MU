@@ -62,38 +62,11 @@ public static class OptiInstaller
         var package = Path.Combine(cache, "package.7z"); Core.RejectLinks(package);
         if (!File.Exists(package) || new FileInfo(package).Length != Size || Core.Hash(package) != Digest)
         {
-            using var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan }; client.DefaultRequestHeaders.UserAgent.ParseAdd("AMD-DLSS-MU/1.3.0");
-            for (int attempt = 1; ; attempt++)
-            {
-                var partial = Path.Combine(cache, Guid.NewGuid().ToString("N") + ".partial");
-                try
-                {
-                    Diagnostics.Record(exe, "optiscaler-download", "start", "v" + Version + " attempt=" + attempt);
-                    using var overall = CancellationTokenSource.CreateLinkedTokenSource(token); overall.CancelAfter(TimeSpan.FromMinutes(15));
-                    using var headers = CancellationTokenSource.CreateLinkedTokenSource(token); headers.CancelAfter(TimeSpan.FromSeconds(30));
-                    using var request = new HttpRequestMessage(HttpMethod.Get, attempt == 2 ? "https://api.github.com/repos/optiscaler/OptiScaler/releases/assets/481819753" : Url);
-                    request.Headers.Accept.ParseAdd("application/octet-stream");
-                    using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, headers.Token); response.EnsureSuccessStatusCode();
-                    if (response.RequestMessage?.RequestUri?.Scheme != "https") throw new IOException("下载重定向不是 HTTPS。");
-                    await using (var input = await response.Content.ReadAsStreamAsync(token))
-                    await using (var output = new FileStream(partial, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true))
-                    {
-                        var bytes = new byte[81920]; long total = 0;
-                        while (true)
-                        {
-                            using var idle = CancellationTokenSource.CreateLinkedTokenSource(overall.Token); idle.CancelAfter(TimeSpan.FromSeconds(60));
-                            int n = await input.ReadAsync(bytes, idle.Token); if (n == 0) break;
-                            total += n; if (total > Size) throw new IOException("下载大小超过已验证资源。");
-                            await output.WriteAsync(bytes.AsMemory(0, n), token); progress.Report($"OptiScaler 下载 {100 * total / Size}%（第 {attempt} 次）");
-                        }
-                    }
-                    if (new FileInfo(partial).Length != Size || Core.Hash(partial) != Digest) throw new IOException("安装包大小或 SHA-256 不匹配。");
-                    File.Move(partial, package, true); break;
-                }
-                catch (Exception e) when (attempt < 3 && !token.IsCancellationRequested && (e is HttpRequestException || e is OperationCanceledException))
-                { Diagnostics.Record(exe, "optiscaler-download", "retry", e.ToString()); await Task.Delay(attempt * 1000, token); }
-                finally { if (File.Exists(partial)) File.Delete(partial); }
-            }
+            using var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+            await DownloadSources.DownloadAsync(client, Url,
+                "https://api.github.com/repos/optiscaler/OptiScaler/releases/assets/481819753",
+                Digest, Size, package, new Progress<int>(n => progress.Report($"OptiScaler 下载 {n}%")),
+                token, message => { progress.Report(message); Diagnostics.Record(exe, "optiscaler-download", "source", message); });
         }
         token.ThrowIfCancellationRequested(); progress.Report("正在校验并解压 OptiScaler…");
         var folder = Path.Combine(cache, "extract-" + Guid.NewGuid().ToString("N"));
