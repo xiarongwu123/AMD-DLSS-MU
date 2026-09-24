@@ -109,6 +109,21 @@ var log = Path.Combine(ed, "OptiScaler.log"); File.WriteAllText(log, new string(
 var excerpt = Diagnostics.ReadTail(ed, "OptiScaler.log", eGame);
 Assert(excerpt.Status == "tail-truncated" && excerpt.Text.Length <= 65536, "large logs bounded");
 Console.WriteLine($"Expanded: {count} assertions passed.");
+var magpieRoot = Path.Combine(root, "magpie-test"); Directory.CreateDirectory(magpieRoot);
+foreach (var invalid in new[] { "../escape.dll", "folder/../../escape.dll", "/absolute.dll", "C:\\evil.dll", "safe.dll:stream", "folder./evil.dll" })
+    Reject(() => MagpieIntegration.SafeEntryPath(magpieRoot, invalid), "Magpie rejects unsafe entry " + invalid);
+Assert(MagpieIntegration.SafeEntryPath(magpieRoot, "effects/Lanczos.hlsl") == Path.Combine(magpieRoot, "effects", "Lanczos.hlsl"), "Magpie accepts nested effects");
+using (var config = JsonDocument.Parse(MagpieIntegration.ConfigJson))
+{
+    Assert(config.RootElement.GetProperty("shortcuts").GetProperty("scale").GetInt32() == (0x400 | 0x800 | 65), "Magpie shortcut is Alt Shift A");
+    Assert(config.RootElement.GetProperty("scalingModes")[0].GetProperty("effects")[0].GetProperty("scalingType").GetInt32() == 1, "Magpie default scales to fit");
+}
+var magpieExe = Path.Combine(magpieRoot, "Magpie.exe"); File.WriteAllText(magpieExe, "fixture");
+File.WriteAllText(Path.Combine(magpieRoot, "mu-package.json"), JsonSerializer.Serialize(new Dictionary<string, string> { ["Magpie.exe"] = Core.Hash(magpieExe) }));
+Assert(MagpieIntegration.ValidateInstallation(magpieRoot, default) == magpieExe, "Magpie validates recorded components");
+File.WriteAllText(magpieExe, "changed");
+Reject(() => MagpieIntegration.ValidateInstallation(magpieRoot, default), "Magpie rejects changed components");
+Console.WriteLine($"Magpie integration: {count} assertions passed.");
 if (args.Length == 1)
 {
     var extracted = Path.Combine(root, "real-opti"); OptiInstaller.ExtractVerified(args[0], extracted);

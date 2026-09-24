@@ -47,7 +47,7 @@ public sealed partial class MainForm
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 52)); root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
         var titleBar = BuildTitleBar(); root.Controls.Add(titleBar, 0, 0); root.SetColumnSpan(titleBar, 2);
         var side = new RoundedPanel { Dock = DockStyle.Fill, BackColor = Sidebar, Padding = new Padding(16, 20, 16, 16), Margin = new Padding(10, 10, 8, 10), Radius = 22 };
-        var topNav = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 390, FlowDirection = FlowDirection.TopDown, WrapContents = false, BackColor = Color.Transparent };
+        var topNav = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, BackColor = Color.Transparent };
         var bottomNav = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 190, FlowDirection = FlowDirection.TopDown, WrapContents = false, BackColor = Color.Transparent };
         var logo = new PictureBox { Size = new Size(150, 126), SizeMode = PictureBoxSizeMode.Zoom, Margin = new Padding(26, 2, 0, 28), BackColor = Color.Transparent };
         using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AmdNrAssistant.amd_dlss_mu_logo.png"))
@@ -60,6 +60,7 @@ public sealed partial class MainForm
             b.Margin = new Padding(0, 0, 0, 7); navigation.Add(b); navigationPages.Add(page); host.Controls.Add(b);
         }
         Nav(topNav, 1, "游戏库", "Games", "\uE7FC");
+        Nav(topNav, 6, "大力喜鹊", "Magpie", "\uE7F4");
         Nav(topNav, 3, "下载任务", "Downloads", "\uE896");
         Nav(topNav, 4, "帮助与反馈", "Help", "\uE897");
         Nav(bottomNav, 5, "设置", "Settings", "\uE713");
@@ -84,7 +85,7 @@ public sealed partial class MainForm
         var version = new Label { Text = "AMD DLSS MU  ·  v" + AutoUpdate.DisplayVersion, Dock = DockStyle.Right, Width = 230, ForeColor = muted, TextAlign = ContentAlignment.MiddleRight, Padding = new Padding(0, 0, 16, 0) };
         foot.Controls.Add(shellStatus); foot.Controls.Add(version); root.Controls.Add(foot, 0, 2); root.SetColumnSpan(foot, 2);
         Controls.Add(root);
-        BuildLibrary(); BuildAbout(); BuildProductPages(); SwitchPage(1); ApplyTheme(darkMode, false);
+        BuildLibrary(); BuildAbout(); BuildProductPages(); BuildMagpiePage(); SwitchPage(1); ApplyTheme(darkMode, false);
         status.TextChanged += (_, _) => shellStatus.Text = status.Text;
         shellStatus.Text = status.Text;
         Shown += async (_, _) => { await ScanGamesAsync(); if (autoCheckUpdates) await CheckAppUpdateAsync(true); };
@@ -199,12 +200,13 @@ public sealed partial class MainForm
         var changed = activePage != index;
         activePage = index; libraryPage.Visible = index == 1; if (aboutPanel != null) aboutPanel.Visible = index == 2;
         downloadsPage.Visible = index == 3; helpPage.Visible = index == 4; settingsPage.Visible = index == 5;
+        magpiePage.Visible = index == 6;
         for (int i = 0; i < navigation.Count; i++) { bool current = navigationPages[i] == index; navigation[i].BackColor = current ? SelectedSurface : Sidebar; navigation[i].ForeColor = current ? Acid : muted; ((RoundedButton)navigation[i]).Active = current; navigation[i].Invalidate(); }
         if (index == 3) RenderDownloads();
         ApplyTheme(darkMode, false);
         if (changed)
         {
-            var page = index switch { 1 => libraryPage, 2 => aboutPanel, 3 => downloadsPage, 4 => helpPage, 5 => settingsPage, _ => null };
+            var page = index switch { 1 => libraryPage, 2 => aboutPanel, 3 => downloadsPage, 4 => helpPage, 5 => settingsPage, 6 => magpiePage, _ => null };
             if (page != null) AnimatePageEntrance(page);
         }
     }
