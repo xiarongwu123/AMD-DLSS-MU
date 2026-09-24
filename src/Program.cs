@@ -637,7 +637,6 @@ public sealed class RoundedPanel : Panel
     bool selected;
     bool hovered;
     float emphasis;
-    float lift;
 
     public int Radius { get; set; } = 14;
 
@@ -657,6 +656,7 @@ public sealed class RoundedPanel : Panel
 
     public RoundedPanel()
     {
+        SetStyle(ControlStyles.Selectable, true);
         SetStyle(
             ControlStyles.UserPaint |
             ControlStyles.AllPaintingInWmPaint |
@@ -668,20 +668,10 @@ public sealed class RoundedPanel : Panel
             if (hovered && (!Visible || !ClientRectangle.Contains(PointToClient(Cursor.Position)))) hovered = false;
             var target = selected ? 1f : hovered ? .38f : 0f;
             emphasis += (target - emphasis) * .28f;
-            if (Tag is GameCandidate)
-            {
-                var targetLift = hovered ? 5f * DeviceDpi / 96f : 0f;
-                lift += (targetLift - lift) * .28f;
-                if (Math.Abs(lift - targetLift) < .1f) lift = targetLift;
-                var offset = (int)Math.Round(lift);
-                var top = (int)Math.Round(8 * DeviceDpi / 96d);
-                var bottom = (int)Math.Round(16 * DeviceDpi / 96d);
-                Margin = new Padding(0, top - offset, Margin.Right, bottom + offset);
-            }
             if (Math.Abs(target - emphasis) < .015f)
             {
                 emphasis = target;
-                if (!hovered && lift == 0) motion.Stop();
+                if (!hovered) motion.Stop();
             }
             Invalidate(true);
         };
@@ -1068,7 +1058,7 @@ public sealed class RoundedButton : Button
 
             e.Graphics.FillRectangle(
                 dot,
-                0, 10, 3, Height - 20);
+                12, Height - 3, Math.Max(0, Width - 24), 3);
         }
         if (Focused && ShowFocusCues) ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(ClientRectangle, -4, -4), ForeColor, BackColor);
         e.Graphics.Restore(paintState);
@@ -1198,9 +1188,9 @@ public sealed class CoverPictureBox : PictureBox
             System.Drawing.Drawing2D.InterpolationMode
                 .HighQualityBicubic;
 
-        var scale = Math.Min(
-            (float)Width / Image.Width,
-            (float)Height / Image.Height);
+        var scale = Tag is true
+            ? Math.Max((float)Width / Image.Width, (float)Height / Image.Height)
+            : Math.Min((float)Width / Image.Width, (float)Height / Image.Height);
 
         // Executable icons are not posters. Keep the fallback small and crisp.
         if (Tag is not true)
@@ -1214,7 +1204,7 @@ public sealed class CoverPictureBox : PictureBox
 
         var destination = new RectangleF(
             (Width - width) / 2,
-            (Height - height) / 2,
+            Tag is true ? 0 : (Height - height) / 2,
             width,
             height);
 
@@ -1270,7 +1260,7 @@ public sealed partial class MainForm : Form
 
     readonly Button install = new RoundedButton
     {
-        Text = "一键配置",
+        Text = "开启 DLSS5",
         AutoSize = true,
         Enabled = false
     };
@@ -1476,7 +1466,7 @@ public sealed partial class MainForm : Form
             BackColor = Surface,
             Cursor = Cursors.Hand,
             Tag = game,
-            Radius = 14
+            Radius = 2
         };
 
         Image image;
@@ -1553,7 +1543,7 @@ public sealed partial class MainForm : Form
         void Pick(object? sender, EventArgs eventArgs)
         {
             if (busy) return;
-            if (selectedCard is not null)
+            if (selectedCard is { IsDisposed: false })
             {
                 selectedCard.Selected = false;
                 selectedCard.Hovered = false;
@@ -1582,7 +1572,7 @@ public sealed partial class MainForm : Form
                     : "已配置 · 等待游戏内验证"
                 : english
                     ? "You can now click Configure."
-                    : "现在可以点击“一键配置”。";
+                    : "选择安装方案后开启 DLSS5，完成后仍需在游戏内验证。";
 
             UpdateButtons();
         }
@@ -1613,6 +1603,28 @@ public sealed partial class MainForm : Form
         card.Controls.Add(availability);
         card.Controls.Add(selectedBadge);
         selectedBadge.BringToFront();
+
+        var coverAction = new DlssCoverAction { Dock = DockStyle.Fill, Visible = false, TabStop = false, AccessibleName = game.Title + " · 开启 DLSS5" };
+        icon.Controls.Add(coverAction);
+        void ShowCoverAction() { coverAction.Visible = true; coverAction.BringToFront(); }
+        void HideCoverAction()
+        {
+            if (!icon.ClientRectangle.Contains(icon.PointToClient(Cursor.Position)))
+                coverAction.Visible = false;
+        }
+        icon.MouseEnter += (_, _) => ShowCoverAction();
+        icon.MouseLeave += (_, _) => HideCoverAction();
+        coverAction.MouseLeave += (_, _) => HideCoverAction();
+        coverAction.Click += (_, _) => { if (busy) return; Pick(null, EventArgs.Empty); ShowGameConfiguration(); };
+        card.TabStop = true; card.AccessibleName = game.Title;
+        card.Enter += (_, _) => ShowCoverAction();
+        card.Leave += (_, _) => { if (!card.ContainsFocus) coverAction.Visible = false; };
+        card.KeyDown += (_, e) =>
+        {
+            if (e.KeyCode is Keys.Enter or Keys.Space) { Pick(null, EventArgs.Empty); ShowGameConfiguration(); e.Handled = true; e.SuppressKeyPress = true; }
+        };
+        card.DoubleClick += (_, _) => ShowGameConfiguration();
+        title.Click += (_, _) => ShowGameConfiguration();
 
         return card;
     }

@@ -5,6 +5,11 @@ var root = Path.Combine(Path.GetTempPath(), "amd-management-tests-" + Guid.NewGu
 Directory.CreateDirectory(root);
 GameManagement.StorageOverride = Path.Combine(root, "records");
 var count = 0;
+Assert(LibraryPaging.PageCount(0) == 1 && LibraryPaging.ClampPage(5, 0) == 0, "empty library has stable first page");
+Assert(LibraryPaging.PageCount(8) == 1 && LibraryPaging.PageCount(9) == 2, "ninth game starts a new eight-game page");
+Assert(LibraryPaging.PageCount(16) == 2 && LibraryPaging.PageCount(17) == 3, "exact and partial pages counted correctly");
+Assert(LibraryPaging.ClampPage(2, 3) == 0, "filtering to three games resets out-of-range page");
+Assert(LibraryPaging.ClampPage(-1, 24) == 0, "previous page cannot go below zero");
 await DownloadTests.Run(root, Assert);
 void Assert(bool ok, string name) { if (!ok) throw new Exception(name); count++; Console.WriteLine("PASS " + name); }
 void Reject(Action act, string name) { try { act(); } catch (IOException) { Assert(true, name); return; } throw new Exception("Expected rejection: " + name); }

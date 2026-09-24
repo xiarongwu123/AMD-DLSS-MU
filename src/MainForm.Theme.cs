@@ -14,11 +14,11 @@ public sealed partial class MainForm
 
     static bool globalDark = true;
     bool darkMode = true;
-    internal static Color Base => globalDark ? Color.FromArgb(8, 12, 17) : Color.FromArgb(239, 242, 246);
-    internal static Color Surface => globalDark ? Color.FromArgb(15, 21, 30) : Color.White;
+    internal static Color Base => globalDark ? Color.FromArgb(5, 8, 13) : Color.FromArgb(239, 242, 246);
+    internal static Color Surface => globalDark ? Color.FromArgb(11, 17, 26) : Color.White;
     internal static Color Sidebar => globalDark ? Color.FromArgb(19, 26, 36) : Color.FromArgb(248, 250, 252);
-    internal static Color Line => globalDark ? Color.FromArgb(43, 54, 68) : Color.FromArgb(210, 218, 228);
-    internal static Color Acid => globalDark ? Color.FromArgb(155, 255, 25) : Color.FromArgb(62, 128, 15);
+    internal static Color Line => globalDark ? Color.FromArgb(35, 48, 65) : Color.FromArgb(210, 218, 228);
+    internal static Color Acid => globalDark ? Color.FromArgb(173, 255, 24) : Color.FromArgb(62, 128, 15);
     internal static Color SelectedSurface => globalDark ? Color.FromArgb(21, 33, 25) : Color.FromArgb(230, 241, 220);
     internal static Color Ink => globalDark ? Color.FromArgb(242, 247, 251) : Color.FromArgb(28, 39, 53);
     internal static Color Muted => globalDark ? Color.FromArgb(148, 161, 175) : Color.FromArgb(87, 102, 120);
@@ -105,6 +105,7 @@ public sealed partial class MainForm
             control.Invalidate(true);
         }
         BackColor = Line; ForeColor = Ink; Recolor(this);
+        if (configurationSurface != null && configurationSurface.Parent == null) Recolor(configurationSurface);
         foreach (var button in navigation)
         {
             bool current = navigationPages[navigation.IndexOf(button)] == activePage;

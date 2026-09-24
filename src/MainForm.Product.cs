@@ -113,7 +113,7 @@ public sealed partial class MainForm
         mode.SelectedIndexChanged += (_, _) => api.Enabled = mode.SelectedIndex == 1; stack.Controls.Add(api);
         Paragraph(stack, "两种方案效果不同。已配置游戏请先恢复，再切换方案。");
         var save = Action("保存", "Save", (_, _) => { installMode.SelectedIndex = mode.SelectedIndex; optiVulkan = api.SelectedIndex == 1; dialog.DialogResult = DialogResult.OK; });
-        stack.Controls.Add(save); dialog.Controls.Add(stack); dialog.ShowDialog(this);
+        stack.Controls.Add(save); dialog.Controls.Add(stack); dialog.ShowDialog(configurationDialog ?? this);
     }
     Form ProductDialog(string title, int width = 560, int height = 330)
     {
@@ -182,29 +182,41 @@ public sealed partial class MainForm
     }
     void FilterGames()
     {
-        var configuredCount = 0;
-        foreach (var game in libraryGames)
-            if (IsConfigured(game.ExePath)) configuredCount++;
+        var states = libraryGames.ToDictionary(g => g.ExePath, GetLibraryState, StringComparer.OrdinalIgnoreCase);
+        var configuredCount = states.Values.Count(s => s == LibraryFilter.Configured);
         if (libraryAllTab != null) libraryAllTab.Text = english ? $"All {libraryGames.Count}" : $"全部 {libraryGames.Count}";
         if (libraryConfiguredTab != null) libraryConfiguredTab.Text = english ? $"Configured {configuredCount}" : $"已配置 {configuredCount}";
+        if (unconfiguredTab != null) unconfiguredTab.Text = (english ? "Unconfigured " : "未配置 ") + states.Values.Count(s => s == LibraryFilter.Unconfigured);
+        if (attentionTab != null) attentionTab.Text = (english ? "Needs review " : "需确认 ") + states.Values.Count(s => s == LibraryFilter.Attention);
         libraryCount.Text = english ? $"{libraryGames.Count} games found" : $"已发现 {libraryGames.Count} 个游戏";
+        var matches = libraryGames.Where(g => g.Title.Contains(librarySearch.Text.Trim(), StringComparison.OrdinalIgnoreCase)
+            && (libraryFilter == LibraryFilter.All || states[g.ExePath] == libraryFilter)).ToList();
+        libraryPageIndex = LibraryPaging.ClampPage(libraryPageIndex, matches.Count);
+        var visible = matches.Skip(libraryPageIndex * LibraryPaging.PageSize).Take(LibraryPaging.PageSize)
+            .Select(g => g.ExePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (Control c in games.Controls)
-            c.Visible = c.Tag is GameCandidate g && g.Title.Contains(librarySearch.Text, StringComparison.OrdinalIgnoreCase) && (!installedOnly || IsConfigured(g.ExePath));
+            c.Visible = c.Tag is GameCandidate g && visible.Contains(g.ExePath);
+        previousGames.Enabled = libraryPageIndex > 0;
+        nextGames.Enabled = libraryPageIndex + 1 < LibraryPaging.PageCount(matches.Count);
+        pageNumber.Text = $"{libraryPageIndex + 1} / {LibraryPaging.PageCount(matches.Count)}";
+        emptyLibrary.Visible = matches.Count == 0;
+        emptyLibrary.Text = libraryGames.Count == 0 ? "尚未发现游戏 · 添加游戏或重新扫描" : "没有匹配的游戏 · 尝试其他筛选或搜索词";
+        homeTotal.Text = libraryGames.Count.ToString(); homeConfigured.Text = configuredCount.ToString();
         LayoutGameCards();
     }
     void LayoutGameCards()
     {
         int S(int n) => (int)Math.Round(n * DeviceDpi / 96d);
         int available = games.ClientSize.Width - games.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth;
-        int columns = available >= S(1120) ? 5 : available >= S(860) ? 4 : available >= S(620) ? 3 : 2;
-        int width = Math.Max(S(150), (available - columns * S(16)) / columns);
+        const int columns = 4;
+        int width = Math.Max(S(100), (available - columns * S(24)) / columns);
         games.SuspendLayout();
         foreach (Control card in games.Controls)
         {
-            if (card is not RoundedPanel { Hovered: true }) card.Margin = new Padding(0, S(8), S(16), S(16));
+            card.Margin = new Padding(0, S(8), S(24), S(16));
             card.Width = width;
             if (card.Controls.OfType<PictureBox>().FirstOrDefault() is not { } pic) continue;
-            pic.SetBounds(S(3), S(3), width - S(6), (int)Math.Round((width - S(6)) * 1.5d));
+            pic.SetBounds(S(3), S(3), width - S(6), (int)Math.Round((width - S(6)) * 394d / 309d));
             var labels = card.Controls.OfType<Label>().ToArray();
             if (labels.Length >= 2) { labels[0].SetBounds(S(12), pic.Bottom + S(10), width - S(24), S(25)); labels[1].SetBounds(S(12), pic.Bottom + S(37), width - S(24), S(24)); }
             if (card.Controls.OfType<GameSelectionBadge>().FirstOrDefault() is { } badge)
@@ -259,7 +271,7 @@ public sealed partial class MainForm
         foreach (var row in downloadRows) row.Card.Visible = showCompleted == (row.State == "已完成 · 校验通过");
         var empty = downloadList.Controls.Find("empty", false).FirstOrDefault();
         if (empty == null) { empty = new Label { Name = "empty", AutoSize = true, MaximumSize = new Size(560, 0), ForeColor = muted, Padding = new Padding(12, 36, 12, 36) }; downloadList.Controls.Add(empty); }
-        empty.Text = showCompleted ? "暂无完成记录。" : "没有正在下载的任务。\n\n为游戏一键配置时，所需组件会自动出现在这里。";
+        empty.Text = showCompleted ? "暂无完成记录。" : "没有正在下载的任务。\n\n在游戏封面点击“开启 DLSS5”并确认配置后，所需组件会出现在这里。";
         empty.Visible = !downloadRows.Any(r => showCompleted == (r.State == "已完成 · 校验通过"));
     }
 }
