@@ -37,7 +37,7 @@ public sealed partial class MainForm
         logo.Click += (_, _) => SwitchPage(0); logo.Disposed += (_, _) => logo.Image?.Dispose();
         header.Controls.Add(logo, 0, 0);
         var nav = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, Margin = Padding.Empty };
-        foreach (var item in new[] { (0, "首页", "Home"), (1, "游戏库", "Library"), (3, "下载任务", "Downloads"), (4, "帮助与反馈", "Help") })
+        foreach (var item in new[] { (0, "首页", "Home"), (1, "游戏库", "Library"), (7, "大力喜鹊", "Magpie"), (3, "下载任务", "Downloads"), (4, "帮助与反馈", "Help") })
         {
             var b = Action(item.Item2, item.Item3, (_, _) => SwitchPage(item.Item1));
             b.Size = new Size(item.Item1 == 4 ? 125 : 100, 50); b.Radius = 2; b.Margin = new Padding(0, 0, 4, 0);

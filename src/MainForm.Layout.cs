@@ -55,7 +55,7 @@ public sealed partial class MainForm
         var version = new Label { Text = "AMD DLSS MU  ·  v" + AutoUpdate.DisplayVersion, Dock = DockStyle.Right, Width = 230, ForeColor = muted, TextAlign = ContentAlignment.MiddleRight, Padding = new Padding(0, 0, 16, 0) };
         foot.Controls.Add(shellStatus); foot.Controls.Add(version); root.Controls.Add(foot, 0, 3);
         Controls.Add(root);
-        BuildLibrary(); BuildV2Home(); BuildAbout(); BuildProductPages(); BuildAccountPage(); SwitchPage(0); ApplyTheme(darkMode, false);
+        BuildLibrary(); BuildV2Home(); BuildAbout(); BuildProductPages(); BuildAccountPage(); BuildMagpiePage(); SwitchPage(0); ApplyTheme(darkMode, false);
         status.TextChanged += (_, _) => shellStatus.Text = status.Text;
         shellStatus.Text = status.Text;
         Shown += async (_, _) => { await ScanGamesAsync(); if (autoCheckUpdates) await CheckAppUpdateAsync(true); };
@@ -174,14 +174,14 @@ public sealed partial class MainForm
         var changed = activePage != index;
         activePage = index; libraryPage.Visible = index is 0 or 1; if (aboutPanel != null) aboutPanel.Visible = index == 2;
         downloadsPage.Visible = index == 3; helpPage.Visible = index == 4; settingsPage.Visible = index == 5;
-        accountPage.Visible = index == 6;
+        accountPage.Visible = index == 6; magpiePage.Visible = index == 7;
         if (index is 0 or 1) ScrollToLibrarySection(index == 1);
         for (int i = 0; i < navigation.Count; i++) { bool current = navigationPages[i] == index; navigation[i].BackColor = current ? SelectedSurface : Sidebar; navigation[i].ForeColor = current ? Acid : muted; ((RoundedButton)navigation[i]).Active = current; navigation[i].Invalidate(); }
         if (index == 3) RenderDownloads();
         ApplyTheme(darkMode, false);
         if (changed)
         {
-            var page = index switch { 0 or 1 => libraryPage, 2 => aboutPanel, 3 => downloadsPage, 4 => helpPage, 5 => settingsPage, 6 => accountPage, _ => null };
+            var page = index switch { 0 or 1 => libraryPage, 2 => aboutPanel, 3 => downloadsPage, 4 => helpPage, 5 => settingsPage, 6 => accountPage, 7 => magpiePage, _ => null };
             if (page != null && index is not 0 and not 1) AnimatePageEntrance(page);
         }
     }
