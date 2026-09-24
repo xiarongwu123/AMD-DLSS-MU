@@ -16,4 +16,40 @@ Reject(Fixture(digest:"")); Reject(Fixture(digest:"sha256:bad"));
 Reject(Fixture(copies:0)); Reject(Fixture(copies:2));
 Reject(Fixture(size:0)); Reject(Fixture(size:2L*1024*1024*1024));
 Reject(Fixture(tag:"v1.3.0-evil"));
+if (args.Length == 1)
+{
+    Core.CheckPe(args[0], false);
+    // FileVersionInfo on macOS returns empty for native bundled Windows hosts.
+    // Read the actual RT_VERSION resource instead of treating that as version zero.
+    var version = ReadPeVersion(args[0]);
+    Assert(version == new Version(1, 4, 0, 0));
+    Assert(new FileInfo(args[0]).Length > 100_000_000);
+    Console.WriteLine("Verified Windows x64 release v" + version + " SHA-256 " + Core.Hash(args[0]));
+}
 Console.WriteLine($"PASS {passed} update release validation assertions");
+
+static Version ReadPeVersion(string path)
+{
+    using var stream = File.OpenRead(path);
+    using var pe = new System.Reflection.PortableExecutable.PEReader(stream);
+    int rootRva = pe.PEHeaders.PEHeader!.ResourceTableDirectory.RelativeVirtualAddress;
+    var resource = pe.GetSectionData(rootRva).GetContent().ToArray();
+    uint U32(int offset) => System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(resource.AsSpan(offset, 4));
+    ushort U16(int offset) => System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(resource.AsSpan(offset, 2));
+    int Child(int directory, uint? id)
+    {
+        int count = U16(directory + 12) + U16(directory + 14);
+        for (int i = 0; i < count; i++)
+        {
+            int entry = directory + 16 + i * 8;
+            if (id == null || U32(entry) == id) return checked((int)(U32(entry + 4) & 0x7fffffff));
+        }
+        throw new IOException("Missing RT_VERSION resource");
+    }
+    int leaf = Child(Child(Child(0, 16), null), null);
+    var blob = pe.GetSectionData(checked((int)U32(leaf))).GetContent(0, checked((int)U32(leaf + 4))).ToArray();
+    uint Value(int offset) => System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(blob.AsSpan(offset, 4));
+    if (Value(40) != 0xfeef04bd) throw new IOException("Invalid VS_FIXEDFILEINFO");
+    uint majorMinor = Value(48), buildRevision = Value(52);
+    return new Version((int)(majorMinor >> 16), (int)(majorMinor & 65535), (int)(buildRevision >> 16), (int)(buildRevision & 65535));
+}

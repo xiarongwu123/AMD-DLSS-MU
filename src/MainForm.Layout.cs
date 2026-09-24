@@ -6,155 +6,248 @@ namespace AmdNrAssistant;
 
 public sealed partial class MainForm
 {
+    Color ink => Ink;
+    Color muted => Muted;
     readonly Panel pageHost = new() { Dock = DockStyle.Fill };
     readonly Panel libraryPage = new() { Dock = DockStyle.Fill };
-    readonly FlowLayoutPanel recentCards = new() { AutoSize = true, WrapContents = true, Margin = new Padding(0), Padding = new Padding(0, 8, 0, 16) };
     readonly List<(Control control, string zh, string en)> translations = new();
     readonly List<Button> navigation = new();
+    readonly List<int> navigationPages = new();
     List<GameCandidate> libraryGames = new();
-    readonly TextBox librarySearch = new() { BorderStyle = BorderStyle.None, Dock = DockStyle.Top, PlaceholderText = "搜索游戏 / Search games" };
+    readonly TextBox librarySearch = new() { BorderStyle = BorderStyle.None, Dock = DockStyle.Fill, PlaceholderText = "搜索游戏 / Search games" };
+    readonly Label shellStatus = new() { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft };
+    readonly Button launch = new RoundedButton { Text = "启动游戏", Visible = false };
+    readonly RoundedButton themeToggle = new();
+    readonly AccentProgressBar libraryDownloadProgress = new() { Dock = DockStyle.Fill, Visible = false, Margin = new Padding(0, 12, 0, 12) };
+    bool configureAnimating;
+    readonly Label libraryCount = new() { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight };
+    UnderlineTabButton? libraryAllTab;
+    UnderlineTabButton? libraryConfiguredTab;
+    System.Windows.Forms.Timer? pageTransition;
+    Control? transitioningPage;
+    bool installedOnly;
     int activePage;
-    readonly Color ink = Color.FromArgb(27, 40, 53);
-    readonly Color muted = Color.FromArgb(112, 130, 146);
     T Localize<T>(T c, string zh, string en) where T : Control { translations.Add((c, zh, en)); c.Text = english ? en : zh; return c; }
-    Label Heading(string zh, string en, float size = 14) => Localize(new Label { AutoSize = true, ForeColor = ink, Font = new Font(Font.FontFamily, size, FontStyle.Bold), Margin = new Padding(0, 12, 0, 12) }, zh, en);
+    Label Heading(string zh, string en, float size = 14) => Localize(new Label { AutoSize = true, ForeColor = ink, Font = new Font(Font.FontFamily, size), Margin = new Padding(0, 8, 0, 8), Padding = Padding.Empty }, zh, en);
+    Label PageTitle(string zh, string en) => Localize(new Label { AutoSize = false, Dock = DockStyle.Fill, ForeColor = ink, Font = new Font(Font.FontFamily, 21, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft, Margin = Padding.Empty, Padding = Padding.Empty }, zh, en);
     RoundedButton Action(string zh, string en, EventHandler click)
     {
-        var b = Localize(new RoundedButton { Size = new Size(144, 44), AutoSize = false, BackColor = Color.White, ForeColor = ink, Cursor = Cursors.Hand, Margin = new Padding(8, 0, 0, 0) }, zh, en);
+        var b = Localize(new RoundedButton { Size = new Size(134, 40), BackColor = Surface, ForeColor = ink, Cursor = Cursors.Hand, Radius = 10, Margin = new Padding(0, 0, 10, 0) }, zh, en);
         b.Click += click; return b;
     }
     public MainForm()
     {
-        Text = "AMD DLSS MU"; Size = new Size(1380, 940); MinimumSize = new Size(1000, 720);
-        Font = new Font("Microsoft YaHei UI", 10); AutoScaleMode = AutoScaleMode.Dpi;
-        StartPosition = FormStartPosition.CenterScreen; BackColor = Color.FromArgb(235, 241, 245);
-        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Padding = new Padding(16), Margin = new Padding(0) };
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 250)); root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        var side = new RoundedPanel { Dock = DockStyle.Fill, BackColor = Color.White, Radius = 26, Padding = new Padding(16), Margin = new Padding(0, 0, 20, 0) };
-        var sideRows = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 5, ColumnCount = 1, BackColor = Color.White };
-        sideRows.RowStyles.Add(new RowStyle(SizeType.Absolute, 156));
-        sideRows.RowStyles.Add(new RowStyle(SizeType.Absolute, 180));
-        sideRows.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        sideRows.RowStyles.Add(new RowStyle(SizeType.Absolute, 126));
-        var logo = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom, Margin = new Padding(20, 12, 20, 22) };
+        LoadPreferences();
+        Text = "AMD DLSS MU"; Size = new Size(1440, 900); MinimumSize = new Size(1100, 740);
+        Font = new Font("Microsoft YaHei UI", 10f); AutoScaleDimensions = new SizeF(96, 96); AutoScaleMode = AutoScaleMode.Dpi;
+        StartPosition = FormStartPosition.CenterScreen; BackColor = Line; ForeColor = ink; Padding = new Padding(1);
+        FormBorderStyle = FormBorderStyle.None;
+        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 3, Margin = Padding.Empty, Padding = Padding.Empty, BackColor = Base };
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 236)); root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 52)); root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+        var titleBar = BuildTitleBar(); root.Controls.Add(titleBar, 0, 0); root.SetColumnSpan(titleBar, 2);
+        var side = new RoundedPanel { Dock = DockStyle.Fill, BackColor = Sidebar, Padding = new Padding(16, 20, 16, 16), Margin = new Padding(10, 10, 8, 10), Radius = 22 };
+        var topNav = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 390, FlowDirection = FlowDirection.TopDown, WrapContents = false, BackColor = Color.Transparent };
+        var bottomNav = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 190, FlowDirection = FlowDirection.TopDown, WrapContents = false, BackColor = Color.Transparent };
+        var logo = new PictureBox { Size = new Size(150, 126), SizeMode = PictureBoxSizeMode.Zoom, Margin = new Padding(26, 2, 0, 28), BackColor = Color.Transparent };
         using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AmdNrAssistant.amd_dlss_mu_logo.png"))
             if (stream != null) { using var img = Image.FromStream(stream); logo.Image = new Bitmap(img); }
-        sideRows.Controls.Add(logo, 0, 0);
-        var nav = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false };
-        var labels = new[] { ("首页", "Home"), ("游戏", "Games"), ("关于", "About") };
-        for (int i = 0; i < labels.Length; i++)
+        logo.Disposed += (_, _) => logo.Image?.Dispose(); topNav.Controls.Add(logo);
+        void Nav(FlowLayoutPanel host, int page, string zh, string en, string glyph)
         {
-            int index = i; var b = Action(labels[i].Item1, labels[i].Item2, (_, _) => SwitchPage(index));
-            b.Glyph = new[] { "\uE80F", "\uE7FC", "\uE946" }[i]; b.Size = new Size(190, 50); b.Margin = new Padding(0, 0, 0, 8); navigation.Add(b); nav.Controls.Add(b);
-            b.MouseEnter += (_, _) => { if (activePage != index) b.BackColor = Color.FromArgb(246, 248, 250); };
-            b.MouseLeave += (_, _) => { if (activePage != index) b.BackColor = Color.White; };
+            var b = Action(zh, en, (_, _) => SwitchPage(page)); b.Size = new Size(202, 54); b.Glyph = glyph; b.Radius = 13;
+            b.Font = new Font(Font.FontFamily, 10.5f, FontStyle.Bold);
+            b.Margin = new Padding(0, 0, 0, 7); navigation.Add(b); navigationPages.Add(page); host.Controls.Add(b);
         }
-        sideRows.Controls.Add(nav, 0, 1);
-        var ready = new RoundedPanel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(243, 246, 248), Padding = new Padding(16), Radius = 18 };
-        ready.Controls.Add(Localize(new Label { Dock = DockStyle.Fill, ForeColor = muted, AutoSize = false }, "● 就绪\n\nAMD DLSS MU\nv" + AutoUpdate.DisplayVersion, "● Ready\n\nAMD DLSS MU\nv" + AutoUpdate.DisplayVersion));
-        sideRows.Controls.Add(ready, 0, 3); side.Controls.Add(sideRows); root.Controls.Add(side, 0, 0);
-        var main = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, Margin = new Padding(0) };
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 62)); main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        var top = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-        top.Controls.Add(Action("中文 / EN", "EN / 中文", (_, _) => { english = !english; ApplyLanguage(english); }));
-        top.Controls.Add(Action("检查更新", "Check updates", async (_, _) => await CheckAppUpdateAsync(false)));
-        top.Controls.Add(Action("第三方许可", "Licenses", (_, _) => ShowLicenses()));
-        main.Controls.Add(top, 0, 0); main.Controls.Add(pageHost, 0, 1); root.Controls.Add(main, 1, 0); Controls.Add(root);
-        BuildLibrary(); BuildHome();
-        BuildAbout(); SwitchPage(0);
-        Shown += async (_, _) => { await ScanGamesAsync(); await CheckAppUpdateAsync(true); }; FormClosed += (_, _) => { controlPanel?.Close(); lifetime.Cancel(); };
+        Nav(topNav, 1, "游戏库", "Games", "\uE7FC");
+        Nav(topNav, 3, "下载任务", "Downloads", "\uE896");
+        Nav(topNav, 4, "帮助与反馈", "Help", "\uE897");
+        Nav(bottomNav, 5, "设置", "Settings", "\uE713");
+        Localize(themeToggle, darkMode ? "切换浅色" : "切换深色", darkMode ? "Light theme" : "Dark theme");
+        themeToggle.Size = new Size(202, 50); themeToggle.BackColor = Sidebar; themeToggle.ForeColor = muted; themeToggle.Radius = 12;
+        themeToggle.Glyph = darkMode ? "\uE706" : "\uE708"; themeToggle.Margin = new Padding(0, 0, 0, 5);
+        themeToggle.Click += (_, _) => ToggleTheme();
+        var update = Action("检查更新", "Check updates", async (_, _) => await CheckAppUpdateAsync(false)); update.Size = new Size(202, 50); update.Glyph = "\uE72C"; update.Radius = 12; bottomNav.Controls.Add(update);
+        Nav(bottomNav, 2, "关于", "About", "\uE946");
+        void FitNavigation()
+        {
+            foreach (var host in new[] { topNav, bottomNav })
+                foreach (Control item in host.Controls)
+                    if (item is Button) item.Width = Math.Max(1, host.ClientSize.Width - item.Margin.Horizontal);
+        }
+        topNav.SizeChanged += (_, _) => FitNavigation();
+        bottomNav.SizeChanged += (_, _) => FitNavigation();
+        side.Controls.Add(topNav); side.Controls.Add(bottomNav); root.Controls.Add(side, 0, 1);
+        pageHost.Margin = new Padding(0, 0, 8, 0); pageHost.BackColor = Base; root.Controls.Add(pageHost, 1, 1);
+        shellStatus.ForeColor = muted; shellStatus.Padding = new Padding(16, 0, 0, 0);
+        var foot = new Panel { Dock = DockStyle.Fill, BackColor = Sidebar, Margin = Padding.Empty };
+        var version = new Label { Text = "AMD DLSS MU  ·  v" + AutoUpdate.DisplayVersion, Dock = DockStyle.Right, Width = 230, ForeColor = muted, TextAlign = ContentAlignment.MiddleRight, Padding = new Padding(0, 0, 16, 0) };
+        foot.Controls.Add(shellStatus); foot.Controls.Add(version); root.Controls.Add(foot, 0, 2); root.SetColumnSpan(foot, 2);
+        Controls.Add(root);
+        BuildLibrary(); BuildAbout(); BuildProductPages(); SwitchPage(1); ApplyTheme(darkMode, false);
+        status.TextChanged += (_, _) => shellStatus.Text = status.Text;
+        shellStatus.Text = status.Text;
+        Shown += async (_, _) => { await ScanGamesAsync(); if (autoCheckUpdates) await CheckAppUpdateAsync(true); };
+        FormClosing += (_, e) => { if (busy && !lifetime.IsCancellationRequested) { e.Cancel = true; MessageBox.Show(this, "请等待当前操作完成，或先在下载任务中取消下载。", Text); } };
+        FormClosed += (_, _) => { pageTransition?.Stop(); pageTransition?.Dispose(); controlPanel?.Close(); lifetime.Cancel(); };
     }
+
+    Control BuildTitleBar()
+    {
+        var bar = new Panel { Dock = DockStyle.Fill, BackColor = Base, Margin = Padding.Empty };
+        var brand = new Label
+        {
+            Text = "  AMD DLSS MU", Dock = DockStyle.Left, Width = 190, TextAlign = ContentAlignment.MiddleLeft,
+            ForeColor = muted, Font = new Font(Font.FontFamily, 9.5f), Padding = new Padding(18, 0, 0, 0)
+        };
+        brand.Paint += (_, e) =>
+        {
+            using var brush = new SolidBrush(Acid);
+            e.Graphics.FillEllipse(brush, 14, (brand.Height - 8) / 2, 8, 8);
+        };
+        var captions = new FlowLayoutPanel { Dock = DockStyle.Right, Width = 144, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Margin = Padding.Empty };
+        Button Caption(string text, EventHandler click)
+        {
+            var button = new Button
+            {
+                Text = text, Size = new Size(48, 50), FlatStyle = FlatStyle.Flat, BackColor = Base,
+                ForeColor = muted, Margin = Padding.Empty, Cursor = Cursors.Hand, TabStop = false
+            };
+            button.FlatAppearance.BorderSize = 0; button.FlatAppearance.MouseOverBackColor = Surface;
+            button.Click += click; return button;
+        }
+        captions.Controls.Add(Caption("—", (_, _) => WindowState = FormWindowState.Minimized));
+        captions.Controls.Add(Caption("□", (_, _) => WindowState = WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized));
+        var close = Caption("×", (_, _) => Close()); close.FlatAppearance.MouseOverBackColor = Color.FromArgb(196, 43, 52); close.ForeColor = ink; captions.Controls.Add(close);
+        var quick = new FlowLayoutPanel { Dock = DockStyle.Right, Width = 126, Height = 50, WrapContents = false, FlowDirection = FlowDirection.LeftToRight, Margin = Padding.Empty, Padding = new Padding(0, 6, 0, 4) };
+        var appearance = new RoundedButton { Size = new Size(42, 40), Text = "", Glyph = darkMode ? "\uE706" : "\uE708", Radius = 20, BackColor = Surface, ForeColor = muted, Margin = new Padding(0, 0, 8, 0) };
+        appearance.Click += (_, _) => { ToggleTheme(); appearance.Glyph = darkMode ? "\uE706" : "\uE708"; appearance.Invalidate(); };
+        var language = new RoundedButton { Size = new Size(70, 40), Text = english ? "EN" : "ZH", Radius = 18, BackColor = Surface, ForeColor = ink, Margin = Padding.Empty };
+        language.Click += (_, _) => { english = !english; ApplyLanguage(english); language.Text = english ? "EN" : "ZH"; };
+        quick.Controls.Add(appearance); quick.Controls.Add(language);
+        void BeginDrag(object? sender, MouseEventArgs e) { if (e.Button == MouseButtons.Left) DragWindow(); }
+        bar.MouseDown += BeginDrag; brand.MouseDown += BeginDrag;
+        bar.DoubleClick += (_, _) => WindowState = WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized;
+        brand.DoubleClick += (_, _) => WindowState = WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized;
+        bar.Controls.Add(brand); bar.Controls.Add(quick); bar.Controls.Add(captions); return bar;
+    }
+
     void BuildLibrary()
     {
-        var rows = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3, ColumnCount = 1 };
-        rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 118)); rows.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 200));
-        var toolbar = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2 };
-        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 316));
-        toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 54)); toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-        toolbar.Controls.Add(Heading("游戏库", "Game library", 18), 0, 0);
-        var shell = new RoundedPanel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(14, 12, 14, 10), Margin = new Padding(0, 0, 12, 4) };
-        var search = librarySearch;
-        search.TextChanged += (_, _) => { foreach (Control c in games.Controls) c.Visible = c.Tag is GameCandidate g && g.Title.Contains(search.Text, StringComparison.OrdinalIgnoreCase); };
-        shell.Controls.Add(search); toolbar.Controls.Add(shell, 0, 1);
-        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
-        actions.Controls.Add(Action("＋ 添加游戏", "＋ Add game", SelectGameManually));
-        scan.AutoSize = false; scan.Size = new Size(144, 44); scan.BackColor = Color.White; scan.ForeColor = ink;
-        Localize(scan, "重新扫描", "Rescan"); scan.Click += async (_, _) => await ScanGamesAsync(); actions.Controls.Add(scan); toolbar.Controls.Add(actions, 1, 1);
-        games.Padding = new Padding(0); games.BackColor = BackColor;
-        var footer = new TableLayoutPanel { Dock = DockStyle.Fill, BackColor = Color.White, ColumnCount = 2, Padding = new Padding(16) };
-        footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); footer.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 314));
-        var details = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3 };
+        var rows = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3, ColumnCount = 1, Margin = Padding.Empty };
+        rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 204)); rows.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 174));
+        var toolbar = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 3, Padding = new Padding(28, 18, 28, 0), Margin = Padding.Empty };
+        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 244));
+        toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 62)); toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 58)); toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+        toolbar.Controls.Add(PageTitle("游戏库", "Game library"), 0, 0);
+        libraryCount.ForeColor = muted; libraryCount.Padding = new Padding(0, 0, 2, 0); toolbar.Controls.Add(libraryCount, 1, 0);
+        var shell = new RoundedPanel { Dock = DockStyle.Fill, BackColor = Surface, Padding = new Padding(16, 13, 16, 13), Margin = new Padding(0, 0, 14, 2), Radius = 12 };
+        librarySearch.BackColor = Surface; librarySearch.ForeColor = ink; librarySearch.TextChanged += (_, _) => FilterGames();
+        shell.Controls.Add(librarySearch); toolbar.Controls.Add(shell, 0, 1);
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, Margin = Padding.Empty, Padding = Padding.Empty };
+        var add = Action("添加游戏", "Add game", SelectGameManually); add.Size = new Size(112, 46); add.Radius = 12; actions.Controls.Add(add);
+        scan.AutoSize = false; scan.Size = new Size(112, 46); scan.Margin = Padding.Empty; scan.BackColor = SelectedSurface; scan.ForeColor = Acid; scan.AccessibleName = "重新扫描游戏";
+        if (scan is RoundedButton scanButton) { scanButton.Glyph = ""; scanButton.Radius = 12; }
+        scan.Text = english ? "Rescan" : "重新扫描"; scan.Click += async (_, _) => await ScanGamesAsync(); actions.Controls.Add(scan); toolbar.Controls.Add(actions, 1, 1);
+        var filters = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0, 5, 0, 0), Margin = Padding.Empty };
+        var all = libraryAllTab = new UnderlineTabButton { Selected = true, Size = new Size(112, 45), Font = new Font(Font.FontFamily, 10f, FontStyle.Bold) };
+        var configured = libraryConfiguredTab = new UnderlineTabButton { Size = new Size(112, 45), Font = new Font(Font.FontFamily, 10f, FontStyle.Bold) };
+        all.Click += (_, _) => { installedOnly = false; all.Selected = true; configured.Selected = false; FilterGames(); };
+        configured.Click += (_, _) => { installedOnly = true; all.Selected = false; configured.Selected = true; FilterGames(); };
+        filters.Controls.Add(all); filters.Controls.Add(configured); toolbar.Controls.Add(filters, 0, 2); toolbar.SetColumnSpan(filters, 2);
+        games.Padding = new Padding(28, 12, 14, 16); games.BackColor = Base; games.Margin = Padding.Empty;
+        games.AllowDrop = true;
+        games.DragEnter += (_, e) => e.Effect = !busy && e.Data?.GetDataPresent(DataFormats.FileDrop) == true ? DragDropEffects.Copy : DragDropEffects.None;
+        games.DragDrop += (_, e) => { if (!busy && e.Data?.GetData(DataFormats.FileDrop) is string[] paths && paths.Length > 0) AddPath(paths[0]); };
+        games.ClientSizeChanged += (_, _) => LayoutGameCards();
+        var footerSurface = new RoundedPanel { Dock = DockStyle.Fill, BackColor = Surface, Radius = 16, Padding = new Padding(1), Margin = new Padding(28, 4, 28, 10) };
+        var footer = new TableLayoutPanel { Dock = DockStyle.Fill, BackColor = Surface, ColumnCount = 2, RowCount = 3, Padding = new Padding(20, 13, 20, 10), Margin = Padding.Empty };
+        footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); footer.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
+        footer.RowStyles.Add(new RowStyle(SizeType.Absolute, 32)); footer.RowStyles.Add(new RowStyle(SizeType.Absolute, 32)); footer.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
         selected.AutoSize = status.AutoSize = false; selected.AutoEllipsis = status.AutoEllipsis = true; selected.Dock = status.Dock = DockStyle.Fill;
-        details.Controls.Add(selected, 0, 0); details.Controls.Add(status, 0, 1);
-        installMode.Items.Add("模式一（推荐）— 官方运行时");
-        installMode.Items.Add("模式二 — OptiScaler 标准版（超分/帧生成）");
-        installMode.SelectedIndex = 0;
-        installMode.SelectedIndexChanged += (_, _) => status.Text = installMode.SelectedIndex == 1
-            ? (english ? "OptiScaler: automatic download and verification; not DLSS 5 neural rendering." : "OptiScaler 标准版：自动下载校验；不等于 DLSS 5 神经渲染。")
-            : (english ? "Recommended mode: official AMD runtime." : "推荐模式：官方 AMD 运行时。");
-        details.Controls.Add(installMode, 0, 2); footer.Controls.Add(details, 0, 0);
-        var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, AutoScroll = true };
-        foreach (var b in new[] { restore, install }) { b.AutoSize = false; b.Size = new Size(148, 44); buttons.Controls.Add(b); }
-        install.BackColor = Color.FromArgb(91, 177, 0); install.ForeColor = Color.White; restore.BackColor = Color.FromArgb(240, 244, 247);
-        install.Click += async (_, _) => await InstallAsync(); restore.Click += async (_, _) => await RestoreAsync();
-        buttons.Controls.Add(Action("兼容性 / 记录", "Compatibility", async (_, _) => await InspectSelectedAsync(false)));
-        buttons.Controls.Add(Action("刷新运行状态", "Runtime status", async (_, _) => await InspectSelectedAsync(true)));
-        buttons.Controls.Add(Action("导出诊断", "Diagnostics", async (_, _) => await ExportDiagnosticAsync()));
-        buttons.Controls.Add(Action("F8 控制面板", "F8 panel", (_, _) => OpenPanel()));
-        footer.Controls.Add(buttons, 1, 0); rows.Controls.Add(toolbar, 0, 0); rows.Controls.Add(games, 0, 1); rows.Controls.Add(footer, 0, 2);
+        selected.Font = new Font(Font.FontFamily, 13); selected.ForeColor = ink; status.ForeColor = muted;
+        footer.Controls.Add(selected, 0, 0); footer.Controls.Add(status, 0, 1);
+        installMode.Items.AddRange(new[] { "模式一 · 神经渲染（推荐）", "模式二 · OptiScaler" }); installMode.SelectedIndex = 0;
+        installMode.BackColor = Surface; installMode.ForeColor = ink;
+        var mainAction = new Panel { Dock = DockStyle.Fill, Padding = new Padding(12, 0, 0, 0), Margin = Padding.Empty };
+        foreach (var b in new[] { install, launch }) { b.AutoSize = false; b.Dock = DockStyle.Fill; b.BackColor = Acid; b.ForeColor = OnAccent; b.Font = new Font(Font.FontFamily, 12f, FontStyle.Bold); if (b is RoundedButton rb) { rb.Chamfer = true; rb.Radius = 16; rb.Glyph = b == install ? "" : "\uE768"; rb.TrailingArrow = b == install; rb.LightningEffect = b == install; } mainAction.Controls.Add(b); }
+        install.Click += async (_, _) =>
+        {
+            if (busy || configureAnimating) return;
+            configureAnimating = true;
+            libraryPage.Enabled = false;
+            try { await Task.Delay(280, lifetime.Token); }
+            catch (OperationCanceledException) { return; }
+            finally { configureAnimating = false; if (!IsDisposed) libraryPage.Enabled = true; }
+            if (!IsDisposed) await InstallAsync();
+        };
+        launch.Click += (_, _) => LaunchSelectedGame();
+        footer.Controls.Add(mainAction, 1, 0); footer.SetRowSpan(mainAction, 2);
+        var secondary = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, Margin = Padding.Empty };
+        var advanced = Action("高级选项", "Advanced", (_, _) => ShowAdvanced()); advanced.Width = 92; secondary.Controls.Add(advanced);
+        restore.AutoSize = false; restore.Size = new Size(94, 36); restore.BackColor = Surface; restore.ForeColor = muted; restore.Click += async (_, _) => await RestoreAsync(); secondary.Controls.Add(restore);
+        var diag = Action("查看诊断", "Diagnostics", (_, _) => ShowDiagnosticsMenu()); diag.Width = 98; secondary.Controls.Add(diag);
+        footer.Controls.Add(secondary, 0, 2);
+        footer.Controls.Add(libraryDownloadProgress, 1, 2);
+        footerSurface.Controls.Add(footer);
+        rows.Controls.Add(toolbar, 0, 0); rows.Controls.Add(games, 0, 1); rows.Controls.Add(footerSurface, 0, 2);
         libraryPage.Controls.Add(rows); pageHost.Controls.Add(libraryPage);
-    }
-    void BuildHome()
-    {
-        homePanel = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-        var stack = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Margin = new Padding(0) };
-        var drop = new RoundedPanel { Height = 320, BackColor = Color.White, Radius = 22, Margin = new Padding(0, 0, 0, 22), Padding = new Padding(26) };
-        var center = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4 };
-        center.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); center.RowStyles.Add(new RowStyle(SizeType.AutoSize)); center.RowStyles.Add(new RowStyle(SizeType.Absolute, 36)); center.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
-        var folder = new Label { Text = "\uE8B7", Font = new Font("Segoe MDL2 Assets", 38), ForeColor = Color.FromArgb(101, 185, 12), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter };
-        var title = Heading("将游戏文件夹拖到这里", "Drop a game folder here", 18); title.Anchor = AnchorStyles.None; title.Margin = new Padding(0, 12, 0, 10);
-        center.Controls.Add(folder, 0, 0); center.Controls.Add(title, 0, 1);
-        center.Controls.Add(Localize(new Label { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, ForeColor = muted }, "或", "or"), 0, 2);
-        var browse = Action("浏览文件夹", "Browse folders", (_, _) => BrowseFolder()); browse.Anchor = AnchorStyles.None; browse.ForeColor = Color.FromArgb(90, 165, 0); browse.BackColor = Color.FromArgb(241, 246, 248); center.Controls.Add(browse, 0, 3);
-        drop.Controls.Add(center); stack.Controls.Add(drop);
-        void AcceptDrop(Control control) { control.AllowDrop = true; control.DragEnter += (_, e) => e.Effect = e.Data?.GetDataPresent(DataFormats.FileDrop) == true ? DragDropEffects.Copy : DragDropEffects.None; control.DragDrop += (_, e) => { if (e.Data?.GetData(DataFormats.FileDrop) is string[] paths && paths.Length > 0) AddPath(paths[0]); }; foreach (Control child in control.Controls) AcceptDrop(child); }
-        AcceptDrop(drop);
-        stack.Controls.Add(Heading("最近的游戏", "Recent games", 15));
-        homeSummary = new Label { AutoSize = true, ForeColor = muted, Margin = new Padding(0, 0, 0, 8) }; stack.Controls.Add(homeSummary); stack.Controls.Add(recentCards);
-        homePanel.Controls.Add(stack);
-        homePanel.ClientSizeChanged += (_, _) => { int w = Math.Max(300, homePanel.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - 8); stack.MaximumSize = new Size(w, 0); stack.Width = w; drop.Width = w; recentCards.MaximumSize = new Size(w, 0); recentCards.Width = w; homeSummary.MaximumSize = new Size(w, 0); };
-        pageHost.Controls.Add(homePanel);
     }
     void SwitchPage(int index)
     {
-        activePage = index; libraryPage.Visible = index == 1; if (homePanel != null) homePanel.Visible = index == 0; if (aboutPanel != null) aboutPanel.Visible = index == 2;
-        for (int i = 0; i < navigation.Count; i++) { navigation[i].BackColor = i == index ? Color.FromArgb(235, 243, 233) : Color.White; navigation[i].ForeColor = i == index ? ink : muted; ((RoundedButton)navigation[i]).Active = i == index; navigation[i].Invalidate(); }
-        if (index == 0) RefreshHome();
+        if (index == 0) index = 1;
+        var changed = activePage != index;
+        activePage = index; libraryPage.Visible = index == 1; if (aboutPanel != null) aboutPanel.Visible = index == 2;
+        downloadsPage.Visible = index == 3; helpPage.Visible = index == 4; settingsPage.Visible = index == 5;
+        for (int i = 0; i < navigation.Count; i++) { bool current = navigationPages[i] == index; navigation[i].BackColor = current ? SelectedSurface : Sidebar; navigation[i].ForeColor = current ? Acid : muted; ((RoundedButton)navigation[i]).Active = current; navigation[i].Invalidate(); }
+        if (index == 3) RenderDownloads();
+        ApplyTheme(darkMode, false);
+        if (changed)
+        {
+            var page = index switch { 1 => libraryPage, 2 => aboutPanel, 3 => downloadsPage, 4 => helpPage, 5 => settingsPage, _ => null };
+            if (page != null) AnimatePageEntrance(page);
+        }
+    }
+
+    void AnimatePageEntrance(Control page)
+    {
+        pageTransition?.Stop(); pageTransition?.Dispose();
+        pageTransition = null;
+        if (transitioningPage is { IsDisposed: false }) transitioningPage.Dock = DockStyle.Fill;
+        transitioningPage = null;
+        var finalBounds = pageHost.ClientRectangle;
+        if (finalBounds.Width <= 0 || finalBounds.Height <= 0) return;
+        if (!SystemInformation.IsMenuAnimationEnabled) { page.Dock = DockStyle.Fill; return; }
+        transitioningPage = page;
+        page.BringToFront(); page.Dock = DockStyle.None;
+        var startOffset = Math.Max(10, (int)Math.Round(18 * DeviceDpi / 96d));
+        page.Bounds = new Rectangle(finalBounds.X + startOffset, finalBounds.Y, finalBounds.Width, finalBounds.Height);
+        var frame = 0;
+        pageTransition = new System.Windows.Forms.Timer { Interval = 15 };
+        pageTransition.Tick += (_, _) =>
+        {
+            frame++;
+            var t = Math.Min(1d, frame / 9d);
+            var eased = 1d - Math.Pow(1d - t, 3d);
+            page.Left = finalBounds.X + (int)Math.Round(startOffset * (1d - eased));
+            if (t < 1d) return;
+            pageTransition!.Stop(); pageTransition.Dispose(); pageTransition = null;
+            page.Bounds = finalBounds; page.Dock = DockStyle.Fill;
+            transitioningPage = null;
+        };
+        pageTransition.Start();
     }
     void RefreshHome()
     {
-        if (homeSummary == null) return;
-        while (recentCards.Controls.Count > 0) { var c = recentCards.Controls[0]; recentCards.Controls.Remove(c); c.Dispose(); }
-        var file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AMD-NR-Assistant", "configured-games.txt");
-        var paths = File.Exists(file) ? File.ReadAllLines(file).Where(File.Exists).Distinct(StringComparer.OrdinalIgnoreCase).Reverse().ToList() : new List<string>();
-        if (Directory.Exists(GameManagement.Root))
-            foreach (var recordPath in Directory.EnumerateFiles(GameManagement.Root, "record.json", SearchOption.AllDirectories))
-            {
-                try
-                {
-                    Core.RejectLinks(recordPath);
-                    var record = System.Text.Json.JsonSerializer.Deserialize<GameRecord>(File.ReadAllText(recordPath));
-                    if (record != null && record.Phase != "restored" && File.Exists(record.Exe) && !paths.Contains(record.Exe, StringComparer.OrdinalIgnoreCase)) paths.Insert(0, record.Exe);
-                }
-                catch { /* Corrupt records remain available to diagnostics; do not break the library. */ }
-            }
-        foreach (var path in paths)
+        foreach (Control card in games.Controls)
         {
-            var game = libraryGames.FirstOrDefault(g => string.Equals(g.ExePath, path, StringComparison.OrdinalIgnoreCase) || (!string.IsNullOrEmpty(g.InstallDirectory) && path.StartsWith(g.InstallDirectory + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)));
-            game ??= new GameCandidate { Title = Path.GetFileNameWithoutExtension(path), ExePath = path };
-            recentCards.Controls.Add(CreateGameCard(game));
+            if (card.Tag is not GameCandidate game) continue;
+            var labels = card.Controls.OfType<Label>().ToArray();
+            if (labels.Length > 1) labels[1].Text = IsConfigured(game.ExePath)
+                ? (english ? "Configured · runtime unverified" : "已配置 · 待验证")
+                : (english ? "Not configured" : "未配置");
         }
-        homeSummary.Text = paths.Count == 0 ? (english ? "No recent games. Add a folder above to get started." : "暂无最近游戏。拖入文件夹或浏览添加即可开始。") : (english ? $"{paths.Count} recent configuration records · click a cover to manage" : $"{paths.Count} 个最近配置记录 · 点击封面管理");
+        FilterGames();
     }
     void BrowseFolder() { using var d = new FolderBrowserDialog(); if (d.ShowDialog(this) == DialogResult.OK) AddPath(d.SelectedPath); }
     void AddPath(string path)
@@ -174,7 +267,13 @@ public sealed partial class MainForm
                 libraryGames.Add(game);
                 games.Controls.Add(CreateGameCard(game));
             }
-            if (selectedCard != null) { selectedCard.BorderColor = default; selectedCard.Invalidate(); }
+            if (selectedCard != null)
+            {
+                selectedCard.Selected = false;
+                selectedCard.Hovered = false;
+                foreach (var badge in selectedCard.Controls.OfType<GameSelectionBadge>()) badge.Visible = false;
+                selectedCard.Invalidate();
+            }
             selectedGame = path;
             selected.Text = (english ? "Selected: " : "已选择：") + game.Title;
             SwitchPage(1);
@@ -182,9 +281,16 @@ public sealed partial class MainForm
             if (card != null)
             {
                 games.ScrollControlIntoView(card);
-                if (card is RoundedPanel rounded) { selectedCard = rounded; rounded.BorderColor = Color.FromArgb(92, 178, 0); rounded.Invalidate(); }
+                if (card is RoundedPanel rounded)
+                {
+                    selectedCard = rounded;
+                    rounded.Selected = true;
+                    foreach (var badge in rounded.Controls.OfType<GameSelectionBadge>()) { badge.Visible = true; badge.BringToFront(); }
+                    rounded.Invalidate();
+                }
             }
-            status.Text = english ? "Added and saved. Select a mode and configure." : "已添加到游戏库并保存。请选择模式后配置。";
+            status.Text = english ? "Added and saved. Ready to configure." : "已添加到游戏库，点击一键配置即可。";
+            LayoutGameCards();
             UpdateButtons();
         }
         catch (Exception e) { MessageBox.Show(this, e.Message, english ? "Could not add game" : "添加失败", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
@@ -193,6 +299,9 @@ public sealed partial class MainForm
     {
         foreach (var (control, zh, englishText) in translations) control.Text = en ? englishText : zh;
         install.Text = en ? "Configure" : "一键配置"; restore.Text = en ? "Restore" : "恢复配置";
+        scan.Text = en ? "Rescan" : "重新扫描";
+        launch.Text = en ? "Launch game" : "启动游戏";
+        UpdateThemeToggleText();
         var selectedIndex = installMode.SelectedIndex;
         installMode.Items.Clear();
         installMode.Items.Add(en ? "Mode 1 (recommended) — official runtime" : "模式一（推荐）— 官方运行时");

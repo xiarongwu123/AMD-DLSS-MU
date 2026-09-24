@@ -42,6 +42,16 @@ public sealed partial class MainForm
             return;
         }
         base.WndProc(ref m);
+        // Preserve desktop resize behavior after introducing custom window chrome.
+        if (m.Msg == 0x84 && m.Result == (IntPtr)1 && WindowState == FormWindowState.Normal)
+        {
+            var packed = m.LParam.ToInt64();
+            var point = PointToClient(new Point((short)(packed & 0xffff), (short)((packed >> 16) & 0xffff)));
+            var edge = Math.Max(5, (int)Math.Round(6 * DeviceDpi / 96d));
+            bool left = point.X < edge, right = point.X >= ClientSize.Width - edge;
+            bool top = point.Y < edge, bottom = point.Y >= ClientSize.Height - edge;
+            m.Result = (IntPtr)(top ? left ? 13 : right ? 14 : 12 : bottom ? left ? 16 : right ? 17 : 15 : left ? 10 : right ? 11 : 1);
+        }
     }
     void OpenPanel()
     {

@@ -50,8 +50,17 @@ public static class AutoUpdate
             using var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
             await DownloadSources.DownloadAsync(client, release.Url, release.ApiUrl, release.Sha256,
                 release.Size, partial, progress, token, status);
+            DownloadSources.CurrentSession.Value?.Report("正在校验", 100, release.Size, "核对 EXE 架构与内部版本");
             await Task.Run(() => Verify(partial, release.Sha256, release.Size, release.Tag[1..]), token);
-            token.ThrowIfCancellationRequested(); File.Move(partial, result); return result;
+            token.ThrowIfCancellationRequested(); File.Move(partial, result);
+            DownloadSources.CurrentSession.Value?.Report("已完成 · 校验通过", 100, release.Size, "SHA-256、EXE 架构与版本校验通过");
+            return result;
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            var session = DownloadSources.CurrentSession.Value;
+            session?.Report("下载失败", session.Percent, release.Size, e.Message);
+            throw;
         }
         finally { if (File.Exists(partial)) File.Delete(partial); }
     }

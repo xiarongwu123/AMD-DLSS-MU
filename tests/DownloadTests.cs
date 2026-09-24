@@ -54,5 +54,47 @@ public static class DownloadTests
         using var metadataClient = new HttpClient(metadataDown);
         var release = await Core.GetReleaseAsync(metadataClient, default);
         assert(release.Tag == Core.ReviewedTag && release.Sha256 == Core.ReviewedInstallerSha256, "metadata outage falls back to pinned mode1 release");
+        using var session = new DownloadSession();
+        var snapshots = new List<DownloadSnapshot>();
+        session.Changed = snapshots.Add;
+        session.Report("下载中", 20, bytes.Length, "source");
+        session.TogglePause();
+        var wait = session.WaitAsync(default);
+        assert(session.Paused && !wait.IsCompleted, "pause gate prevents subsequent reads");
+        session.TogglePause();
+        await wait.WaitAsync(TimeSpan.FromSeconds(1));
+        assert(!session.Paused, "resume releases read gate");
+        session.TogglePause();
+        using var stop = new CancellationTokenSource();
+        var pausedWait = session.WaitAsync(stop.Token);
+        stop.Cancel();
+        bool pausedCancelled = false;
+        try { await pausedWait; } catch (OperationCanceledException) { pausedCancelled = true; }
+        assert(pausedCancelled, "paused download remains cancellable");
+        session.TogglePause();
+        DownloadSources.CurrentSession.Value = session;
+        try
+        {
+            await DownloadSources.DownloadAsync(client, direct, api, hash, bytes.Length, target, new ProgressSink(), default);
+            assert(snapshots.Last().State == "已完成 · 校验通过" && snapshots.Last().Percent == 100, "task completes only after verified download");
+            try { await DownloadSources.DownloadAsync(failClient, direct, api, hash, bytes.Length, target, new ProgressSink(), default); } catch (IOException) { }
+            assert(snapshots.Last().State == "下载失败", "bad digest produces failed task not completed");
+        }
+        finally { DownloadSources.CurrentSession.Value = null; }
+        var disposable = new DownloadSession();
+        DownloadSources.CurrentSession.Value = disposable;
+        disposable.Dispose();
+        assert(DownloadSources.CurrentSession.Value == null, "disposing task clears ambient download session");
+        using var cancelSession = new DownloadSession();
+        cancelSession.Report("连接中", 0, bytes.Length, "source"); cancelSession.Cancel();
+        DownloadSources.CurrentSession.Value = cancelSession;
+        try
+        {
+            var beforeCalls = handler.Calls; bool taskCancelled = false;
+            try { await DownloadSources.DownloadAsync(client, direct, api, hash, bytes.Length, target, new ProgressSink(), default); }
+            catch (OperationCanceledException) { taskCancelled = true; }
+            assert(taskCancelled && handler.Calls == beforeCalls, "task cancellation reaches downloader without starting request");
+        }
+        finally { DownloadSources.CurrentSession.Value = null; }
     }
 }

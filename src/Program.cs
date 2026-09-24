@@ -618,11 +618,42 @@ public static class GameScanner
     }
 }
 
+internal static class UiPaint
+{
+    internal static Color OpaqueBackground(Control? control)
+    {
+        while (control != null)
+        {
+            if (control.BackColor.A == 255) return control.BackColor;
+            control = control.Parent;
+        }
+        return MainForm.Base;
+    }
+}
+
 public sealed class RoundedPanel : Panel
 {
+    readonly System.Windows.Forms.Timer motion = new() { Interval = 15 };
+    bool selected;
+    bool hovered;
+    float emphasis;
+    float lift;
+
     public int Radius { get; set; } = 14;
 
     public Color BorderColor { get; set; } = default;
+
+    public bool Selected
+    {
+        get => selected;
+        set { if (selected == value) return; selected = value; StartMotion(); }
+    }
+
+    public bool Hovered
+    {
+        get => hovered;
+        set { if (hovered == value) return; hovered = value; StartMotion(); }
+    }
 
     public RoundedPanel()
     {
@@ -631,6 +662,47 @@ public sealed class RoundedPanel : Panel
             ControlStyles.AllPaintingInWmPaint |
             ControlStyles.OptimizedDoubleBuffer,
             true);
+
+        motion.Tick += (_, _) =>
+        {
+            if (hovered && (!Visible || !ClientRectangle.Contains(PointToClient(Cursor.Position)))) hovered = false;
+            var target = selected ? 1f : hovered ? .38f : 0f;
+            emphasis += (target - emphasis) * .28f;
+            if (Tag is GameCandidate)
+            {
+                var targetLift = hovered ? 5f * DeviceDpi / 96f : 0f;
+                lift += (targetLift - lift) * .28f;
+                if (Math.Abs(lift - targetLift) < .1f) lift = targetLift;
+                var offset = (int)Math.Round(lift);
+                var top = (int)Math.Round(8 * DeviceDpi / 96d);
+                var bottom = (int)Math.Round(16 * DeviceDpi / 96d);
+                Margin = new Padding(0, top - offset, Margin.Right, bottom + offset);
+            }
+            if (Math.Abs(target - emphasis) < .015f)
+            {
+                emphasis = target;
+                if (!hovered && lift == 0) motion.Stop();
+            }
+            Invalidate(true);
+        };
+    }
+
+    void StartMotion() { if (!motion.Enabled) motion.Start(); Invalidate(); }
+
+    static Color Mix(Color from, Color to, float amount)
+    {
+        amount = Math.Clamp(amount, 0f, 1f);
+        return Color.FromArgb(
+            (int)(from.A + (to.A - from.A) * amount),
+            (int)(from.R + (to.R - from.R) * amount),
+            (int)(from.G + (to.G - from.G) * amount),
+            (int)(from.B + (to.B - from.B) * amount));
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) motion.Dispose();
+        base.Dispose(disposing);
     }
 
     protected override void OnSizeChanged(EventArgs e)
@@ -726,29 +798,71 @@ public sealed class RoundedPanel : Panel
 
         path.CloseFigure();
 
-        e.Graphics.Clear(Parent?.BackColor ?? BackColor);
+        e.Graphics.Clear(UiPaint.OpaqueBackground(Parent));
 
         e.Graphics.SmoothingMode =
             System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-        using var brush = new SolidBrush(BackColor);
+        var fill = Mix(BackColor, MainForm.SelectedSurface, emphasis * .46f);
+        using var brush = new SolidBrush(fill);
 
         e.Graphics.FillPath(brush, path);
 
         var borderColor = BorderColor == default
-            ? Color.FromArgb(220, 226, 232)
+            ? Mix(MainForm.Line, selected ? MainForm.Acid : MainForm.Muted, emphasis)
             : BorderColor;
 
-        var borderWidth = BorderColor == default ? 1 : 2;
+        var borderWidth = BorderColor == default ? 1f + emphasis * 2f : selected ? 3f : 2f;
 
         using var pen = new Pen(borderColor, borderWidth);
+
+        // Keep the stroke inside the rounded region so child controls and the
+        // window edge cannot clip the selected outline.
+        pen.Alignment = System.Drawing.Drawing2D.PenAlignment.Inset;
 
         e.Graphics.DrawPath(pen, path);
     }
 }
 
+public sealed class GameSelectionBadge : Control
+{
+    public GameSelectionBadge()
+    {
+        Size = new Size(30, 30);
+        Visible = false;
+        SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+                 ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor, true);
+        BackColor = Color.Transparent;
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+        using var fill = new SolidBrush(MainForm.Acid);
+        using var path = new System.Drawing.Drawing2D.GraphicsPath();
+        path.AddArc(1, 1, 9, 9, 180, 90);
+        path.AddArc(Width - 11, 1, 9, 9, 270, 90);
+        path.AddArc(Width - 11, Height - 11, 9, 9, 0, 90);
+        path.AddArc(1, Height - 11, 9, 9, 90, 90);
+        path.CloseFigure();
+        e.Graphics.FillPath(fill, path);
+        using var font = new Font("Segoe UI", 12f, FontStyle.Bold);
+        TextRenderer.DrawText(e.Graphics, "✓", font, ClientRectangle, MainForm.OnAccent,
+            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+    }
+}
+
 public sealed class RoundedButton : Button
 {
+    bool hot;
+    bool pressed;
+    float hoverAmount;
+    float flash;
+    float pressAmount;
+    public bool TrailingArrow { get; set; }
+    public bool LightningEffect { get; set; }
+    readonly System.Windows.Forms.Timer motion = new() { Interval = 15 };
+    public bool Chamfer { get; set; }
     public string Glyph { get; set; } = "";
 
     public bool Active { get; set; }
@@ -768,6 +882,32 @@ public sealed class RoundedButton : Button
             ControlStyles.AllPaintingInWmPaint |
             ControlStyles.OptimizedDoubleBuffer,
             true);
+
+        Cursor = Cursors.Hand;
+        motion.Tick += (_, _) =>
+        {
+            var target = hot ? 1f : 0f;
+            hoverAmount += (target - hoverAmount) * .3f;
+            var pressTarget = pressed && Enabled ? 1f : 0f;
+            pressAmount += (pressTarget - pressAmount) * .35f;
+            if (Math.Abs(pressTarget - pressAmount) < .02f) pressAmount = pressTarget;
+            flash = Math.Max(0, flash - .055f);
+            if (Math.Abs(target - hoverAmount) < .02f) { hoverAmount = target; if (flash == 0 && pressAmount == pressTarget) motion.Stop(); }
+            Invalidate();
+        };
+    }
+
+    protected override void OnMouseEnter(EventArgs e) { hot = true; motion.Start(); Invalidate(); base.OnMouseEnter(e); }
+    protected override void OnMouseLeave(EventArgs e) { hot = pressed = false; motion.Start(); Invalidate(); base.OnMouseLeave(e); }
+    protected override void OnMouseDown(MouseEventArgs e) { if (e.Button == MouseButtons.Left) pressed = true; motion.Start(); Invalidate(); base.OnMouseDown(e); }
+    protected override void OnMouseUp(MouseEventArgs e) { pressed = false; motion.Start(); Invalidate(); base.OnMouseUp(e); }
+    protected override void OnKeyDown(KeyEventArgs e) { if (e.KeyCode == Keys.Space) { pressed = true; motion.Start(); } base.OnKeyDown(e); }
+    protected override void OnKeyUp(KeyEventArgs e) { pressed = false; motion.Start(); base.OnKeyUp(e); }
+    protected override void OnLostFocus(EventArgs e) { pressed = false; motion.Start(); base.OnLostFocus(e); }
+    protected override void OnClick(EventArgs e)
+    {
+        if (LightningEffect) { flash = 1f; motion.Start(); Invalidate(); }
+        base.OnClick(e);
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -808,26 +948,67 @@ public sealed class RoundedButton : Button
             90);
 
         path.CloseFigure();
+        if (Chamfer)
+        {
+            path.Reset();
+            var cut = Math.Max(5, (int)(7 * DeviceDpi / 96f));
+            path.AddPolygon(new Point[] { new(cut, 0), new(Width - 1, 0), new(Width - 1, Height - cut), new(Width - cut, Height - 1), new(0, Height - 1), new(0, cut) });
+        }
+        e.Graphics.Clear(UiPaint.OpaqueBackground(Parent));
 
-        e.Graphics.Clear(Parent?.BackColor ?? BackColor);
+        var paintState = e.Graphics.Save();
+        var insetPress = pressAmount * 1.5f * DeviceDpi / 96f;
+        e.Graphics.TranslateTransform(insetPress, insetPress);
+        e.Graphics.ScaleTransform(Math.Max(.9f, (Width - insetPress * 2) / Math.Max(1, Width)), Math.Max(.9f, (Height - insetPress * 2) / Math.Max(1, Height)));
 
         e.Graphics.SmoothingMode =
             System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-        var fillColor = Enabled
-            ? BackColor
-            : Color.FromArgb(226, 231, 236);
+        var visuallyEnabled = Enabled || flash > 0;
+        var fillColor = visuallyEnabled ? BackColor : MainForm.Line;
+        if (Enabled && hoverAmount > 0)
+        {
+            var hoverColor = BackColor == MainForm.Surface
+                ? MainForm.SelectedSurface
+                : ControlPaint.Light(BackColor, pressed ? .02f : .08f);
+            fillColor = Color.FromArgb(
+                (int)(fillColor.A + (hoverColor.A - fillColor.A) * hoverAmount),
+                (int)(fillColor.R + (hoverColor.R - fillColor.R) * hoverAmount),
+                (int)(fillColor.G + (hoverColor.G - fillColor.G) * hoverAmount),
+                (int)(fillColor.B + (hoverColor.B - fillColor.B) * hoverAmount));
+        }
 
         using var brush = new SolidBrush(fillColor);
 
         e.Graphics.FillPath(brush, path);
 
+        if (BackColor == MainForm.Surface || BackColor == MainForm.SelectedSurface)
+        {
+            using var border = new Pen(hot ? MainForm.Acid : MainForm.Line, hot ? 1.4f : 1f)
+            { Alignment = System.Drawing.Drawing2D.PenAlignment.Inset };
+            e.Graphics.DrawPath(border, path);
+        }
+
         var bounds = ClientRectangle;
+        if (TrailingArrow)
+        {
+            var inset = (int)(24 * DeviceDpi / 96f);
+            bounds = new Rectangle(inset, 0, Math.Max(1, Width - inset * 3), Height);
+            var shift = (int)(3 * hoverAmount * DeviceDpi / 96f);
+            var x = Width - inset + shift;
+            var y = Height / 2 - (int)(3 * DeviceDpi / 96f);
+            var size = 6 * DeviceDpi / 96f;
+            using var arrow = new Pen(visuallyEnabled ? ForeColor : MainForm.Muted, 2 * DeviceDpi / 96f);
+            e.Graphics.DrawLine(arrow, x - size, y, x, y + size);
+            e.Graphics.DrawLines(arrow, new PointF[] { new(x - size, y + size), new(x, y + size), new(x, y) });
+        }
 
         if (Glyph.Length > 0)
         {
             var inset = (int)(16 * DeviceDpi / 96f);
-            var iconWidth = (int)(28 * DeviceDpi / 96f);
+            var iconWidth = (int)(26 * DeviceDpi / 96f);
+            var gap = (int)(8 * DeviceDpi / 96f);
+            if (string.IsNullOrEmpty(Text)) inset = (Width - iconWidth) / 2;
 
             using var iconFont =
                 new Font("Segoe MDL2 Assets", 14);
@@ -841,16 +1022,16 @@ public sealed class RoundedButton : Button
                     0,
                     iconWidth,
                     Height),
-                ForeColor,
+                visuallyEnabled ? ForeColor : MainForm.Muted,
                 TextFormatFlags.VerticalCenter |
-                TextFormatFlags.HorizontalCenter);
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPadding);
 
             bounds = new Rectangle(
-                inset + iconWidth + 8,
+                inset + iconWidth + gap,
                 0,
                 Math.Max(
                     1,
-                    Width - inset - iconWidth - 32),
+                    Width - inset * 2 - iconWidth - gap),
                 Height);
         }
 
@@ -859,27 +1040,135 @@ public sealed class RoundedButton : Button
             Text,
             Font,
             bounds,
-            Enabled
+            visuallyEnabled
                 ? ForeColor
-                : Color.FromArgb(155, 163, 172),
-            (Glyph.Length == 0
+                : MainForm.Muted,
+            (Glyph.Length == 0 && !TrailingArrow
                 ? TextFormatFlags.HorizontalCenter
                 : TextFormatFlags.Left) |
             TextFormatFlags.VerticalCenter |
             TextFormatFlags.EndEllipsis);
 
+        if (flash > 0)
+        {
+            var state = e.Graphics.Save();
+            e.Graphics.SetClip(path);
+            var x = Width * (1 - flash);
+            using var glow = new SolidBrush(Color.FromArgb((int)(90 * flash), MainForm.OnAccent));
+            e.Graphics.FillPolygon(glow, new PointF[] { new(x - 30, 0), new(x + 12, 0), new(x - 8, Height), new(x - 50, Height) });
+            using var boltFont = new Font("Segoe MDL2 Assets", 24);
+            TextRenderer.DrawText(e.Graphics, "\uE945", boltFont, new Rectangle(Width - Height, 0, Height, Height), MainForm.OnAccent,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+            e.Graphics.Restore(state);
+        }
         if (Active)
         {
             using var dot = new SolidBrush(
-                Color.FromArgb(101, 185, 12));
+                MainForm.Acid);
 
-            e.Graphics.FillEllipse(
+            e.Graphics.FillRectangle(
                 dot,
-                Width - 20,
-                Height / 2 - 4,
-                8,
-                8);
+                0, 10, 3, Height - 20);
         }
+        if (Focused && ShowFocusCues) ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(ClientRectangle, -4, -4), ForeColor, BackColor);
+        e.Graphics.Restore(paintState);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) motion.Dispose();
+        base.Dispose(disposing);
+    }
+}
+
+public sealed class AccentProgressBar : Control
+{
+    int value;
+    float displayedValue;
+    readonly System.Windows.Forms.Timer motion = new() { Interval = 15 };
+    public int Value
+    {
+        get => value;
+        set
+        {
+            this.value = Math.Clamp(value, 0, 100);
+            if (this.value < displayedValue || !Visible) displayedValue = this.value;
+            motion.Start();
+            Invalidate();
+        }
+    }
+    public AccentProgressBar()
+    {
+        SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
+        motion.Tick += (_, _) =>
+        {
+            displayedValue += (value - displayedValue) * .22f;
+            if (Math.Abs(value - displayedValue) < .1f) { displayedValue = value; motion.Stop(); }
+            Invalidate();
+        };
+    }
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        e.Graphics.Clear(MainForm.Line);
+        if (displayedValue <= 0) return;
+        using var brush = new SolidBrush(MainForm.Acid);
+        e.Graphics.FillRectangle(brush, 0, 0, Math.Max(1, Width * displayedValue / 100), Height);
+    }
+    protected override void Dispose(bool disposing) { if (disposing) motion.Dispose(); base.Dispose(disposing); }
+}
+
+public sealed class UnderlineTabButton : Button
+{
+    bool selected;
+    bool hot;
+    float selectionAmount;
+    readonly System.Windows.Forms.Timer motion = new() { Interval = 15 };
+    public bool Selected { get => selected; set { selected = value; motion.Start(); Invalidate(); } }
+    public UnderlineTabButton()
+    {
+        FlatStyle = FlatStyle.Flat;
+        FlatAppearance.BorderSize = 0;
+        UseVisualStyleBackColor = false;
+        BackColor = Color.Transparent;
+        Cursor = Cursors.Hand;
+        Margin = new Padding(0, 0, 12, 0);
+        SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+                 ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor, true);
+        motion.Tick += (_, _) =>
+        {
+            var target = selected ? 1f : 0f;
+            selectionAmount += (target - selectionAmount) * .32f;
+            if (Math.Abs(target - selectionAmount) < .02f) { selectionAmount = target; motion.Stop(); }
+            Invalidate();
+        };
+    }
+    protected override void OnMouseEnter(EventArgs e) { hot = true; Invalidate(); base.OnMouseEnter(e); }
+    protected override void OnMouseLeave(EventArgs e) { hot = false; Invalidate(); base.OnMouseLeave(e); }
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        e.Graphics.Clear(Parent?.BackColor ?? MainForm.Base);
+        var color = selected ? MainForm.Acid : hot ? MainForm.Ink : MainForm.Muted;
+        if (hot && !selected)
+        {
+            using var hoverBrush = new SolidBrush(Color.FromArgb(14, MainForm.Acid));
+            e.Graphics.FillRectangle(hoverBrush, 4, 3, Width - 8, Height - 8);
+        }
+        TextRenderer.DrawText(e.Graphics, Text, Font, new Rectangle(0, 0, Width, Height - 5), color,
+            TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.EndEllipsis);
+        if (selectionAmount > 0)
+        {
+            using var brush = new SolidBrush(MainForm.Acid);
+            var underlineWidth = Math.Max(2, (int)((Width - 18) * selectionAmount));
+            e.Graphics.FillRectangle(brush, (Width - underlineWidth) / 2, Height - 3, underlineWidth, 3);
+        }
+        if (Focused && ShowFocusCues)
+            ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(ClientRectangle, -3, -4), color, BackColor);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) motion.Dispose();
+        base.Dispose(disposing);
     }
 }
 
@@ -912,6 +1201,13 @@ public sealed class CoverPictureBox : PictureBox
         var scale = Math.Min(
             (float)Width / Image.Width,
             (float)Height / Image.Height);
+
+        // Executable icons are not posters. Keep the fallback small and crisp.
+        if (Tag is not true)
+        {
+            var iconLimit = 72f * DeviceDpi / 96f;
+            scale = Math.Min(scale, Math.Min(iconLimit / Image.Width, iconLimit / Image.Height));
+        }
 
         var width = Image.Width * scale;
         var height = Image.Height * scale;
@@ -1011,9 +1307,6 @@ public sealed partial class MainForm : Form
     RoundedPanel? selectedCard;
 
     Panel? aboutPanel;
-    Panel? homePanel;
-
-    Label? homeSummary;
 
     bool english;
 
@@ -1021,6 +1314,7 @@ public sealed partial class MainForm : Form
     {
         if (busy || !scan.Enabled) return;
         scan.Enabled = false;
+        scan.Text = english ? "Scanning…" : "扫描中…";
         progress.Visible = true;
 
         status.Text = "正在扫描游戏目录…";
@@ -1049,6 +1343,7 @@ public sealed partial class MainForm : Form
                 card.Visible = game.Title.Contains(librarySearch.Text, StringComparison.OrdinalIgnoreCase);
                 games.Controls.Add(card);
             }
+            FilterGames();
 
             status.Text = list.Count == 0
                 ? "没有找到游戏。可以使用“添加游戏”选择 EXE。"
@@ -1074,6 +1369,7 @@ public sealed partial class MainForm : Form
         finally
         {
             scan.Enabled = true;
+            scan.Text = english ? "Rescan" : "重新扫描";
             progress.Visible = false;
         }
     }
@@ -1156,6 +1452,8 @@ public sealed partial class MainForm : Form
 
                     picture.Image = new Bitmap(source);
                     picture.SizeMode = PictureBoxSizeMode.Zoom;
+                    picture.Tag = true;
+                    LayoutGameCards();
 
                     previousImage?.Dispose();
                 }
@@ -1173,9 +1471,9 @@ public sealed partial class MainForm : Form
         {
             Width = 230,
             Height = 411,
-            Margin = new Padding(10),
-            Padding = new Padding(1),
-            BackColor = Color.White,
+            Margin = new Padding(0, 0, 16, 16),
+            Padding = new Padding(3),
+            BackColor = Surface,
             Cursor = Cursors.Hand,
             Tag = game,
             Radius = 14
@@ -1197,20 +1495,23 @@ public sealed partial class MainForm : Form
 
         var icon = new CoverPictureBox
         {
-            Width = 226,
-            Height = 339,
-            Location = new Point(2, 2),
-            BackColor = Color.FromArgb(225, 231, 236),
-            Image = image
+            Width = 224,
+            Height = 337,
+            Location = new Point(3, 3),
+            BackColor = Surface,
+            Image = image,
+            Tag = game.CoverPath != null
         };
+        icon.Disposed += (_, _) => icon.Image?.Dispose();
 
         var title = new Label
         {
+            BackColor = Color.Transparent,
             Text = game.Title,
             Location = new Point(14, 352),
             Width = 208,
             Height = 24,
-            Font = new Font(Font, FontStyle.Bold),
+            Font = new Font(Font.FontFamily, 9.5f, FontStyle.Bold),
             AutoEllipsis = true
         };
 
@@ -1218,9 +1519,7 @@ public sealed partial class MainForm : Form
 
         try
         {
-            ready = Core.CheckInstalled(
-                    Path.GetDirectoryName(game.ExePath)!)
-                .Ready;
+            ready = IsConfigured(game.ExePath);
         }
         catch
         {
@@ -1229,6 +1528,7 @@ public sealed partial class MainForm : Form
 
         var availability = new Label
         {
+            BackColor = Color.Transparent,
             Text = ready
                 ? english
                     ? "Files present · runtime unverified"
@@ -1240,8 +1540,14 @@ public sealed partial class MainForm : Form
             Location = new Point(14, 381),
             Width = 202,
             Height = 24,
-            ForeColor = Color.FromArgb(78, 158, 0),
+            ForeColor = muted,
             AutoEllipsis = true
+        };
+
+        var selectedBadge = new GameSelectionBadge
+        {
+            Location = new Point(card.Width - 40, 12),
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
         };
 
         void Pick(object? sender, EventArgs eventArgs)
@@ -1249,15 +1555,16 @@ public sealed partial class MainForm : Form
             if (busy) return;
             if (selectedCard is not null)
             {
-                selectedCard.BorderColor = default;
+                selectedCard.Selected = false;
+                selectedCard.Hovered = false;
+                foreach (var badge in selectedCard.Controls.OfType<GameSelectionBadge>()) badge.Visible = false;
                 selectedCard.Invalidate();
             }
 
             selectedCard = card;
-
-            card.BorderColor =
-                Color.FromArgb(92, 178, 0);
-
+            card.Selected = true;
+            selectedBadge.Visible = true;
+            selectedBadge.BringToFront();
             card.Invalidate();
 
             selectedGame = game.ExePath;
@@ -1268,10 +1575,11 @@ public sealed partial class MainForm : Form
                 ? "Selected: " + game.Title
                 : "已选择：" + game.Title;
 
+            ready = IsConfigured(game.ExePath);
             status.Text = ready
                 ? english
-                    ? "DLSS 5 is configured. Enable FSR and press End in game."
-                    : "此游戏已配置 DLSS 5；启动游戏并启用 FSR后按 End。"
+                    ? "Configured · runtime unverified"
+                    : "已配置 · 等待游戏内验证"
                 : english
                     ? "You can now click Configure."
                     : "现在可以点击“一键配置”。";
@@ -1284,15 +1592,27 @@ public sealed partial class MainForm : Form
                      card,
                      icon,
                      title,
-                     availability
+                     availability,
+                     selectedBadge
                  })
         {
             control.Click += Pick;
+            control.MouseEnter += (_, _) =>
+            {
+                card.Hovered = true;
+            };
+            control.MouseLeave += (_, _) =>
+            {
+                if (!card.ClientRectangle.Contains(card.PointToClient(Cursor.Position)))
+                    card.Hovered = false;
+            };
         }
 
         card.Controls.Add(icon);
         card.Controls.Add(title);
         card.Controls.Add(availability);
+        card.Controls.Add(selectedBadge);
+        selectedBadge.BringToFront();
 
         return card;
     }
@@ -1326,6 +1646,11 @@ public sealed partial class MainForm : Form
         if (busy) return;
         var targetExe = selectedGame;
         var chosenMode = SelectedInstallMode;
+        using var downloadSession = BeginDownloadSession(Path.GetFileNameWithoutExtension(targetExe) + " · " + (chosenMode == InstallMode.Official ? "模式一组件" : "OptiScaler"), async () =>
+        {
+            selectedGame = targetExe; installMode.SelectedIndex = chosenMode == InstallMode.Official ? 0 : 1;
+            selected.Text = Path.GetFileNameWithoutExtension(targetExe); await InstallAsync();
+        });
         Diagnostics.Record(targetExe, "install", "start", chosenMode.ToString());
         busy = true;
         libraryPage.Enabled = false;
@@ -1433,7 +1758,7 @@ public sealed partial class MainForm : Form
                 catch (Exception networkError)
                     when (networkError is HttpRequestException ||
                           networkError is TaskCanceledException &&
-                          !lifetime.IsCancellationRequested)
+                          !lifetime.IsCancellationRequested && !downloadSession.Token.IsCancellationRequested)
                 {
                     Diagnostics.Record(targetExe, "network", "failed", networkError.ToString());
                     cachedInstaller =
@@ -1608,15 +1933,6 @@ public sealed partial class MainForm : Form
                 $"配置完成（代理：{check.ProxyName}）。" +
                 "启动游戏并启用 FSR，按 End 打开菜单。";
 
-            MessageBox.Show(
-                this,
-                "配置已完成。请启动游戏并启用 FSR；" +
-                "进入游戏后按 End 打开菜单。\n\n" +
-                "如果 End 无反应，请检查游戏 EXE 目录是否存在代理 DLL、" +
-                "dlssnr_on_amd.ini 和 dlssnr_on_amd_weights.bin。",
-                "AMD DLSS MU",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
         }
         catch (OperationCanceledException)
         {
@@ -1662,11 +1978,12 @@ public sealed partial class MainForm : Form
                 if (GameManagement.Read(targetExe) is { Phase: "installing" })
                     GameManagement.Finish(targetExe, completed);
             }
-            catch (Exception e) { status.Text = "安装记录未完成，请保留现场：" + e.Message; }
+            catch (Exception e) { completed = false; status.Text = "安装记录未完成，请保留现场：" + e.Message; }
             busy = false;
             libraryPage.Enabled = true;
             UpdateButtons();
         }
+        if (completed) ShowConfigurationComplete(targetExe, false);
     }
 
     async Task<ReleaseInfo?> CheckReleaseAsync()
@@ -1729,8 +2046,12 @@ public sealed partial class MainForm : Form
             var record = selectedGame == null ? null : GameManagement.Read(selectedGame);
             transactionState = null;
             install.Enabled = !busy && selectedGame != null && (record == null || record.Phase == "restored");
+            bool ready = selectedGame != null && IsConfigured(selectedGame);
+            launch.Visible = ready; launch.Enabled = ready && !busy;
+            install.Visible = !ready;
             restore.Enabled = !busy && selectedGame != null;
+            FilterGames();
         }
-        catch (Exception e) { install.Enabled = restore.Enabled = false; status.Text = e.Message; }
+        catch (Exception e) { launch.Enabled = install.Enabled = restore.Enabled = false; status.Text = e.Message; }
     }
 }
