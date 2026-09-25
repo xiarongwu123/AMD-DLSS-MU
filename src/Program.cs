@@ -43,6 +43,14 @@ public sealed class GameCandidate
 
 public static class GameScanner
 {
+    static readonly HashSet<string> nonGameProducts = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Launcher", "Social Club", "Epic Online Services", "Rockstar Games Launcher",
+        "Ubisoft Game Launcher", "Steamworks Shared", "wallpaper_engine"
+    };
+
+    static bool IsGameProduct(string title) => !nonGameProducts.Contains(title.Trim());
+
     static readonly string[] ignoredFiles =
     [
         "unins",
@@ -129,6 +137,8 @@ public static class GameScanner
 
                 var title = Path.GetFileName(directory);
 
+                if (!IsGameProduct(title)) continue;
+
                 steamIds.TryGetValue(title, out var appId);
 
                 try
@@ -158,6 +168,7 @@ public static class GameScanner
         foreach (var entry in GameLibrary.DiscoverRegistered())
         {
             token.ThrowIfCancellationRequested();
+            if (!IsGameProduct(entry.Title)) continue;
             var exe = entry.Exe ?? FindGameExe(entry.Directory);
             if (exe != null && !found.ContainsKey(exe))
                 found[exe] = new GameCandidate { Title = entry.Title, ExePath = exe, InstallDirectory = entry.Directory };
@@ -799,10 +810,10 @@ public class RoundedPanel : Panel
         e.Graphics.FillPath(brush, path);
 
         var borderColor = BorderColor == default
-            ? Mix(MainForm.Line, selected ? MainForm.Acid : MainForm.Muted, emphasis)
+            ? Mix(MainForm.Line, MainForm.Acid, emphasis * .92f)
             : BorderColor;
 
-        var borderWidth = BorderColor == default ? 1f + emphasis * 2f : selected ? 3f : 2f;
+        var borderWidth = BorderColor == default ? 1f + emphasis * 2f : selected ? 3f : 1.2f;
 
         using var pen = new Pen(borderColor, borderWidth);
 
@@ -811,39 +822,19 @@ public class RoundedPanel : Panel
         pen.Alignment = System.Drawing.Drawing2D.PenAlignment.Inset;
 
         e.Graphics.DrawPath(pen, path);
-    }
-}
-
-public sealed class GameSelectionBadge : Control
-{
-    public GameSelectionBadge()
-    {
-        Size = new Size(30, 30);
-        Visible = false;
-        SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
-                 ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor, true);
-        BackColor = Color.Transparent;
-    }
-
-    protected override void OnPaint(PaintEventArgs e)
-    {
-        e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-        using var fill = new SolidBrush(MainForm.Acid);
-        using var path = new System.Drawing.Drawing2D.GraphicsPath();
-        path.AddArc(1, 1, 9, 9, 180, 90);
-        path.AddArc(Width - 11, 1, 9, 9, 270, 90);
-        path.AddArc(Width - 11, Height - 11, 9, 9, 0, 90);
-        path.AddArc(1, Height - 11, 9, 9, 90, 90);
-        path.CloseFigure();
-        e.Graphics.FillPath(fill, path);
-        using var font = new Font("Segoe UI", 12f, FontStyle.Bold);
-        TextRenderer.DrawText(e.Graphics, "✓", font, ClientRectangle, MainForm.OnAccent,
-            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+        if (BorderColor == default && emphasis > .01f)
+        {
+            using var glow = new Pen(Color.FromArgb((int)(55 * emphasis), MainForm.Acid), 5f)
+            { Alignment = System.Drawing.Drawing2D.PenAlignment.Inset };
+            e.Graphics.DrawPath(glow, path);
+        }
     }
 }
 
 public sealed class RoundedButton : Button
 {
+    int shapeWidth = -1, shapeHeight = -1, shapeRadius = -1;
+    bool shapeChamfer;
     bool hot;
     bool pressed;
     float hoverAmount;
@@ -902,6 +893,7 @@ public sealed class RoundedButton : Button
 
     protected override void OnPaint(PaintEventArgs e)
     {
+        if (Width < 2 || Height < 2) return;
         using var path =
             new System.Drawing.Drawing2D.GraphicsPath();
 
@@ -944,6 +936,15 @@ public sealed class RoundedButton : Button
             var cut = Math.Max(5, (int)(7 * DeviceDpi / 96f));
             path.AddPolygon(new Point[] { new(cut, 0), new(Width - 1, 0), new(Width - 1, Height - cut), new(Width - cut, Height - 1), new(0, Height - 1), new(0, cut) });
         }
+        // Clip the native control itself. Painting an opaque color outside the
+        // rounded path caused dark square corners on gradient and artwork hosts.
+        if (shapeWidth != Width || shapeHeight != Height || shapeRadius != Radius || shapeChamfer != Chamfer)
+        {
+            var previous = Region;
+            Region = new Region(path);
+            previous?.Dispose();
+            shapeWidth = Width; shapeHeight = Height; shapeRadius = Radius; shapeChamfer = Chamfer;
+        }
         e.Graphics.Clear(UiPaint.OpaqueBackground(Parent));
 
         var paintState = e.Graphics.Save();
@@ -972,9 +973,36 @@ public sealed class RoundedButton : Button
 
         e.Graphics.FillPath(brush, path);
 
+        if (Enabled && BackColor != MainForm.Base)
+        {
+            using var depth = new System.Drawing.Drawing2D.LinearGradientBrush(ClientRectangle,
+                Color.FromArgb((int)(31 + 15 * hoverAmount), Color.White), Color.FromArgb(0, Color.White), 90f);
+            e.Graphics.FillPath(depth, path);
+        }
+
+        if (Active)
+        {
+            using var activeTint = new System.Drawing.Drawing2D.LinearGradientBrush(ClientRectangle,
+                Color.FromArgb(6, MainForm.Acid), Color.FromArgb(42, MainForm.Acid), 90f);
+            e.Graphics.FillPath(activeTint, path);
+        }
+
+        if (Enabled && BackColor == MainForm.Acid)
+        {
+            using var sheen = new System.Drawing.Drawing2D.LinearGradientBrush(ClientRectangle,
+                Color.FromArgb(55, Color.White), Color.Transparent, 90f);
+            e.Graphics.FillPath(sheen, path);
+            using var lightEdge = new Pen(Color.FromArgb((int)(55 + 65 * hoverAmount), MainForm.Acid), 1.4f + hoverAmount)
+            { Alignment = System.Drawing.Drawing2D.PenAlignment.Inset };
+            e.Graphics.DrawPath(lightEdge, path);
+        }
+
         if (BackColor == MainForm.Surface || BackColor == MainForm.SelectedSurface)
         {
-            using var border = new Pen(hot ? MainForm.Acid : MainForm.Line, hot ? 1.4f : 1f)
+            using var border = new Pen(Color.FromArgb(
+                (int)(MainForm.Line.R + (MainForm.Acid.R - MainForm.Line.R) * hoverAmount),
+                (int)(MainForm.Line.G + (MainForm.Acid.G - MainForm.Line.G) * hoverAmount),
+                (int)(MainForm.Line.B + (MainForm.Acid.B - MainForm.Line.B) * hoverAmount)), 1f + .5f * hoverAmount)
             { Alignment = System.Drawing.Drawing2D.PenAlignment.Inset };
             e.Graphics.DrawPath(border, path);
         }
@@ -1053,12 +1081,11 @@ public sealed class RoundedButton : Button
         }
         if (Active)
         {
-            using var dot = new SolidBrush(
-                MainForm.Acid);
-
-            e.Graphics.FillRectangle(
-                dot,
-                12, Height - 3, Math.Max(0, Width - 24), 3);
+            using var aura = new Pen(Color.FromArgb(64, MainForm.Acid), 7f);
+            using var line = new Pen(MainForm.Acid, 2.5f);
+            var left = 13f; var right = Width - 13f; var y = Height - 2.5f;
+            e.Graphics.DrawLine(aura, left, y, right, y);
+            e.Graphics.DrawLine(line, left, y, right, y);
         }
         if (Focused && ShowFocusCues) ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(ClientRectangle, -4, -4), ForeColor, BackColor);
         e.Graphics.Restore(paintState);
@@ -1075,7 +1102,14 @@ public sealed class AccentProgressBar : Control
 {
     int value;
     float displayedValue;
+    float sweep;
+    bool indeterminate;
     readonly System.Windows.Forms.Timer motion = new() { Interval = 15 };
+    public bool Indeterminate
+    {
+        get => indeterminate;
+        set { indeterminate = value; if (value) motion.Start(); Invalidate(); }
+    }
     public int Value
     {
         get => value;
@@ -1092,16 +1126,46 @@ public sealed class AccentProgressBar : Control
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
         motion.Tick += (_, _) =>
         {
+            if (indeterminate) sweep = (sweep + .018f) % 1f;
             displayedValue += (value - displayedValue) * .22f;
-            if (Math.Abs(value - displayedValue) < .1f) { displayedValue = value; motion.Stop(); }
+            if (Math.Abs(value - displayedValue) < .1f)
+            {
+                displayedValue = value;
+                if (!indeterminate) motion.Stop();
+            }
             Invalidate();
         };
     }
+    protected override void OnSizeChanged(EventArgs e)
+    {
+        base.OnSizeChanged(e);
+        if (Width < 2 || Height < 2) return;
+        using var path = new System.Drawing.Drawing2D.GraphicsPath();
+        var d = Math.Min(Height, Width);
+        path.AddArc(0, 0, d, d, 90, 180);
+        path.AddArc(Width - d - 1, 0, d, d, 270, 180);
+        path.CloseFigure();
+        var previous = Region;
+        Region = new Region(path);
+        previous?.Dispose();
+    }
     protected override void OnPaint(PaintEventArgs e)
     {
+        e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
         e.Graphics.Clear(MainForm.Line);
+        if (indeterminate)
+        {
+            var block = Math.Max(18, Width / 4);
+            var x = (int)((Width + block) * sweep) - block;
+            using var moving = new System.Drawing.Drawing2D.LinearGradientBrush(
+                new Rectangle(x, 0, block, Math.Max(1, Height)),
+                Color.FromArgb(115, MainForm.Acid), MainForm.Acid, 0f);
+            e.Graphics.FillRectangle(moving, x, 0, block, Height);
+            return;
+        }
         if (displayedValue <= 0) return;
-        using var brush = new SolidBrush(MainForm.Acid);
+        using var brush = new System.Drawing.Drawing2D.LinearGradientBrush(ClientRectangle,
+            MainForm.Acid, Color.FromArgb(74, 229, 91), 0f);
         e.Graphics.FillRectangle(brush, 0, 0, Math.Max(1, Width * displayedValue / 100), Height);
     }
     protected override void Dispose(bool disposing) { if (disposing) motion.Dispose(); base.Dispose(disposing); }
@@ -1188,6 +1252,16 @@ public sealed class CoverPictureBox : PictureBox
             System.Drawing.Drawing2D.InterpolationMode
                 .HighQualityBicubic;
 
+        if (Tag is not true)
+        {
+            using var backdrop = new System.Drawing.Drawing2D.LinearGradientBrush(ClientRectangle,
+                MainForm.Surface, MainForm.SelectedSurface, 115f);
+            e.Graphics.FillRectangle(backdrop, ClientRectangle);
+            using var rule = new Pen(Color.FromArgb(35, MainForm.Acid), 1);
+            for (var x = -Height; x < Width; x += 56)
+                e.Graphics.DrawLine(rule, x, Height, x + Height, 0);
+        }
+
         var scale = Tag is true
             ? Math.Max((float)Width / Image.Width, (float)Height / Image.Height)
             : Math.Min((float)Width / Image.Width, (float)Height / Image.Height);
@@ -1195,7 +1269,7 @@ public sealed class CoverPictureBox : PictureBox
         // Executable icons are not posters. Keep the fallback small and crisp.
         if (Tag is not true)
         {
-            var iconLimit = 72f * DeviceDpi / 96f;
+            var iconLimit = Math.Min(92f, Width * .35f) * DeviceDpi / 96f;
             scale = Math.Min(scale, Math.Min(iconLimit / Image.Width, iconLimit / Image.Height));
         }
 
@@ -1204,11 +1278,19 @@ public sealed class CoverPictureBox : PictureBox
 
         var destination = new RectangleF(
             (Width - width) / 2,
-            Tag is true ? 0 : (Height - height) / 2,
+            Tag is true ? 0 : (Height - height) / 2 - 15,
             width,
             height);
 
         e.Graphics.DrawImage(Image, destination);
+        if (Tag is not true && !string.IsNullOrWhiteSpace(AccessibleName))
+        {
+            using var font = new Font("Microsoft YaHei UI", 11f, FontStyle.Bold);
+            TextRenderer.DrawText(e.Graphics, AccessibleName, font,
+                new Rectangle(14, Math.Max(0, Height - 63), Width - 28, 48), MainForm.Ink,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis |
+                TextFormatFlags.WordBreak);
+        }
     }
 }
 
@@ -1346,7 +1428,7 @@ public sealed partial class MainForm : Form
 
             status.Text = list.Count == 0
                 ? "没有找到游戏。可以使用“添加游戏”选择 EXE。"
-                : $"找到 {list.Count} 个游戏，点击卡片选择。";
+                : $"找到 {list.Count} 个游戏，悬停封面可开启 DLSS5 或管理配置。";
             status.Text += manualWarning;
         }
         catch (OperationCanceledException)
@@ -1491,7 +1573,8 @@ public sealed partial class MainForm : Form
             Location = new Point(3, 3),
             BackColor = Surface,
             Image = image,
-            Tag = game.CoverPath != null
+            Tag = game.CoverPath != null,
+            AccessibleName = game.Title
         };
         icon.Disposed += (_, _) => icon.Image?.Dispose();
 
@@ -1535,32 +1618,11 @@ public sealed partial class MainForm : Form
             AutoEllipsis = true
         };
 
-        var selectedBadge = new GameSelectionBadge
-        {
-            Location = new Point(card.Width - 40, 12),
-            Anchor = AnchorStyles.Top | AnchorStyles.Right
-        };
-
         void Pick(object? sender, EventArgs eventArgs)
         {
             if (busy) return;
-            if (selectedCard is { IsDisposed: false })
-            {
-                selectedCard.Selected = false;
-                selectedCard.Hovered = false;
-                foreach (var badge in selectedCard.Controls.OfType<GameSelectionBadge>()) badge.Visible = false;
-                selectedCard.Invalidate();
-            }
-
             selectedCard = card;
-            card.Selected = true;
-            selectedBadge.Visible = true;
-            selectedBadge.BringToFront();
-            card.Invalidate();
-
             selectedGame = game.ExePath;
-
-            SwitchPage(1);
 
             selected.Text = english
                 ? "Selected: " + game.Title
@@ -1583,8 +1645,7 @@ public sealed partial class MainForm : Form
                      card,
                      icon,
                      title,
-                     availability,
-                     selectedBadge
+                     availability
                  })
         {
             control.Click += Pick;
@@ -1602,10 +1663,7 @@ public sealed partial class MainForm : Form
         card.Controls.Add(icon);
         card.Controls.Add(title);
         card.Controls.Add(availability);
-        card.Controls.Add(selectedBadge);
-        selectedBadge.BringToFront();
-
-        var coverAction = new DlssCoverAction { Dock = DockStyle.Fill, Visible = false, TabStop = false, AccessibleName = game.Title + " · 开启 DLSS5" };
+        var coverAction = new DlssCoverAction { Dock = DockStyle.Fill, Visible = false, English = english, PrimaryText = ready ? (english ? "Launch game" : "启动游戏") : (english ? "Enable DLSS5" : "开启 DLSS5"), AccessibleName = game.Title + " · 开启 DLSS5、高级选项、恢复配置" };
         icon.Controls.Add(coverAction);
         void ShowCoverAction() { coverAction.Visible = true; coverAction.BringToFront(); }
         void HideCoverAction()
@@ -1616,16 +1674,29 @@ public sealed partial class MainForm : Form
         icon.MouseEnter += (_, _) => ShowCoverAction();
         icon.MouseLeave += (_, _) => HideCoverAction();
         coverAction.MouseLeave += (_, _) => HideCoverAction();
-        coverAction.Click += async (_, _) => { if (busy) return; Pick(null, EventArgs.Empty); await EnableSelectedDlssAsync(); };
+        coverAction.ConfigureRequested += async (_, _) =>
+        {
+            if (busy) return;
+            Pick(null, EventArgs.Empty);
+            if (IsConfigured(game.ExePath)) LaunchGame(game.ExePath);
+            else await EnableSelectedDlssAsync();
+        };
+        coverAction.AdvancedRequested += (_, _) => { Pick(null, EventArgs.Empty); ShowAdvanced(); };
+        coverAction.RestoreRequested += async (_, _) => { Pick(null, EventArgs.Empty); await RestoreAsync(); };
         card.TabStop = true; card.AccessibleName = game.Title;
         card.Enter += (_, _) => ShowCoverAction();
         card.Leave += (_, _) => { if (!card.ContainsFocus) coverAction.Visible = false; };
         card.KeyDown += (_, e) =>
         {
-            if (e.KeyCode is Keys.Enter or Keys.Space) { Pick(null, EventArgs.Empty); _ = EnableSelectedDlssAsync(); e.Handled = true; e.SuppressKeyPress = true; }
+            if (e.KeyCode is Keys.Enter or Keys.Space)
+            {
+                Pick(null, EventArgs.Empty);
+                if (IsConfigured(game.ExePath)) LaunchGame(game.ExePath);
+                else _ = EnableSelectedDlssAsync();
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+            }
         };
-        card.DoubleClick += async (_, _) => await EnableSelectedDlssAsync();
-
         return card;
     }
 

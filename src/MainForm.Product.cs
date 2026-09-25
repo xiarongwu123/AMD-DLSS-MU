@@ -79,7 +79,7 @@ public sealed partial class MainForm
         Paragraph(stack, "模式一：确认游戏内开启 FSR 超分辨率，并进入实际场景。模式二使用 Insert 菜单。组件存在不代表运行时已生效。");
         stack.Controls.Add(Action("查看诊断", "Diagnostics", (_, _) => ShowDiagnosticsMenu()));
         stack.Controls.Add(Heading("游戏卡顿或闪退？", "Stuttering or crashes?", 14));
-        Paragraph(stack, "退出游戏后，在游戏库选中对应游戏并恢复配置，再验证原始状态。带反作弊的联网游戏请勿贸然安装图形插件。");
+        Paragraph(stack, "退出游戏后，在游戏库悬停对应游戏封面并点击“恢复配置”，再验证原始状态。带反作弊的联网游戏请勿贸然安装图形插件。");
         stack.Controls.Add(Action("返回游戏库", "Game library", (_, _) => SwitchPage(1)));
         stack.Controls.Add(Heading("联系作者", "Contact", 14));
         stack.Controls.Add(Action("加入讨论组", "Community", (_, _) => SwitchPage(2)));
@@ -115,7 +115,10 @@ public sealed partial class MainForm
         mode.SelectedIndexChanged += (_, _) => api.Enabled = mode.SelectedIndex == 1; stack.Controls.Add(api);
         Paragraph(stack, "两种方案效果不同。已配置游戏请先恢复，再切换方案。");
         var save = Action("保存", "Save", (_, _) => { installMode.SelectedIndex = mode.SelectedIndex; optiVulkan = api.SelectedIndex == 1; dialog.DialogResult = DialogResult.OK; });
-        stack.Controls.Add(save); dialog.Controls.Add(stack); dialog.ShowDialog(this);
+        stack.Controls.Add(save);
+        var diagnostics = Action("查看诊断", "Diagnostics", (_, _) => { dialog.Close(); ShowDiagnosticsMenu(); });
+        diagnostics.Width = 160; stack.Controls.Add(diagnostics);
+        dialog.Controls.Add(stack); dialog.ShowDialog(this);
     }
     Form ProductDialog(string title, int width = 560, int height = 330)
     {
@@ -165,15 +168,16 @@ public sealed partial class MainForm
     {
         if (selectedGame == null || busy || configureAnimating) return;
         configureAnimating = true;
+        var cover = selectedCard?.Controls.OfType<PictureBox>().FirstOrDefault()?
+            .Controls.OfType<DlssCoverAction>().FirstOrDefault();
+        if (cover is { IsDisposed: false }) { cover.Progress = 4; cover.Loading = true; cover.Visible = true; }
         install.Text = english ? "Enabling…" : "正在开启…";
-        libraryDownloadProgress.Visible = true;
-        libraryDownloadProgress.Value = 4;
         try { await InstallAsync(); }
         finally
         {
             configureAnimating = false;
             install.Text = english ? "Enable DLSS5" : "开启 DLSS5";
-            if (!busy) libraryDownloadProgress.Visible = false;
+            if (cover is { IsDisposed: false }) { cover.Loading = false; cover.Visible = false; }
         }
     }
     void LaunchSelectedGame() { if (selectedGame != null && !busy) LaunchGame(selectedGame); }
@@ -253,16 +257,12 @@ public sealed partial class MainForm
             pic.SetBounds(S(3), S(3), width - S(6), (int)Math.Round((width - S(6)) * 394d / 309d));
             var labels = card.Controls.OfType<Label>().ToArray();
             if (labels.Length >= 2) { labels[0].SetBounds(S(12), pic.Bottom + S(10), width - S(24), S(25)); labels[1].SetBounds(S(12), pic.Bottom + S(37), width - S(24), S(24)); }
-            if (card.Controls.OfType<GameSelectionBadge>().FirstOrDefault() is { } badge)
-                badge.SetBounds(width - S(42), S(12), S(30), S(30));
             card.Height = pic.Bottom + S(72);
         }
         games.ResumeLayout();
     }
     DownloadSession BeginDownloadSession(string title, Func<Task> retry)
     {
-        libraryDownloadProgress.Value = 0;
-        libraryDownloadProgress.Visible = true;
         DownloadRow? row = null;
         var session = new DownloadSession();
         session.Changed = snapshot =>
@@ -275,8 +275,10 @@ public sealed partial class MainForm
                 row.State = snapshot.State; row.Percent = snapshot.Percent; row.Size = snapshot.Size; row.Detail = snapshot.Detail;
                 row.Info.Text = $"{title}\n{snapshot.State} · {snapshot.Percent}% · {snapshot.Size / 1048576d:0.00} MB\n{snapshot.Detail}";
                 row.Bar.Value = Math.Clamp(snapshot.Percent, 0, 100);
-                libraryDownloadProgress.Visible = true;
-                libraryDownloadProgress.Value = row.Bar.Value;
+                var activeCover = selectedCard?.Controls.OfType<PictureBox>().FirstOrDefault()?
+                    .Controls.OfType<DlssCoverAction>().FirstOrDefault();
+                if (activeCover is { IsDisposed: false, Loading: true })
+                    activeCover.Progress = 4 + (int)Math.Round(snapshot.Percent * .82);
                 row.Pause.Enabled = snapshot.State is "下载中" or "已暂停"; row.Pause.Text = session.Paused ? "继续" : "暂停";
                 row.Cancel.Enabled = snapshot.State is "下载中" or "已暂停" or "连接中";
                 row.Retry.Visible = snapshot.State is "下载失败" or "已取消";

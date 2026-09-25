@@ -20,28 +20,31 @@ public sealed partial class MainForm
         while (accountPage.Controls.Count > 0) { var c = accountPage.Controls[0]; accountPage.Controls.Remove(c); c.Dispose(); }
         translations.RemoveAll(item => item.control.IsDisposed);
         // No credentials are stored or transmitted until a real authentication provider is supplied.
-        var content = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2, Padding = new Padding(30, 24, 30, 24), BackColor = Base };
-        content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 54)); content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 46));
-        var hero = new ArtworkPanel("AmdNrAssistant.mu-account-art.png") { Dock = DockStyle.Fill, MinimumSize = new Size(0, 760), BackColor = Color.FromArgb(5, 24, 26), BorderColor = Color.FromArgb(32, 103, 66), Radius = 24, FocusX = 0, Margin = new Padding(0, 0, 18, 0) };
+        // The art is the page background. The form floats on it as a glass surface,
+        // rather than splitting the view into two unrelated bordered columns.
+        var background = new ArtworkPanel("AmdNrAssistant.mu-account-art.png")
+        { BackColor = Base, Radius = 1, ShowBorder = false, FocusX = .5f, Margin = Padding.Empty };
         var eyebrow = new Label { Text = "／ AMD DLSS MU    ／", ForeColor = Acid, Font = new Font(Font.FontFamily, 11, FontStyle.Bold), BackColor = Color.Transparent };
         var headline = new Label { Text = registerAccount ? "创建账户\n管理游戏体验" : "登录账户\n继续游戏体验", ForeColor = Ink, Font = new Font(Font.FontFamily, 31, FontStyle.Bold), BackColor = Color.Transparent };
         var pass = new Label { Text = "MU 通行证", ForeColor = Acid, Font = new Font(Font.FontFamily, 31, FontStyle.Bold), BackColor = Color.Transparent };
+        var benefits = new Label { Text = "◉  多设备同步配置\n     登录后管理游戏与配置\n\n◉  专属设置云备份\n     更换电脑也不怕丢失配置\n\n◉  获取最新功能更新\n     解锁更多游戏兼容与优化方案\n\n◉  加入社区与支持\n     获取教程、反馈与更多玩法", ForeColor = Ink, Font = new Font(Font.FontFamily, 11f), BackColor = Color.Transparent };
         var subtitle = new Label { Text = "把时间留给游戏。\n本地游戏管理无需登录，即刻开始。", ForeColor = Muted, Font = new Font(Font.FontFamily, 12), BackColor = Color.Transparent };
         var local = Action("进入本地游戏库  →", "Open local library →", (_, _) => SwitchPage(0)); local.BackColor = Surface; local.ForeColor = Ink; local.Radius = 18;
-        hero.Controls.Add(eyebrow); hero.Controls.Add(headline); hero.Controls.Add(pass); hero.Controls.Add(subtitle); hero.Controls.Add(local);
+        background.Controls.Add(eyebrow); background.Controls.Add(headline); background.Controls.Add(pass);
+        background.Controls.Add(benefits); background.Controls.Add(subtitle); background.Controls.Add(local);
         void LayoutHero()
         {
-            var left = 38; var usable = Math.Max(240, hero.ClientSize.Width - 76);
-            eyebrow.SetBounds(left, 40, usable, 30);
-            headline.SetBounds(left, 105, usable, 150);
-            pass.SetBounds(left, 265, usable, 66);
-            subtitle.SetBounds(left, Math.Max(340, hero.ClientSize.Height - 182), usable, 66);
-            local.SetBounds(left, Math.Max(420, hero.ClientSize.Height - 106), Math.Min(280, usable), 52);
+            var left = 64; var usable = Math.Max(240, (int)(background.ClientSize.Width * .50) - left);
+            eyebrow.SetBounds(left, 65, usable, 30);
+            headline.SetBounds(left, 122, usable, 150);
+            pass.SetBounds(left, 283, usable, 66);
+            benefits.SetBounds(left, 378, usable, Math.Max(0, Math.Min(290, background.ClientSize.Height - 490)));
+            subtitle.SetBounds(left, Math.Max(620, background.ClientSize.Height - 162), usable, 66);
+            local.SetBounds(left, Math.Max(690, background.ClientSize.Height - 86), Math.Min(280, usable), 52);
         }
-        hero.ClientSizeChanged += (_, _) => LayoutHero(); LayoutHero();
-        content.Controls.Add(hero, 0, 0);
-        var panel = new RoundedPanel { Dock = DockStyle.Fill, AutoSize = true, BackColor = Surface, Radius = 24, BorderColor = Line, Padding = new Padding(30), Margin = Padding.Empty };
-        var form = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 1, RowCount = 0, Margin = Padding.Empty };
+        background.ClientSizeChanged += (_, _) => LayoutHero(); LayoutHero();
+        var panel = new GlassPanel { BackColor = Surface, Radius = 22, Padding = new Padding(30), Margin = Padding.Empty };
+        var form = new TableLayoutPanel { AutoSize = true, ColumnCount = 1, RowCount = 0, Margin = Padding.Empty };
         form.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         void Row(Control c, int height)
         {
@@ -100,7 +103,31 @@ public sealed partial class MainForm
         submit.BackColor = Acid; submit.ForeColor = OnAccent; submit.Radius = 18; submit.Font = new Font(Font.FontFamily, 12, FontStyle.Bold); Row(submit, 58); Row(feedback, 66);
         var switchMode = Action(registerAccount ? "已有账号？返回登录" : "没有账号？立即注册", "Switch account mode", (_, _) => { registerAccount = !registerAccount; RenderAccount(); });
         Row(switchMode, 42);
-        panel.Controls.Add(form); content.Controls.Add(panel, 1, 0); accountPage.Controls.Add(content);
+        panel.Controls.Add(form); background.Controls.Add(panel); accountPage.Controls.Add(background);
+        void LayoutForm()
+        {
+            form.Width = Math.Max(320, panel.ClientSize.Width - 60);
+            form.Left = 30;
+            form.Top = Math.Max(24, (panel.ClientSize.Height - form.Height) / 2);
+        }
+        panel.ClientSizeChanged += (_, _) => LayoutForm();
+        form.SizeChanged += (_, _) => LayoutForm();
+        void LayoutPage()
+        {
+            var viewport = accountPage.ClientSize;
+            background.SetBounds(0, 0, Math.Max(1000, viewport.Width),
+                Math.Max(viewport.Height, registerAccount ? 940 : 790));
+            var panelX = (int)(background.Width * .55);
+            panel.SetBounds(panelX, 36, background.Width - panelX - 34, background.Height - 72);
+            accountPage.AutoScrollMinSize = new Size(0, background.Height);
+            LayoutHero();
+            LayoutForm();
+        }
+        EventHandler resizePage = (_, _) => LayoutPage();
+        accountPage.ClientSizeChanged += resizePage;
+        background.Disposed += (_, _) => accountPage.ClientSizeChanged -= resizePage;
+        LayoutPage();
+        LayoutForm();
         accountPage.AutoScrollPosition = Point.Empty;
     }
 }

@@ -3,16 +3,78 @@ using System.Windows.Forms;
 
 namespace AmdNrAssistant;
 
-/// <summary>Interactive cover overlay; painting never changes layout or the game state.</summary>
-public sealed class DlssCoverAction : Button
+/// <summary>Card actions live on the cover; hovering and clicking artwork never imply installation.</summary>
+public sealed class DlssCoverAction : Control
 {
+    public event EventHandler? ConfigureRequested;
+    public event EventHandler? AdvancedRequested;
+    public event EventHandler? RestoreRequested;
+    bool loading;
+    int progress;
+    float reveal = 1f;
+    readonly System.Windows.Forms.Timer revealTimer = new() { Interval = 16 };
+    string primaryText = "开启 DLSS5";
+    public bool English { get; set; }
+    public bool Loading { get => loading; set { loading = value; Invalidate(); } }
+    public int Progress { get => progress; set { progress = Math.Clamp(value, 0, 95); Invalidate(); } }
+    public string PrimaryText { get => primaryText; set { primaryText = value; Invalidate(); } }
+
     public DlssCoverAction()
     {
-        SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
-        FlatStyle = FlatStyle.Flat;
-        FlatAppearance.BorderSize = 0;
-        Cursor = Cursors.Hand;
-        Text = "开启 DLSS5";
+        SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+            ControlStyles.OptimizedDoubleBuffer | ControlStyles.Selectable, true);
+        Cursor = Cursors.Default;
+        TabStop = true;
+        revealTimer.Tick += (_, _) =>
+        {
+            reveal = Math.Min(1f, reveal + .14f);
+            Invalidate();
+            if (reveal >= 1f) revealTimer.Stop();
+        };
+    }
+
+    protected override void OnVisibleChanged(EventArgs e)
+    {
+        base.OnVisibleChanged(e);
+        revealTimer.Stop();
+        if (Visible && !Loading) { reveal = 0f; revealTimer.Start(); }
+        else reveal = 1f;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) revealTimer.Dispose();
+        base.Dispose(disposing);
+    }
+
+    Rectangle Primary => new(Math.Max(14, Width / 9), Height / 2 - 30,
+        Width - 2 * Math.Max(14, Width / 9), 54);
+    Rectangle Advanced => new(Primary.Left, Primary.Bottom + 12, (Primary.Width - 10) / 2, 38);
+    Rectangle Restore => new(Advanced.Right + 10, Advanced.Top, Advanced.Width, 38);
+
+    protected override void OnMouseClick(MouseEventArgs e)
+    {
+        base.OnMouseClick(e);
+        if (e.Button != MouseButtons.Left || Loading) return;
+        if (Primary.Contains(e.Location)) ConfigureRequested?.Invoke(this, EventArgs.Empty);
+        else if (Advanced.Contains(e.Location)) AdvancedRequested?.Invoke(this, EventArgs.Empty);
+        else if (Restore.Contains(e.Location)) RestoreRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (Loading || e.KeyCode is not Keys.Enter and not Keys.Space) return;
+        ConfigureRequested?.Invoke(this, EventArgs.Empty);
+        e.Handled = true;
+        e.SuppressKeyPress = true;
+    }
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        Cursor = Primary.Contains(e.Location) || Advanced.Contains(e.Location) || Restore.Contains(e.Location)
+            ? Cursors.Hand : Cursors.Default;
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -20,24 +82,58 @@ public sealed class DlssCoverAction : Button
         var g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;
         g.Clear(MainForm.Base);
-        if (Parent is PictureBox { Image: { } image })
+        if (Parent is PictureBox { Image: { } image } picture)
         {
-            var scale = Math.Max((float)Width / image.Width, (float)Height / image.Height);
+            var poster = picture.Tag is true;
+            var scale = poster
+                ? Math.Max((float)Width / image.Width, (float)Height / image.Height)
+                : Math.Min((float)Width / image.Width, (float)Height / image.Height);
+            if (!poster)
+            {
+                var iconLimit = Math.Min(92f, Width * .35f) * DeviceDpi / 96f;
+                scale = Math.Min(scale, Math.Min(iconLimit / image.Width, iconLimit / image.Height));
+            }
             var w = image.Width * scale; var h = image.Height * scale;
-            g.DrawImage(image, (Width - w) / 2, 0, w, h);
+            g.DrawImage(image, (Width - w) / 2, poster ? 0 : (Height - h) / 2 - 15, w, h);
         }
-        using var shade = new SolidBrush(Color.FromArgb(220, MainForm.Base));
+        using var shade = new SolidBrush(Color.FromArgb((int)(219 * reveal), MainForm.Base));
         g.FillRectangle(shade, ClientRectangle);
-        using var edge = new Pen(MainForm.Acid, Math.Max(1, DeviceDpi / 96f));
-        g.DrawRectangle(edge, 1, 1, Math.Max(0, Width - 3), Math.Max(0, Height - 3));
-        var button = new Rectangle(Width / 8, Height / 2 - 25, Width * 3 / 4, 50);
-        using var fill = new SolidBrush(MainForm.Acid);
-        g.FillRectangle(fill, button);
-        using var labelFont = new Font(Font.FontFamily, 11, FontStyle.Bold);
-        TextRenderer.DrawText(g, Text, labelFont, button, MainForm.OnAccent, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-        using var mono = new Font("Consolas", 8);
-        TextRenderer.DrawText(g, "MU / GRAPHICS", mono, new Rectangle(0, button.Top - 36, Width, 24), MainForm.Acid, TextFormatFlags.HorizontalCenter);
-        TextRenderer.DrawText(g, "ENTER PERFORMANCE MODE", mono, new Rectangle(0, button.Bottom + 20, Width, 26), MainForm.Muted, TextFormatFlags.HorizontalCenter);
-        if (Focused) ControlPaint.DrawFocusRectangle(g, Rectangle.Inflate(button, -4, -4), MainForm.OnAccent, MainForm.Acid);
+        if (reveal < .55f && !Loading) return;
+        if (Loading)
+        {
+            var track = new Rectangle(Math.Max(18, Width / 9), Height / 2 + 12,
+                Width - 2 * Math.Max(18, Width / 9), 8);
+            using var trackBrush = new SolidBrush(MainForm.Line);
+            using var fillBrush = new SolidBrush(MainForm.Acid);
+            g.FillRectangle(trackBrush, track);
+            g.FillRectangle(fillBrush, new Rectangle(track.Left, track.Top,
+                Math.Max(4, track.Width * Progress / 100), track.Height));
+            using var font = new Font("Microsoft YaHei UI", 11f, FontStyle.Bold);
+            TextRenderer.DrawText(g, English ? $"Configuring · {Progress}%" : $"正在配置 · {Progress}%", font,
+                new Rectangle(0, track.Top - 46, Width, 34), MainForm.Ink,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+            return;
+        }
+        DrawButton(g, Primary, MainForm.Acid, MainForm.OnAccent, PrimaryText, true);
+        DrawButton(g, Advanced, MainForm.Surface, MainForm.Ink, English ? "Advanced" : "高级选项", false);
+        DrawButton(g, Restore, MainForm.Surface, MainForm.Ink, English ? "Restore" : "恢复配置", false);
+    }
+
+    static void DrawButton(Graphics g, Rectangle bounds, Color fill, Color ink, string label, bool primary)
+    {
+        using var path = new GraphicsPath();
+        var d = primary ? 22 : 16;
+        path.AddArc(bounds.Left, bounds.Top, d, d, 180, 90);
+        path.AddArc(bounds.Right - d, bounds.Top, d, d, 270, 90);
+        path.AddArc(bounds.Right - d, bounds.Bottom - d, d, d, 0, 90);
+        path.AddArc(bounds.Left, bounds.Bottom - d, d, d, 90, 90);
+        path.CloseFigure();
+        using var brush = new SolidBrush(fill);
+        g.FillPath(brush, path);
+        using var pen = new Pen(primary ? MainForm.Acid : MainForm.Line);
+        g.DrawPath(pen, path);
+        using var font = new Font("Microsoft YaHei UI", primary ? 11f : 9f, primary ? FontStyle.Bold : FontStyle.Regular);
+        TextRenderer.DrawText(g, label, font, bounds, ink,
+            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
     }
 }

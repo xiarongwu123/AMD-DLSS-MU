@@ -14,6 +14,7 @@ public sealed partial class MainForm
 
     static bool globalDark = true;
     bool darkMode = true;
+    internal static bool IsDarkTheme => globalDark;
     internal static Color Base => globalDark ? Color.FromArgb(5, 8, 13) : Color.FromArgb(239, 242, 246);
     internal static Color Surface => globalDark ? Color.FromArgb(11, 17, 26) : Color.White;
     internal static Color Sidebar => globalDark ? Color.FromArgb(19, 26, 36) : Color.FromArgb(248, 250, 252);
@@ -105,7 +106,6 @@ public sealed partial class MainForm
             control.Invalidate(true);
         }
         BackColor = Line; ForeColor = Ink; Recolor(this);
-        if (configurationSurface != null && configurationSurface.Parent == null) Recolor(configurationSurface);
         foreach (var button in navigation)
         {
             bool current = navigationPages[navigation.IndexOf(button)] == activePage;
@@ -124,7 +124,8 @@ public sealed partial class MainForm
 
     void UpdateThemeToggleText()
     {
-        themeToggle.Text = english
+        themeToggle.Text = "";
+        themeToggle.AccessibleName = english
             ? (darkMode ? "Light theme" : "Dark theme")
             : (darkMode ? "切换浅色" : "切换深色");
     }
