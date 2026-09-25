@@ -631,7 +631,7 @@ internal static class UiPaint
     }
 }
 
-public sealed class RoundedPanel : Panel
+public class RoundedPanel : Panel
 {
     readonly System.Windows.Forms.Timer motion = new() { Interval = 15 };
     bool selected;
@@ -1324,6 +1324,7 @@ public sealed partial class MainForm : Form
             }
             catch (IOException e) { manualWarning = "；" + e.Message; }
             libraryGames = list;
+            libraryStateCache.Clear();
             selectedCard = null;
             while (games.Controls.Count > 0) { var card = games.Controls[0]; games.Controls.Remove(card); card.Dispose(); }
 
@@ -1466,7 +1467,7 @@ public sealed partial class MainForm : Form
             BackColor = Surface,
             Cursor = Cursors.Hand,
             Tag = game,
-            Radius = 2
+            Radius = 16
         };
 
         Image image;
@@ -1615,16 +1616,15 @@ public sealed partial class MainForm : Form
         icon.MouseEnter += (_, _) => ShowCoverAction();
         icon.MouseLeave += (_, _) => HideCoverAction();
         coverAction.MouseLeave += (_, _) => HideCoverAction();
-        coverAction.Click += (_, _) => { if (busy) return; Pick(null, EventArgs.Empty); ShowGameConfiguration(); };
+        coverAction.Click += async (_, _) => { if (busy) return; Pick(null, EventArgs.Empty); await EnableSelectedDlssAsync(); };
         card.TabStop = true; card.AccessibleName = game.Title;
         card.Enter += (_, _) => ShowCoverAction();
         card.Leave += (_, _) => { if (!card.ContainsFocus) coverAction.Visible = false; };
         card.KeyDown += (_, e) =>
         {
-            if (e.KeyCode is Keys.Enter or Keys.Space) { Pick(null, EventArgs.Empty); ShowGameConfiguration(); e.Handled = true; e.SuppressKeyPress = true; }
+            if (e.KeyCode is Keys.Enter or Keys.Space) { Pick(null, EventArgs.Empty); _ = EnableSelectedDlssAsync(); e.Handled = true; e.SuppressKeyPress = true; }
         };
-        card.DoubleClick += (_, _) => ShowGameConfiguration();
-        title.Click += (_, _) => ShowGameConfiguration();
+        card.DoubleClick += async (_, _) => await EnableSelectedDlssAsync();
 
         return card;
     }
@@ -1684,7 +1684,6 @@ public sealed partial class MainForm : Form
             }
             if (GameManagement.Read(targetExe) is { Phase: not "restored" })
                 throw new IOException("请先恢复此游戏，再安装或切换模式。");
-            if (MessageBox.Show(this, compatibility.Summary + "\n\n" + string.Join("\n", compatibility.Details) + "\n\n是否继续安装？", "兼容性检查", MessageBoxButtons.YesNo, MessageBoxIcon.Information) != DialogResult.Yes) return;
             if (chosenMode == InstallMode.OptiScalerStandard)
             {
                 await InstallOptiScalerStandardAsync(targetExe); return;

@@ -31,4 +31,8 @@
   <ItemGroup Condition="Exists('..\assets\amd_dlss_mu_logo.png')">
     <EmbeddedResource Include="..\assets\amd_dlss_mu_logo.png" LogicalName="AmdNrAssistant.amd_dlss_mu_logo.png" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\assets\mu-hero-art.png" LogicalName="AmdNrAssistant.mu-hero-art.png" />
+    <EmbeddedResource Include="..\assets\mu-account-art.png" LogicalName="AmdNrAssistant.mu-account-art.png" />
+  </ItemGroup>
 </Project>

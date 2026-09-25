@@ -9,23 +9,70 @@ public sealed partial class MainForm
     readonly Panel magpiePage = new() { Dock = DockStyle.Fill, Padding = new Padding(28), AutoScroll = true };
     readonly Label magpieStatus = new() { AutoSize = true, ForeColor = Muted, Margin = new Padding(0, 16, 0, 12), Text = "首次开启自动下载完整包；后续校验本机组件后直接启动。" };
     readonly ProgressBar magpieProgress = new() { Width = 520, Height = 12, Visible = false, Margin = new Padding(0, 0, 0, 20) };
+    readonly FlowLayoutPanel magpieGameCards = new() { Dock = DockStyle.Fill, WrapContents = false, AutoScroll = false, Margin = Padding.Empty };
     RoundedButton? magpieStart;
 
     void BuildMagpiePage()
     {
         magpiePage.BackColor = Base;
-        var body = new FlowLayoutPanel { Dock = DockStyle.Fill, BackColor = Base, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
-        body.Controls.Add(Heading("大力喜鹊", "Magpie Experimental", 21));
-        var help = Localize(new Label { AutoSize = true, MaximumSize = new Size(700, 0), ForeColor = muted, Margin = new Padding(0, 16, 0, 20) },
-            "独立窗口缩放工具 · SAOG0721/Magpie " + MagpieIntegration.Tag + "\n\n自动下载、SHA-256 校验、解压并启动，不修改游戏文件。首次默认通用 Lanczos 缩放，不默认开启 DLSS 或补帧。\n\n使用：将游戏设为窗口模式，切回游戏后按 Alt + Shift + A 启用／停止；其他效果在 Magpie 内选择。\n\n实验性 AI 效果取决于显卡与运行组件，不能等同游戏原生 DLSS。请勿叠加多套补帧。",
-            "Standalone window scaling · SAOG0721/Magpie " + MagpieIntegration.Tag + "\n\nDownloads, verifies and starts a separate portable installation. Defaults to Lanczos, not DLSS or frame generation.\n\nRun your game in windowed mode, focus it and press Alt + Shift + A to toggle scaling. Choose other effects inside Magpie. AI effects depend on hardware; avoid stacking frame generation.");
-        body.Controls.Add(help);
+        var body = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2, RowCount = 3, BackColor = Base, Margin = Padding.Empty };
+        body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
+        body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 190));
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 345));
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 270));
+        var banner = new ArtworkPanel("AmdNrAssistant.mu-hero-art.png") { Dock = DockStyle.Fill, Radius = 24, BackColor = Color.FromArgb(5, 27, 28), BorderColor = Color.FromArgb(27, 111, 65), Margin = new Padding(0, 0, 0, 18) };
+        banner.Controls.Add(new Label { Text = "大力喜鹊", Font = new Font(Font.FontFamily, 29, FontStyle.Bold), ForeColor = Ink, BackColor = Color.Transparent, Location = new Point(30, 26), Size = new Size(430, 64) });
+        banner.Controls.Add(new Label { Text = "独立窗口缩放工具 · SAOG0721/Magpie", Font = new Font(Font.FontFamily, 13), ForeColor = Muted, BackColor = Color.Transparent, Location = new Point(32, 98), Size = new Size(560, 42) });
+        body.Controls.Add(banner, 0, 0); body.SetColumnSpan(banner, 2);
+        var main = new RoundedPanel { Dock = DockStyle.Fill, Radius = 22, BackColor = Surface, BorderColor = Line, Padding = new Padding(28), Margin = new Padding(0, 0, 18, 16) };
+        var startContent = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 3, Margin = Padding.Empty };
+        startContent.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 52)); startContent.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 48));
+        startContent.RowStyles.Add(new RowStyle(SizeType.Absolute, 90)); startContent.RowStyles.Add(new RowStyle(SizeType.Absolute, 118)); startContent.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        startContent.Controls.Add(new Label { Text = "⚡  一键开启大力喜鹊", Dock = DockStyle.Fill, Font = new Font(Font.FontFamily, 23, FontStyle.Bold), ForeColor = Ink, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        startContent.SetColumnSpan(startContent.Controls[0], 2);
+        var left = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false };
         magpieStart = Action("开启大力喜鹊", "Start Magpie", async (_, _) => await StartMagpieAsync());
-        magpieStart.Size = new Size(260, 58); magpieStart.Chamfer = true; magpieStart.BackColor = Acid; magpieStart.ForeColor = OnAccent;
-        body.Controls.Add(magpieStart); body.Controls.Add(magpieStatus); body.Controls.Add(magpieProgress);
-        body.Controls.Add(Action("项目与使用说明", "Project / help", (_, _) => Process.Start(new ProcessStartInfo(MagpieIntegration.Repository) { UseShellExecute = true })));
-        body.SizeChanged += (_, _) => { help.MaximumSize = new Size(Math.Max(200, body.ClientSize.Width - 28), 0); magpieStatus.MaximumSize = help.MaximumSize; magpieProgress.Width = Math.Max(180, Math.Min(520, body.ClientSize.Width - 28)); };
+        magpieStart.Size = new Size(350, 62); magpieStart.Radius = 20; magpieStart.BackColor = Acid; magpieStart.ForeColor = OnAccent;
+        magpieStart.Font = new Font(Font.FontFamily, 14, FontStyle.Bold); magpieStart.LightningEffect = true;
+        left.Controls.Add(magpieStart); left.Controls.Add(magpieStatus); left.Controls.Add(magpieProgress);
+        startContent.Controls.Add(left, 0, 1); startContent.SetRowSpan(left, 2);
+        var features = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2 };
+        features.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50)); features.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        features.RowStyles.Add(new RowStyle(SizeType.Percent, 50)); features.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+        string[] featureTexts = { "◉ 自动下载依赖", "✓ 校验组件", "▣ 独立窗口运行", "↶ 不改游戏文件" };
+        for (var i = 0; i < featureTexts.Length; i++)
+        {
+            var feature = new RoundedPanel { Dock = DockStyle.Fill, Radius = 16, BackColor = SelectedSurface, BorderColor = Line, Margin = new Padding(4), Padding = new Padding(8) };
+            feature.Controls.Add(new Label { Text = featureTexts[i], Dock = DockStyle.Fill, ForeColor = Ink, Font = new Font(Font.FontFamily, 10, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter });
+            features.Controls.Add(feature, i % 2, i / 2);
+        }
+        startContent.Controls.Add(features, 1, 1); startContent.SetRowSpan(features, 2);
+        main.Controls.Add(startContent); body.Controls.Add(main, 0, 1);
+        var instructions = new RoundedPanel { Dock = DockStyle.Fill, Radius = 22, BackColor = Surface, BorderColor = Line, Padding = new Padding(22), Margin = new Padding(0, 0, 0, 16) };
+        var instructionsText = new Label { Dock = DockStyle.Fill, ForeColor = Ink, Font = new Font(Font.FontFamily, 10.5f), Text = "使用说明\n\n1  开启后自动准备并启动 Magpie\n\n2  把游戏设为窗口模式\n\n3  切回游戏按 Alt + Shift + A\n\n默认是 Lanczos 缩放；不自动启用 DLSS 或补帧。", AutoEllipsis = false };
+        instructions.Controls.Add(instructionsText); body.Controls.Add(instructions, 1, 1);
+        var recent = new RoundedPanel { Dock = DockStyle.Fill, Radius = 20, BackColor = Surface, BorderColor = Line, Padding = new Padding(16), Margin = new Padding(0, 0, 18, 0) };
+        recent.Controls.Add(magpieGameCards);
+        recent.Controls.Add(new Label { Text = "最近的游戏", Dock = DockStyle.Top, Height = 38, Font = new Font(Font.FontFamily, 15, FontStyle.Bold), ForeColor = Ink });
+        body.Controls.Add(recent, 0, 2);
+        var notes = new RoundedPanel { Dock = DockStyle.Fill, Radius = 20, BackColor = Surface, BorderColor = Line, Padding = new Padding(22) };
+        notes.Controls.Add(new Label { Text = "注意事项\n\n• 实验性 AI 效果取决于显卡和运行组件\n• 与游戏原生 DLSS 不同\n• 不建议叠加多套补帧", Dock = DockStyle.Fill, ForeColor = Muted, Font = new Font(Font.FontFamily, 10.5f) });
+        body.Controls.Add(notes, 1, 2);
         magpiePage.Controls.Add(body); pageHost.Controls.Add(magpiePage);
+        RenderMagpieGames();
+    }
+
+    void RenderMagpieGames()
+    {
+        if (selectedCard?.Parent == magpieGameCards) selectedCard = null;
+        while (magpieGameCards.Controls.Count > 0) { var c = magpieGameCards.Controls[0]; magpieGameCards.Controls.Remove(c); c.Dispose(); }
+        foreach (var game in libraryGames.Take(3))
+        {
+            var card = CreateGameCard(game);
+            SizeHomeCard(card, 175, 192);
+            magpieGameCards.Controls.Add(card);
+        }
     }
 
     async Task StartMagpieAsync()

@@ -11,6 +11,8 @@ public sealed partial class MainForm
     readonly Panel settingsPage = new() { Dock = DockStyle.Fill, Padding = new Padding(28), AutoScroll = true };
     readonly FlowLayoutPanel downloadList = new() { Dock = DockStyle.Fill, AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false };
     readonly List<DownloadRow> downloadRows = new();
+    RoundedPanel? productToast;
+    System.Windows.Forms.Timer? productToastTimer;
     bool showCompleted, autoCheckUpdates = true;
     bool optiVulkan;
     [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
@@ -113,7 +115,7 @@ public sealed partial class MainForm
         mode.SelectedIndexChanged += (_, _) => api.Enabled = mode.SelectedIndex == 1; stack.Controls.Add(api);
         Paragraph(stack, "两种方案效果不同。已配置游戏请先恢复，再切换方案。");
         var save = Action("保存", "Save", (_, _) => { installMode.SelectedIndex = mode.SelectedIndex; optiVulkan = api.SelectedIndex == 1; dialog.DialogResult = DialogResult.OK; });
-        stack.Controls.Add(save); dialog.Controls.Add(stack); dialog.ShowDialog(configurationDialog ?? this);
+        stack.Controls.Add(save); dialog.Controls.Add(stack); dialog.ShowDialog(this);
     }
     Form ProductDialog(string title, int width = 560, int height = 330)
     {
@@ -127,14 +129,52 @@ public sealed partial class MainForm
     }
     void ShowConfigurationComplete(string exe, bool opti)
     {
-        using var dialog = ProductDialog("配置完成");
-        var stack = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false };
-        stack.Controls.Add(Heading("配置完成", "Configuration complete", 22));
-        Paragraph(stack, opti ? "组件已部署，可以启动游戏。\n进入游戏后按 Insert 调节，并验证实际效果。" : "组件已部署，可以启动游戏。\n首次进入游戏：开启 FSR 超分辨率，进入场景后按 End 查看面板。");
-        var actions = new FlowLayoutPanel { AutoSize = true };
-        actions.Controls.Add(Action("返回游戏库", "Game library", (_, _) => { dialog.Close(); SwitchPage(1); }));
-        var start = Action("启动游戏", "Launch game", (_, _) => { dialog.Close(); LaunchGame(exe); }); start.BackColor = Acid; start.ForeColor = OnAccent; start.Chamfer = true; actions.Controls.Add(start);
-        stack.Controls.Add(actions); dialog.Controls.Add(stack); dialog.ShowDialog(this);
+        SwitchPage(1);
+        status.Text = opti
+            ? "开启成功 · OptiScaler 组件已部署。进入游戏后按 Insert 验证实际效果。"
+            : "开启成功 · 组件已部署。进入游戏后开启 FSR、按 End 验证实际效果。";
+        ShowProductToast("开启成功 · 可以启动游戏", true);
+    }
+
+    void ShowProductToast(string message, bool success)
+    {
+        productToastTimer?.Stop(); productToastTimer?.Dispose(); productToastTimer = null;
+        if (productToast != null) { pageHost.Controls.Remove(productToast); productToast.Dispose(); }
+        var toast = productToast = new RoundedPanel
+        {
+            Size = new Size(370, 58), Radius = 17, BackColor = Surface,
+            BorderColor = success ? Acid : Line, Padding = new Padding(16, 8, 16, 8)
+        };
+        toast.Controls.Add(new Label
+        {
+            Text = message, Dock = DockStyle.Fill, ForeColor = success ? Acid : Ink,
+            Font = new Font(Font.FontFamily, 11f, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter
+        });
+        pageHost.Controls.Add(toast); toast.BringToFront();
+        toast.Location = new Point(Math.Max(12, pageHost.ClientSize.Width - toast.Width - 26), 20);
+        productToastTimer = new System.Windows.Forms.Timer { Interval = 3500 };
+        productToastTimer.Tick += (_, _) =>
+        {
+            productToastTimer?.Stop(); productToastTimer?.Dispose(); productToastTimer = null;
+            if (productToast != null) { pageHost.Controls.Remove(productToast); productToast.Dispose(); productToast = null; }
+        };
+        productToastTimer.Start();
+    }
+
+    async Task EnableSelectedDlssAsync()
+    {
+        if (selectedGame == null || busy || configureAnimating) return;
+        configureAnimating = true;
+        install.Text = english ? "Enabling…" : "正在开启…";
+        libraryDownloadProgress.Visible = true;
+        libraryDownloadProgress.Value = 4;
+        try { await InstallAsync(); }
+        finally
+        {
+            configureAnimating = false;
+            install.Text = english ? "Enable DLSS5" : "开启 DLSS5";
+            if (!busy) libraryDownloadProgress.Visible = false;
+        }
     }
     void LaunchSelectedGame() { if (selectedGame != null && !busy) LaunchGame(selectedGame); }
     void LaunchGame(string exe)
@@ -187,33 +227,27 @@ public sealed partial class MainForm
         if (libraryAllTab != null) libraryAllTab.Text = english ? $"All {libraryGames.Count}" : $"全部 {libraryGames.Count}";
         if (libraryConfiguredTab != null) libraryConfiguredTab.Text = english ? $"Configured {configuredCount}" : $"已配置 {configuredCount}";
         if (unconfiguredTab != null) unconfiguredTab.Text = (english ? "Unconfigured " : "未配置 ") + states.Values.Count(s => s == LibraryFilter.Unconfigured);
-        if (attentionTab != null) attentionTab.Text = (english ? "Needs review " : "需确认 ") + states.Values.Count(s => s == LibraryFilter.Attention);
+        if (attentionTab != null) attentionTab.Text = (english ? "Unsupported " : "不支持 ") + states.Values.Count(s => s == LibraryFilter.Unsupported);
         libraryCount.Text = english ? $"{libraryGames.Count} games found" : $"已发现 {libraryGames.Count} 个游戏";
         var matches = libraryGames.Where(g => g.Title.Contains(librarySearch.Text.Trim(), StringComparison.OrdinalIgnoreCase)
             && (libraryFilter == LibraryFilter.All || states[g.ExePath] == libraryFilter)).ToList();
-        libraryPageIndex = LibraryPaging.ClampPage(libraryPageIndex, matches.Count);
-        var visible = matches.Skip(libraryPageIndex * LibraryPaging.PageSize).Take(LibraryPaging.PageSize)
-            .Select(g => g.ExePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var visible = matches.Select(g => g.ExePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (Control c in games.Controls)
             c.Visible = c.Tag is GameCandidate g && visible.Contains(g.ExePath);
-        previousGames.Enabled = libraryPageIndex > 0;
-        nextGames.Enabled = libraryPageIndex + 1 < LibraryPaging.PageCount(matches.Count);
-        pageNumber.Text = $"{libraryPageIndex + 1} / {LibraryPaging.PageCount(matches.Count)}";
         emptyLibrary.Visible = matches.Count == 0;
         emptyLibrary.Text = libraryGames.Count == 0 ? "尚未发现游戏 · 添加游戏或重新扫描" : "没有匹配的游戏 · 尝试其他筛选或搜索词";
-        homeTotal.Text = libraryGames.Count.ToString(); homeConfigured.Text = configuredCount.ToString();
-        LayoutGameCards();
+        LayoutV2Sections();
     }
     void LayoutGameCards()
     {
         int S(int n) => (int)Math.Round(n * DeviceDpi / 96d);
         int available = games.ClientSize.Width - games.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth;
-        const int columns = 4;
-        int width = Math.Max(S(100), (available - columns * S(24)) / columns);
+        const int columns = 5;
+        int width = Math.Max(S(100), (available - columns * S(16)) / columns);
         games.SuspendLayout();
         foreach (Control card in games.Controls)
         {
-            card.Margin = new Padding(0, S(8), S(24), S(16));
+            card.Margin = new Padding(0, S(8), S(16), S(16));
             card.Width = width;
             if (card.Controls.OfType<PictureBox>().FirstOrDefault() is not { } pic) continue;
             pic.SetBounds(S(3), S(3), width - S(6), (int)Math.Round((width - S(6)) * 394d / 309d));
@@ -271,7 +305,7 @@ public sealed partial class MainForm
         foreach (var row in downloadRows) row.Card.Visible = showCompleted == (row.State == "已完成 · 校验通过");
         var empty = downloadList.Controls.Find("empty", false).FirstOrDefault();
         if (empty == null) { empty = new Label { Name = "empty", AutoSize = true, MaximumSize = new Size(560, 0), ForeColor = muted, Padding = new Padding(12, 36, 12, 36) }; downloadList.Controls.Add(empty); }
-        empty.Text = showCompleted ? "暂无完成记录。" : "没有正在下载的任务。\n\n在游戏封面点击“开启 DLSS5”并确认配置后，所需组件会出现在这里。";
+        empty.Text = showCompleted ? "暂无完成记录。" : "没有正在下载的任务。\n\n点击“开启 DLSS5”后，所需组件会出现在这里。";
         empty.Visible = !downloadRows.Any(r => showCompleted == (r.State == "已完成 · 校验通过"));
     }
 }

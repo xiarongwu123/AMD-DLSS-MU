@@ -20,17 +20,27 @@ public sealed partial class MainForm
         while (accountPage.Controls.Count > 0) { var c = accountPage.Controls[0]; accountPage.Controls.Remove(c); c.Dispose(); }
         translations.RemoveAll(item => item.control.IsDisposed);
         // No credentials are stored or transmitted until a real authentication provider is supplied.
-        var content = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2, Padding = new Padding(48, 32, 48, 32), BackColor = Base };
-        content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 52)); content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 48));
-        var hero = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(16, 48, 24, 0) };
-        var eyebrow = new Label { Text = "MU / ACCOUNT CENTER", AutoSize = true, ForeColor = Acid, Font = new Font("Consolas", 11), Margin = new Padding(0, 0, 0, 24) };
-        hero.Controls.Add(eyebrow);
-        hero.Controls.Add(new Label { Text = registerAccount ? "创建账户\n同步游戏体验" : "登录，继续\n释放每一帧", AutoSize = true, ForeColor = Ink, Font = new Font(Font.FontFamily, 32, FontStyle.Bold), Margin = new Padding(0, 0, 0, 18) });
-        hero.Controls.Add(new Label { Text = registerAccount ? "MU 通行证" : "图形潜能", AutoSize = true, ForeColor = Acid, Font = new Font(Font.FontFamily, 32, FontStyle.Bold), Margin = new Padding(0, 0, 0, 28) });
-        hero.Controls.Add(new Label { Text = "把时间留给游戏。\n本地游戏管理无需登录，即刻开始。", AutoSize = true, ForeColor = Muted, Margin = new Padding(0, 0, 0, 32) });
-        var local = Action("进入本地游戏库 →", "Open local library →", (_, _) => SwitchPage(0)); local.Width = 240; local.Chamfer = true; hero.Controls.Add(local);
+        var content = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2, Padding = new Padding(30, 24, 30, 24), BackColor = Base };
+        content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 54)); content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 46));
+        var hero = new ArtworkPanel("AmdNrAssistant.mu-account-art.png") { Dock = DockStyle.Fill, MinimumSize = new Size(0, 760), BackColor = Color.FromArgb(5, 24, 26), BorderColor = Color.FromArgb(32, 103, 66), Radius = 24, FocusX = 0, Margin = new Padding(0, 0, 18, 0) };
+        var eyebrow = new Label { Text = "／ AMD DLSS MU    ／", ForeColor = Acid, Font = new Font(Font.FontFamily, 11, FontStyle.Bold), BackColor = Color.Transparent };
+        var headline = new Label { Text = registerAccount ? "创建账户\n管理游戏体验" : "登录账户\n继续游戏体验", ForeColor = Ink, Font = new Font(Font.FontFamily, 31, FontStyle.Bold), BackColor = Color.Transparent };
+        var pass = new Label { Text = "MU 通行证", ForeColor = Acid, Font = new Font(Font.FontFamily, 31, FontStyle.Bold), BackColor = Color.Transparent };
+        var subtitle = new Label { Text = "把时间留给游戏。\n本地游戏管理无需登录，即刻开始。", ForeColor = Muted, Font = new Font(Font.FontFamily, 12), BackColor = Color.Transparent };
+        var local = Action("进入本地游戏库  →", "Open local library →", (_, _) => SwitchPage(0)); local.BackColor = Surface; local.ForeColor = Ink; local.Radius = 18;
+        hero.Controls.Add(eyebrow); hero.Controls.Add(headline); hero.Controls.Add(pass); hero.Controls.Add(subtitle); hero.Controls.Add(local);
+        void LayoutHero()
+        {
+            var left = 38; var usable = Math.Max(240, hero.ClientSize.Width - 76);
+            eyebrow.SetBounds(left, 40, usable, 30);
+            headline.SetBounds(left, 105, usable, 150);
+            pass.SetBounds(left, 265, usable, 66);
+            subtitle.SetBounds(left, Math.Max(340, hero.ClientSize.Height - 182), usable, 66);
+            local.SetBounds(left, Math.Max(420, hero.ClientSize.Height - 106), Math.Min(280, usable), 52);
+        }
+        hero.ClientSizeChanged += (_, _) => LayoutHero(); LayoutHero();
         content.Controls.Add(hero, 0, 0);
-        var panel = new RoundedPanel { Dock = DockStyle.Fill, AutoSize = true, BackColor = Surface, Radius = 2, BorderColor = Line, Padding = new Padding(28), Margin = new Padding(16, 0, 0, 0) };
+        var panel = new RoundedPanel { Dock = DockStyle.Fill, AutoSize = true, BackColor = Surface, Radius = 24, BorderColor = Line, Padding = new Padding(30), Margin = Padding.Empty };
         var form = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 1, RowCount = 0, Margin = Padding.Empty };
         form.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         void Row(Control c, int height)
@@ -49,7 +59,7 @@ public sealed partial class MainForm
         TextBox Field(string label, string placeholder, bool password = false)
         {
             Row(new Label { Text = label, ForeColor = Muted, TextAlign = ContentAlignment.BottomLeft }, 30);
-            var border = new RoundedPanel { BackColor = Base, Radius = 2, BorderColor = Line, Padding = new Padding(12, 12, password ? 68 : 12, 8), Margin = new Padding(0, 6, 0, 0) };
+            var border = new RoundedPanel { BackColor = Base, Radius = 14, BorderColor = Line, Padding = new Padding(12, 12, password ? 68 : 12, 8), Margin = new Padding(0, 6, 0, 0) };
             var input = new TextBox { Dock = DockStyle.Fill, BorderStyle = BorderStyle.None, BackColor = Base, ForeColor = Ink, PlaceholderText = placeholder, UseSystemPasswordChar = password, AccessibleName = label, MaxLength = password ? 128 : 254 };
             border.Controls.Add(input);
             if (password)
@@ -87,7 +97,7 @@ public sealed partial class MainForm
             if (confirmation != null && confirmation.Text != password.Text) { feedback.Text = "两次输入的密码不一致。"; confirmation.Focus(); return; }
             feedback.Text = "账户服务尚未接入，未提交或保存任何账户信息。";
         });
-        submit.BackColor = Acid; submit.ForeColor = OnAccent; submit.Chamfer = true; Row(submit, 54); Row(feedback, 66);
+        submit.BackColor = Acid; submit.ForeColor = OnAccent; submit.Radius = 18; submit.Font = new Font(Font.FontFamily, 12, FontStyle.Bold); Row(submit, 58); Row(feedback, 66);
         var switchMode = Action(registerAccount ? "已有账号？返回登录" : "没有账号？立即注册", "Switch account mode", (_, _) => { registerAccount = !registerAccount; RenderAccount(); });
         Row(switchMode, 42);
         panel.Controls.Add(form); content.Controls.Add(panel, 1, 0); accountPage.Controls.Add(content);
