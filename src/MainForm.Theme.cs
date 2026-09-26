@@ -133,6 +133,10 @@ public sealed partial class MainForm
     void ApplyNativeTheme(Control control)
     {
         if (!OperatingSystem.IsWindows() || !control.IsHandleCreated) return;
+        // Owner-drawn buttons/panels have their own theme and paint lifecycle.
+        // Applying Explorer styles to them lets native hover painting compete
+        // with the custom rounded surface.
+        if (control is not TextBoxBase and not ComboBox and not ListView and not TreeView) return;
         try { SetWindowTheme(control.Handle, darkMode ? "DarkMode_Explorer" : "Explorer", null); }
         catch { /* Older Windows builds may not expose the dark Explorer theme. */ }
     }

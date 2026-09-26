@@ -90,8 +90,9 @@ public sealed class HeroTitleControl : Control
         e.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
         using var format = (StringFormat)StringFormat.GenericTypographic.Clone();
         format.FormatFlags |= StringFormatFlags.NoWrap | StringFormatFlags.MeasureTrailingSpaces;
-        using var light = new SolidBrush(MainForm.Ink);
-        using var accent = new LinearGradientBrush(ClientRectangle, MainForm.Acid,
+        // The artwork remains dark in both themes; never inherit dark-on-light ink.
+        using var light = new SolidBrush(Color.FromArgb(245, 249, 250));
+        using var accent = new LinearGradientBrush(ClientRectangle, Color.FromArgb(173, 255, 47),
             Color.FromArgb(75, 225, 124), 0f);
         const string prefix = "一键配置 AMD";
         e.Graphics.DrawString(prefix, Font, light, 0f, 0f, format);
@@ -157,8 +158,10 @@ public sealed class HoverLiftSlot : Panel
     void LayoutContent()
     {
         if (content == null || Width < 1 || Height < 1) return;
+        var previous = content.Bounds;
         var top = Math.Max(0, (int)Math.Round(7 * DeviceDpi / 96f - lift));
         content.SetBounds(0, top, Width, Math.Max(1, Height - (int)Math.Round(9 * DeviceDpi / 96f)));
+        if (previous != content.Bounds) Invalidate(Rectangle.Union(previous, content.Bounds), true);
     }
 
     protected override void OnSizeChanged(EventArgs e) { base.OnSizeChanged(e); LayoutContent(); }
@@ -192,9 +195,9 @@ public sealed class StatusChip : Control
         e.Graphics.DrawPath(border, shape);
         using var iconFont = new Font("Segoe MDL2 Assets", 10f);
         TextRenderer.DrawText(e.Graphics, "\uE721", iconFont, new Rectangle(7, 0, 23, Height),
-            MainForm.Muted, TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPadding);
+            MainForm.Muted, UiPaint.TextFlags | TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPadding);
         TextRenderer.DrawText(e.Graphics, Text, Font, new Rectangle(34, 0, Math.Max(1, Width - 39), Height),
-            MainForm.Muted, TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
+            MainForm.Muted, UiPaint.TextFlags | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
     }
 }
 
@@ -264,23 +267,18 @@ public sealed class ArtworkPanel : RoundedPanel
         g.SmoothingMode = SmoothingMode.AntiAlias;
         var source = ArtworkSource();
         g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-        g.DrawImage(artwork, ClientRectangle, source, GraphicsUnit.Pixel);
+        var bounds = new RectangleF(1, 1, Width - 2, Height - 2);
+        using var path = UiPaint.RoundPath(bounds, Radius * DeviceDpi / 96f);
+        UiPaint.FillImage(g, artwork, source, bounds, path);
         if (FadeBottom)
         {
-            var fade = new Rectangle(0, Math.Max(0, Height * 2 / 3), Width, Math.Max(1, Height / 3));
-            using var bottom = new LinearGradientBrush(fade, Color.Transparent, MainForm.Base, 90f);
-            g.FillRectangle(bottom, fade);
+            using var bottom = new LinearGradientBrush(ClientRectangle, Color.Transparent, MainForm.Base, 90f);
+            bottom.InterpolationColors = new ColorBlend { Colors = new[] { Color.Transparent, Color.Transparent, Color.FromArgb(175, MainForm.Base) }, Positions = new[] { 0f, .66f, 1f } };
+            g.FillPath(bottom, path);
         }
         if (!ShowBorder) return;
         using var border = new Pen(BorderColor == default ? Color.FromArgb(80, MainForm.Acid) : BorderColor, 1.4f)
         { Alignment = PenAlignment.Inset };
-        using var path = new GraphicsPath();
-        var diameter = Math.Min(Radius * 2, Math.Min(Width - 1, Height - 1));
-        path.AddArc(0, 0, diameter, diameter, 180, 90);
-        path.AddArc(Width - diameter - 1, 0, diameter, diameter, 270, 90);
-        path.AddArc(Width - diameter - 1, Height - diameter - 1, diameter, diameter, 0, 90);
-        path.AddArc(0, Height - diameter - 1, diameter, diameter, 90, 90);
-        path.CloseFigure();
         g.DrawPath(border, path);
         using var softEdge = new Pen(Color.FromArgb(23, MainForm.Acid), 5f) { Alignment = PenAlignment.Inset };
         g.DrawPath(softEdge, path);
@@ -314,20 +312,14 @@ public sealed class GlassPanel : RoundedPanel
     protected override void OnPaintBackground(PaintEventArgs e)
     {
         e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        if (Parent is ArtworkPanel art) art.DrawArtworkSection(e.Graphics, Bounds);
-        else e.Graphics.Clear(MainForm.Base);
+        UiPaint.ParentBackground(this, e, InvokePaintBackground, InvokePaint);
         if (Width < 2 || Height < 2) return;
-        using var path = new GraphicsPath();
-        var d = Math.Max(2, Math.Min(Radius * 2, Math.Min(Width - 1, Height - 1)));
-        path.AddArc(0, 0, d, d, 180, 90);
-        path.AddArc(Width - d - 1, 0, d, d, 270, 90);
-        path.AddArc(Width - d - 1, Height - d - 1, d, d, 0, 90);
-        path.AddArc(0, Height - d - 1, d, d, 90, 90);
-        path.CloseFigure();
+        using var path = UiPaint.RoundPath(new RectangleF(1, 1, Width - 2, Height - 2), Radius * DeviceDpi / 96f);
         using var tint = new LinearGradientBrush(ClientRectangle,
-            Color.FromArgb(231, MainForm.Surface), Color.FromArgb(205, MainForm.SelectedSurface), 15f);
+            Color.FromArgb(225, MainForm.Surface), Color.FromArgb(218, MainForm.Base), 105f);
         e.Graphics.FillPath(tint, path);
-        using var outer = new Pen(Color.FromArgb(85, MainForm.Acid), 1.5f) { Alignment = PenAlignment.Inset };
+        using var edge = new LinearGradientBrush(ClientRectangle, Color.FromArgb(85, MainForm.Acid), Color.FromArgb(80, MainForm.Line), 45f);
+        using var outer = new Pen(edge, 1.2f) { Alignment = PenAlignment.Inset };
         e.Graphics.DrawPath(outer, path);
     }
 }
@@ -337,15 +329,9 @@ public sealed class GlowPanel : RoundedPanel
     protected override void OnPaintBackground(PaintEventArgs e)
     {
         if (Width < 2 || Height < 2) return;
-        e.Graphics.Clear(UiPaint.OpaqueBackground(Parent));
+        UiPaint.ParentBackground(this, e, InvokePaintBackground, InvokePaint);
         e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        using var path = new GraphicsPath();
-        var d = Math.Max(2, Math.Min(Radius * 2, Math.Min(Width - 1, Height - 1)));
-        path.AddArc(1, 1, d, d, 180, 90);
-        path.AddArc(Width - d - 2, 1, d, d, 270, 90);
-        path.AddArc(Width - d - 2, Height - d - 2, d, d, 0, 90);
-        path.AddArc(1, Height - d - 2, d, d, 90, 90);
-        path.CloseFigure();
+        using var path = UiPaint.RoundPath(new RectangleF(1, 1, Width - 2, Height - 2), Radius * DeviceDpi / 96f);
         using var fill = new LinearGradientBrush(ClientRectangle, MainForm.SelectedSurface, MainForm.Surface, 10f);
         e.Graphics.FillPath(fill, path);
         using var edge = new LinearGradientBrush(ClientRectangle,

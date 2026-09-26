@@ -7,7 +7,7 @@ public sealed partial class MainForm
 {
     Color ink => Ink;
     Color muted => Muted;
-    readonly Panel pageHost = new() { Dock = DockStyle.Fill };
+    readonly Panel pageHost = new BufferedPageHost { Dock = DockStyle.Fill };
     TableLayoutPanel? shellLayout;
     readonly Panel libraryPage = new LibraryScrollPanel { Dock = DockStyle.Fill };
     readonly List<(Control control, string zh, string en)> translations = new();
@@ -21,8 +21,6 @@ public sealed partial class MainForm
     readonly Label libraryCount = new() { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight };
     UnderlineTabButton? libraryAllTab;
     UnderlineTabButton? libraryConfiguredTab;
-    System.Windows.Forms.Timer? pageTransition;
-    Control? transitioningPage;
     int activePage;
     T Localize<T>(T c, string zh, string en) where T : Control { translations.Add((c, zh, en)); c.Text = english ? en : zh; return c; }
     Label Heading(string zh, string en, float size = 14) => Localize(new Label { AutoSize = true, ForeColor = ink, Font = new Font(Font.FontFamily, size), Margin = new Padding(0, 8, 0, 8), Padding = Padding.Empty }, zh, en);
@@ -35,6 +33,9 @@ public sealed partial class MainForm
     public MainForm()
     {
         LoadPreferences();
+        using (var iconStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("AmdNrAssistant.AppIcon"))
+            if (iconStream != null) { using var embeddedIcon = new Icon(iconStream); Icon = (Icon)embeddedIcon.Clone(); }
+        ShowIcon = true;
         Text = "AMD DLSS MU · 2.0 Preview"; Size = new Size(1440, 910); MinimumSize = new Size(1200, 740);
         Font = new Font("Microsoft YaHei UI", 10f, FontStyle.Regular); AutoScaleDimensions = new SizeF(96, 96); AutoScaleMode = AutoScaleMode.Dpi;
         StartPosition = FormStartPosition.CenterScreen; BackColor = Line; ForeColor = ink; Padding = new Padding(1);
@@ -50,7 +51,7 @@ public sealed partial class MainForm
         BuildLibrary(); BuildV2Home(); BuildAbout(); BuildProductPages(); BuildAccountPage(); BuildMagpiePage(); SwitchPage(6); ApplyTheme(darkMode, false); ApplyAccountGate();
         Shown += async (_, _) => await RestoreAccountAsync();
         FormClosing += (_, e) => { if (busy && !lifetime.IsCancellationRequested) { e.Cancel = true; MessageBox.Show(this, "请等待当前操作完成，或先在下载任务中取消下载。", Text); } };
-        FormClosed += (_, _) => { accountHeartbeat.Stop(); accountHeartbeat.Dispose(); accountClient.Changed -= AccountStateChanged; pageTransition?.Stop(); pageTransition?.Dispose(); sectionTransition?.Stop(); sectionTransition?.Dispose(); productToastTimer?.Stop(); productToastTimer?.Dispose(); controlPanel?.Close(); lifetime.Cancel(); accountClient.Dispose(); };
+        FormClosed += (_, _) => { accountHeartbeat.Stop(); accountHeartbeat.Dispose(); accountClient.Changed -= AccountStateChanged; productToastTimer?.Stop(); productToastTimer?.Dispose(); controlPanel?.Close(); lifetime.Cancel(); accountClient.Dispose(); };
     }
 
     void BuildLibrary()
@@ -94,55 +95,30 @@ public sealed partial class MainForm
     void SwitchPage(int index)
     {
         if (index != 6 && !accountClient.IsOnline && !(index == 3 && busy)) index = 6;
-        if (sectionTransition != null)
+        pageHost.SuspendLayout();
+        try
         {
-            sectionTransition.Stop();
-            sectionTransition.Dispose();
-            sectionTransition = null;
-        }
-        var changed = activePage != index;
-        activePage = index; libraryPage.Visible = index is 0 or 1; if (aboutPanel != null) aboutPanel.Visible = index == 2;
-        downloadsPage.Visible = index == 3; helpPage.Visible = index == 4; settingsPage.Visible = index == 5;
-        accountPage.Visible = index == 6; magpiePage.Visible = index == 7;
-        SetHeaderMode(index);
-        if (index is 0 or 1) ScrollToLibrarySection(index == 1);
-        for (int i = 0; i < navigation.Count; i++) { bool current = navigationPages[i] == index; navigation[i].BackColor = current ? SelectedSurface : Sidebar; navigation[i].ForeColor = current ? Acid : muted; ((RoundedButton)navigation[i]).Active = current; navigation[i].Invalidate(); }
-        if (index == 3) RenderDownloads();
-        ApplyTheme(darkMode, false);
-        if (changed)
-        {
+            activePage = index; libraryPage.Visible = index is 0 or 1; if (aboutPanel != null) aboutPanel.Visible = index == 2;
+            downloadsPage.Visible = index == 3; helpPage.Visible = index == 4; settingsPage.Visible = index == 5;
+            accountPage.Visible = index == 6; magpiePage.Visible = index == 7;
+            SetHeaderMode(index);
+            if (index is 0 or 1) ScrollToLibrarySection(index == 1);
+            for (int i = 0; i < navigation.Count; i++) { bool current = navigationPages[i] == index; navigation[i].BackColor = current ? SelectedSurface : Sidebar; navigation[i].ForeColor = current ? Acid : muted; ((RoundedButton)navigation[i]).Active = current; navigation[i].Invalidate(); }
+            if (index == 3) RenderDownloads();
             var page = index switch { 0 or 1 => libraryPage, 2 => aboutPanel, 3 => downloadsPage, 4 => helpPage, 5 => settingsPage, 6 => accountPage, 7 => magpiePage, _ => null };
-            if (page != null && index != 1) AnimatePageEntrance(page);
+            // Moving a page containing native text boxes and dozens of child
+            // windows per frame leaves stale pixels and thrashes layout. Keep
+            // page geometry stable; buttons/cards retain their own animation.
+            if (page != null) { page.Dock = DockStyle.Fill; page.BringToFront(); }
         }
-    }
-
-    void AnimatePageEntrance(Control page)
-    {
-        pageTransition?.Stop(); pageTransition?.Dispose();
-        pageTransition = null;
-        if (transitioningPage is { IsDisposed: false }) transitioningPage.Dock = DockStyle.Fill;
-        transitioningPage = null;
-        var finalBounds = pageHost.ClientRectangle;
-        if (finalBounds.Width <= 0 || finalBounds.Height <= 0) return;
-        if (!SystemInformation.IsMenuAnimationEnabled) { page.Dock = DockStyle.Fill; return; }
-        transitioningPage = page;
-        page.BringToFront(); page.Dock = DockStyle.None;
-        var startOffset = Math.Max(10, (int)Math.Round(18 * DeviceDpi / 96d));
-        page.Bounds = new Rectangle(finalBounds.X + startOffset, finalBounds.Y, finalBounds.Width, finalBounds.Height);
-        var frame = 0;
-        pageTransition = new System.Windows.Forms.Timer { Interval = 15 };
-        pageTransition.Tick += (_, _) =>
+        finally
         {
-            frame++;
-            var t = Math.Min(1d, frame / 13d);
-            var eased = 1d - Math.Pow(1d - t, 3d);
-            page.Left = finalBounds.X + (int)Math.Round(startOffset * (1d - eased));
-            if (t < 1d) return;
-            pageTransition!.Stop(); pageTransition.Dispose(); pageTransition = null;
-            page.Bounds = finalBounds; page.Dock = DockStyle.Fill;
-            transitioningPage = null;
-        };
-        pageTransition.Start();
+            pageHost.ResumeLayout(true);
+            // Queue one redraw after layout. Synchronous Refresh on both trees
+            // exposes intermediate native child-window frames during switching.
+            pageHost.Invalidate(true);
+            headerNavigation?.Parent?.Invalidate(true);
+        }
     }
     void RefreshHome()
     {

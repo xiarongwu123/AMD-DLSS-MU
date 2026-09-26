@@ -104,11 +104,37 @@ public sealed partial class MainForm
         }
     }
 
-    async Task NavigateAuthorizedAsync(int page)
+    bool CanNavigateToPage(int page)
     {
-        if (page == 6) { SwitchPage(6); if (!accountRequestBusy) RenderAccount(); return; }
+        if (IsDisposed || lifetime.IsCancellationRequested) return false;
+        if (page == 6) return true;
+        // Keep the existing ability to view/cancel an in-flight download when
+        // connectivity is lost; this never authorizes starting new work.
+        if (page == 3 && busy) return true;
+        if (!accountClient.HasSession || !accountClient.IsOnline)
+        {
+            accountFeedback = "请先联网登录，再使用客户端功能。";
+            SwitchPage(6); return false;
+        }
         var feature = page switch { 7 => "magpie.launch", 4 => "diagnostics.use", 5 => "configuration.edit", _ => "library.manage" };
-        if (await RequireFeatureAsync(feature)) SwitchPage(page);
+        if (accountClient.Account?.Features.Any(f => f.Key == feature && f.Allowed) != true)
+        {
+            ShowProductToast("当前账户暂无此页面的功能权限。", false); return false;
+        }
+        return true;
+    }
+
+    Task NavigateAuthorizedAsync(int page)
+    {
+        // Viewing an existing local page is not a privileged operation. Use the
+        // heartbeat-verified snapshot so tab clicks cannot await/reorder HTTP
+        // requests. Every action still calls RequireFeatureAsync server-side.
+        if (CanNavigateToPage(page))
+        {
+            SwitchPage(page);
+            if (page == 6 && !accountRequestBusy) RenderAccount();
+        }
+        return Task.CompletedTask;
     }
 
     IDisposable BeginAccountTransaction()

@@ -247,7 +247,7 @@ public sealed partial class MainForm
         var tile = new RoundedPanel { Size = new Size(width, height), Radius = 16, BackColor = Surface, Margin = Padding.Empty, Cursor = Cursors.Hand, AccessibleName = game.Title + "，查看游戏" };
         var cover = new CoverPictureBox { Dock = DockStyle.Fill, Image = image, Tag = game.CoverPath != null, BackColor = Surface, Cursor = Cursors.Hand, AccessibleName = game.Title };
         cover.Disposed += (_, _) => cover.Image?.Dispose();
-        var name = new Label { Text = game.Title, Dock = DockStyle.Bottom, Height = 38, Padding = new Padding(10, 8, 6, 0), BackColor = Surface, ForeColor = Ink, Font = new Font(Font.FontFamily, 9f, FontStyle.Bold), AutoEllipsis = true, Cursor = Cursors.Hand };
+        var name = new Label { Text = game.Title, Dock = DockStyle.Bottom, Height = 38, Padding = new Padding(10, 8, 6, 0), BackColor = Color.Transparent, ForeColor = Ink, Font = new Font(Font.FontFamily, 9f, FontStyle.Bold), AutoEllipsis = true, Cursor = Cursors.Hand };
         async void Open(object? _, EventArgs __) { if (!await RequireFeatureAsync("library.manage")) return; SwitchPage(1); RevealGame(game); var target = games.Controls.Cast<Control>().FirstOrDefault(c => ReferenceEquals(c.Tag, game)); if (target != null) games.ScrollControlIntoView(target); }
         tile.Click += Open; cover.Click += Open; name.Click += Open;
         tile.Controls.Add(cover); tile.Controls.Add(name);

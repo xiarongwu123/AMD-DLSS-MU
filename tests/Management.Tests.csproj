@@ -7,6 +7,7 @@
     <Compile Include="../src/DownloadSources.cs" Link="DownloadSources.cs"/>
     <Compile Include="../src/AutoUpdate.cs" Link="AutoUpdate.cs"/>
     <Compile Include="../src/Diagnostics.cs" Link="Diagnostics.cs"/>
+    <Compile Include="../src/UpstreamInstaller.cs" Link="UpstreamInstaller.cs"/>
     <Compile Include="../src/OptiInstaller.cs" Link="OptiInstaller.cs"/>
     <Compile Include="../src/LivePanel.cs" Link="LivePanel.cs"/>
     <PackageReference Include="SharpCompress" Version="0.48.1" />

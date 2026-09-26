@@ -22,7 +22,8 @@ public sealed class DlssCoverAction : Control
     public DlssCoverAction()
     {
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
-            ControlStyles.OptimizedDoubleBuffer | ControlStyles.Selectable, true);
+            ControlStyles.OptimizedDoubleBuffer | ControlStyles.Selectable | ControlStyles.SupportsTransparentBackColor, true);
+        BackColor = Color.Transparent;
         Cursor = Cursors.Default;
         TabStop = true;
         revealTimer.Tick += (_, _) =>
@@ -77,27 +78,18 @@ public sealed class DlssCoverAction : Control
             ? Cursors.Hand : Cursors.Default;
     }
 
+    protected override void OnPaintBackground(PaintEventArgs e)
+        => UiPaint.ParentBackground(this, e, InvokePaintBackground, InvokePaint);
+
     protected override void OnPaint(PaintEventArgs e)
     {
         var g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.Clear(MainForm.Base);
-        if (Parent is PictureBox { Image: { } image } picture)
-        {
-            var poster = picture.Tag is true;
-            var scale = poster
-                ? Math.Max((float)Width / image.Width, (float)Height / image.Height)
-                : Math.Min((float)Width / image.Width, (float)Height / image.Height);
-            if (!poster)
-            {
-                var iconLimit = Math.Min(92f, Width * .35f) * DeviceDpi / 96f;
-                scale = Math.Min(scale, Math.Min(iconLimit / image.Width, iconLimit / image.Height));
-            }
-            var w = image.Width * scale; var h = image.Height * scale;
-            g.DrawImage(image, (Width - w) / 2, poster ? 0 : (Height - h) / 2 - 15, w, h);
-        }
+        if (Width < 2 || Height < 2) return;
+        using var coverPath = UiPaint.RoundPath(new RectangleF(.5f, .5f, Width - 1, Height - 1),
+            (Parent is CoverPictureBox cover ? cover.CornerRadius : 16) * DeviceDpi / 96f, topOnly: true);
         using var shade = new SolidBrush(Color.FromArgb((int)(219 * reveal), MainForm.Base));
-        g.FillRectangle(shade, ClientRectangle);
+        g.FillPath(shade, coverPath);
         if (reveal < .55f && !Loading) return;
         if (Loading)
         {
@@ -111,7 +103,7 @@ public sealed class DlssCoverAction : Control
             using var font = new Font("Microsoft YaHei UI", 11f, FontStyle.Bold);
             TextRenderer.DrawText(g, English ? $"Configuring · {Progress}%" : $"正在配置 · {Progress}%", font,
                 new Rectangle(0, track.Top - 46, Width, 34), MainForm.Ink,
-                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                UiPaint.TextFlags | TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
             return;
         }
         DrawButton(g, Primary, MainForm.Acid, MainForm.OnAccent, PrimaryText, true);
@@ -134,6 +126,6 @@ public sealed class DlssCoverAction : Control
         g.DrawPath(pen, path);
         using var font = new Font("Microsoft YaHei UI", primary ? 11f : 9f, primary ? FontStyle.Bold : FontStyle.Regular);
         TextRenderer.DrawText(g, label, font, bounds, ink,
-            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+            UiPaint.TextFlags | TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
     }
 }

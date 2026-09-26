@@ -16,9 +16,8 @@ public sealed partial class MainForm
     readonly FlowLayoutPanel homeCards = new() { WrapContents = false, BackColor = Color.Transparent, Margin = Padding.Empty };
     readonly Label emptyLibrary = new() { AutoSize = false, Size = new Size(650, 100), TextAlign = ContentAlignment.MiddleCenter, ForeColor = Muted };
     UnderlineTabButton? unconfiguredTab, attentionTab;
-    RoundedButton scrollLibrary = null!;
+    ScrollHintControl scrollLibrary = null!;
     RoundedButton heroDlss = null!, heroMagpie = null!;
-    System.Windows.Forms.Timer? sectionTransition;
     bool layingOutSections;
     bool libraryOnly;
     Control? headerBrand, headerNavigation, headerSearch, headerUpdate;
@@ -92,7 +91,7 @@ public sealed partial class MainForm
         var searchIcon = new Label { Text = "\uE721", Dock = DockStyle.Left, Width = 25, ForeColor = Muted, Font = new Font("Segoe MDL2 Assets", 12), TextAlign = ContentAlignment.MiddleCenter, BackColor = Color.Transparent };
         librarySearch.PlaceholderText = english ? "Search games..." : "搜索游戏 / Search games...";
         librarySearch.BackColor = Surface; librarySearch.ForeColor = ink;
-        librarySearch.TextChanged += async (_, _) => { if (accountClient.IsOnline && await RequireFeatureAsync("library.manage")) { FilterGames(); SwitchPage(1); } };
+        librarySearch.TextChanged += (_, _) => { if (accountClient.IsOnline && CanNavigateToPage(1)) { FilterGames(); if (activePage != 1) SwitchPage(1); } };
         search.Controls.Add(librarySearch); search.Controls.Add(searchIcon);
         header.Controls.Add(search); header.Controls.Add(update);
         headerSearch = search; headerUpdate = update;
@@ -125,7 +124,7 @@ public sealed partial class MainForm
     {
         libraryPage.AutoScroll = true;
         games.AutoScroll = false;
-        homeHero = new ArtworkPanel("AmdNrAssistant.mu-hero-art.png") { Radius = 18, ShowBorder = true, FadeBottom = true, BackColor = Color.FromArgb(6, 31, 27), FocusX = .5f };
+        homeHero = new ArtworkPanel("AmdNrAssistant.mu-home-banner-new.png") { Radius = 18, ShowBorder = true, FadeBottom = true, BackColor = Color.FromArgb(6, 31, 27), FocusX = .5f };
         homeHero.Controls.Add(new HeroTitleControl { Font = new Font(Font.FontFamily, 34f, FontStyle.Bold), Name = "heroTitle" });
         heroDlss = Action("开启 DLSS5", "Open DLSS5", async (_, _) => await NavigateAuthorizedAsync(1));
         heroDlss.BackColor = Acid; heroDlss.ForeColor = OnAccent; heroDlss.Radius = 16;
@@ -135,18 +134,18 @@ public sealed partial class MainForm
         heroMagpie.Glyph = "\uE945"; heroMagpie.Font = new Font(Font.FontFamily, 11f, FontStyle.Bold);
         homeHero.Controls.Add(heroDlss); homeHero.Controls.Add(heroMagpie);
         homeSection.Controls.Add(homeHero);
-        homeSectionTitle = new Label { Text = "我的游戏", Font = new Font(Font.FontFamily, 18f, FontStyle.Bold), ForeColor = Ink, AutoSize = false };
-        homeSectionHint = new Label { Text = "已扫描到的本地游戏，选择并一键配置。", ForeColor = Muted, AutoSize = false };
+        homeSectionTitle = new Label { Text = "我的游戏", Font = new Font(Font.FontFamily, 18f, FontStyle.Bold), ForeColor = Ink, AutoSize = false, BackColor = Color.Transparent };
+        homeSectionHint = new Label { Text = "已扫描到的本地游戏，选择并一键配置。", ForeColor = Muted, AutoSize = false, BackColor = Color.Transparent };
         homeSection.Controls.Add(homeSectionTitle); homeSection.Controls.Add(homeSectionHint);
         homeSection.Controls.Add(homeCards);
-        scrollLibrary = Action("下滑查看全部游戏  ↓", "Scroll for all games  ↓", async (_, _) => await NavigateAuthorizedAsync(1));
-        scrollLibrary.BackColor = SelectedSurface; scrollLibrary.ForeColor = Acid; scrollLibrary.Radius = 18;
+        scrollLibrary = new ScrollHintControl { Text = english ? "Scroll for all games" : "下滑查看全部游戏", ForeColor = Muted };
+        scrollLibrary.Click += async (_, _) => await NavigateAuthorizedAsync(1);
         scrollLibrary.Font = new Font(Font.FontFamily, 10f, FontStyle.Bold); homeSection.Controls.Add(scrollLibrary);
         libraryPage.Controls.Add(homeSection);
         libraryPage.ClientSizeChanged += (_, _) => LayoutV2Sections();
         libraryPage.Scroll += (_, _) => UpdateScrollNavigation();
         if (libraryPage is LibraryScrollPanel scrollHost)
-            scrollHost.EnterLibraryRequested += async (_, _) => { if (await RequireFeatureAsync("library.manage")) AnimateToLibrary(); };
+            scrollHost.EnterLibraryRequested += (_, _) => { if (CanNavigateToPage(1)) AnimateToLibrary(); };
         RenderHomeCards(); LayoutV2Sections();
     }
 
@@ -190,6 +189,12 @@ public sealed partial class MainForm
         int S(int n) => (int)Math.Round(n * DeviceDpi / 96d);
         card.Size = new Size(width, height + S(9)); card.Margin = new Padding(0, 0, S(18), S(12));
         if (card is not HoverLiftSlot { Content: { } content }) return;
+        if (content.Name == "addGameArtwork")
+        {
+            content.Controls["addTitle"]?.SetBounds(S(20), height - S(86), width - S(40), S(34));
+            content.Controls["addHint"]?.SetBounds(S(20), height - S(48), width - S(40), S(26));
+            return;
+        }
         if (content.Controls.Find("addIcon", false).FirstOrDefault() is Control addIcon)
         {
             addIcon.SetBounds(0, Math.Max(0, height / 2 - S(52)), width, S(58));
@@ -197,8 +202,12 @@ public sealed partial class MainForm
             return;
         }
         if (content.Controls.OfType<PictureBox>().FirstOrDefault() is not { } pic) return;
-        var compact = width < S(340);
-        pic.SetBounds(S(2), S(2), width - S(4), height - (compact ? S(126) : S(88)));
+        var compact = width < S(280);
+        // Reserve a fixed gutter for the largest hover stroke. Child windows
+        // are always painted over their parent, including the parent's border.
+        pic.SetBounds(S(6), S(6), width - S(12), height - (compact ? S(126) : S(88)) - S(4));
+        if (pic is CoverPictureBox cover && content is RoundedPanel panel)
+            cover.CornerRadius = Math.Max(1, panel.Radius - 6);
         if (content.Controls.OfType<Label>().FirstOrDefault() is { } title)
             title.SetBounds(S(14), pic.Bottom + S(8), width - S(28), S(26));
         if (content.Controls.OfType<StatusChip>().FirstOrDefault() is { } status)
@@ -256,16 +265,16 @@ public sealed partial class MainForm
                 ForeColor = Muted, Font = new Font(Font.FontFamily, 11f), BackColor = Color.Transparent });
             homeCards.Controls.Add(new HoverLiftSlot { Content = blank });
         }
-        var add = new RoundedPanel { BackColor = Surface, Radius = 18, Cursor = Cursors.Hand,
+        var add = new ArtworkPanel("AmdNrAssistant.mu-add-game-art.png") { Name = "addGameArtwork", BackColor = Surface, Radius = 18, Cursor = Cursors.Hand,
             AccessibleName = "手动添加游戏", TabStop = true };
-        var addGlyph = new Label { Name = "addIcon", Text = "\uE710", ForeColor = Acid,
-            Font = new Font("Segoe MDL2 Assets", 26), TextAlign = ContentAlignment.MiddleCenter,
-            BackColor = Color.Transparent, Cursor = Cursors.Hand };
+        var addHint = new Label { Name = "addHint", Text = "选择本地游戏 · 加入你的游戏库", ForeColor = Muted,
+            TextAlign = ContentAlignment.MiddleCenter, BackColor = Color.Transparent, Cursor = Cursors.Hand };
         var addTitle = new Label { Name = "addTitle", Text = "添加游戏", ForeColor = Ink,
             Font = new Font(Font.FontFamily, 17f, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter,
             BackColor = Color.Transparent, Cursor = Cursors.Hand };
-        add.Controls.Add(addGlyph); add.Controls.Add(addTitle);
-        add.Click += SelectGameManually; addGlyph.Click += SelectGameManually; addTitle.Click += SelectGameManually;
+        add.Controls.Add(addHint); add.Controls.Add(addTitle);
+        add.Click += SelectGameManually; addHint.Click += SelectGameManually; addTitle.Click += SelectGameManually;
+        add.KeyDown += (_, e) => { if (e.KeyCode is Keys.Enter or Keys.Space) { SelectGameManually(add, EventArgs.Empty); e.Handled = true; e.SuppressKeyPress = true; } };
         homeCards.Controls.Add(new HoverLiftSlot { Content = add });
         LayoutV2Sections();
     }
@@ -286,29 +295,17 @@ public sealed partial class MainForm
 
     void AnimateToLibrary()
     {
-        if (sectionTransition?.Enabled == true || activePage == 1) return;
-        var origin = -libraryPage.AutoScrollPosition.Y;
-        var target = homeSection.Height;
-        var frame = 0;
-        sectionTransition = new System.Windows.Forms.Timer { Interval = 15 };
-        sectionTransition.Tick += (_, _) =>
-        {
-            frame++;
-            var t = Math.Min(1d, frame / 22d);
-            var eased = 1d - Math.Pow(1d - t, 3d);
-            libraryPage.AutoScrollPosition = new Point(0, origin + (int)Math.Round((target - origin) * eased));
-            if (t < 1d) return;
-            sectionTransition!.Stop(); sectionTransition.Dispose(); sectionTransition = null;
-            activePage = 1;
-            ScrollToLibrarySection(true);
-        };
-        sectionTransition.Start();
+        if (activePage == 1) return;
+        // AutoScrollPosition uses ScrollWindow to move native child windows.
+        // Driving it per animation frame tears their independently painted
+        // surfaces. Use one settled page change; local hover motion remains.
+        SwitchPage(1);
     }
 
     void UpdateScrollNavigation()
     {
         if (activePage is not 0 and not 1) return;
-        if (!libraryOnly && sectionTransition?.Enabled != true &&
+        if (!libraryOnly &&
             -libraryPage.AutoScrollPosition.Y >= homeSection.Height - 16)
         {
             ScrollToLibrarySection(true);

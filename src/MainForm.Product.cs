@@ -147,6 +147,55 @@ public sealed partial class MainForm
         ShowProductToast("开启成功 · 可以启动游戏", true);
     }
 
+    void ShowInstallationFailure(Exception error, string exe)
+    {
+        if (IsDisposed || Disposing) return;
+        var missingRuntime = error is MissingAmdHipRuntimeException;
+        var title = missingRuntime ? "开启失败：缺少 AMD 运行时" : "开启 DLSS5 失败";
+        var advice = missingRuntime
+            ? "如果你使用 NVIDIA 显卡：请勿继续此 AMD 安装方案，也不要在上游提示中强行输入 y。此提示不是 NVIDIA 驱动损坏。\r\n\r\n如果你使用 AMD 显卡：请检查上游支持的显卡型号和 AMD Adrenalin 驱动。\r\n\r\n若游戏显示配置未完成，请先使用“恢复配置”清理本次安装，再重试。"
+            : "安装未成功。请保留下面的错误详情；若游戏显示配置未完成，请先恢复配置再重试。";
+        var fullText = title + "\r\n\r\n" + error.Message + "\r\n\r\n处理建议\r\n" + advice +
+            "\r\n\r\n技术详情（路径等敏感信息已脱敏）\r\n" + Diagnostics.Redact(error.ToString(), exe);
+        using var dialog = new Form
+        {
+            Text = title, StartPosition = FormStartPosition.CenterParent,
+            ClientSize = new Size(700, 480), MinimumSize = new Size(460, 340),
+            BackColor = Surface, ForeColor = Ink, Font = Font,
+            MinimizeBox = false, MaximizeBox = false, ShowInTaskbar = false
+        };
+        var heading = new Label
+        {
+            Dock = DockStyle.Top, Height = 64, Padding = new Padding(20, 12, 20, 8),
+            Text = "⚠ " + title, ForeColor = Color.FromArgb(255, 120, 100),
+            Font = new Font(Font.FontFamily, 16, FontStyle.Bold)
+        };
+        var details = new TextBox
+        {
+            Dock = DockStyle.Fill, Multiline = true, ReadOnly = true, WordWrap = true,
+            ScrollBars = ScrollBars.Vertical, Text = fullText, BorderStyle = BorderStyle.None,
+            BackColor = Surface, ForeColor = Ink, Font = new Font(Font.FontFamily, 11)
+        };
+        var body = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20, 8, 20, 12), BackColor = Surface };
+        body.Controls.Add(details);
+        var actions = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Bottom, Height = 62, Padding = new Padding(20, 8, 20, 8),
+            FlowDirection = FlowDirection.RightToLeft, BackColor = Surface
+        };
+        var close = new Button { Text = "知道了", Width = 100, Height = 38, DialogResult = DialogResult.OK };
+        var copy = new Button { Text = "复制完整错误", Width = 140, Height = 38 };
+        copy.Click += (_, _) =>
+        {
+            try { Clipboard.SetText(fullText); copy.Text = "已复制"; }
+            catch { MessageBox.Show(dialog, "无法访问剪贴板，可在详情中选择文本复制。", "复制失败"); }
+        };
+        actions.Controls.Add(close); actions.Controls.Add(copy);
+        dialog.Controls.Add(body); dialog.Controls.Add(actions); dialog.Controls.Add(heading);
+        dialog.AcceptButton = close; dialog.CancelButton = close;
+        dialog.ShowDialog(this);
+    }
+
     void ShowProductToast(string message, bool success)
     {
         productToastTimer?.Stop(); productToastTimer?.Dispose(); productToastTimer = null;
@@ -264,7 +313,9 @@ public sealed partial class MainForm
             card.Margin = new Padding(0, S(8), S(16), S(16));
             card.Width = width;
             if (card.Controls.OfType<PictureBox>().FirstOrDefault() is not { } pic) continue;
-            pic.SetBounds(S(3), S(3), width - S(6), (int)Math.Round((width - S(6)) * 394d / 309d));
+            pic.SetBounds(S(6), S(6), width - S(12), (int)Math.Round((width - S(12)) * 394d / 309d));
+            if (pic is CoverPictureBox cover && card is RoundedPanel panel)
+                cover.CornerRadius = Math.Max(1, panel.Radius - 6);
             var labels = card.Controls.OfType<Label>().ToArray();
             if (labels.Length >= 2) { labels[0].SetBounds(S(12), pic.Bottom + S(10), width - S(24), S(25)); labels[1].SetBounds(S(12), pic.Bottom + S(37), width - S(24), S(24)); }
             card.Height = pic.Bottom + S(72);

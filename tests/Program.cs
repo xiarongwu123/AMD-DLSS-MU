@@ -11,6 +11,7 @@ Assert(LibraryPaging.PageCount(16) == 2 && LibraryPaging.PageCount(17) == 3, "ex
 Assert(LibraryPaging.ClampPage(2, 3) == 0, "filtering to three games resets out-of-range page");
 Assert(LibraryPaging.ClampPage(-1, 24) == 0, "previous page cannot go below zero");
 await DownloadTests.Run(root, Assert);
+InstallerProtocolTests.Run(Assert);
 void Assert(bool ok, string name) { if (!ok) throw new Exception(name); count++; Console.WriteLine("PASS " + name); }
 void Reject(Action act, string name) { try { act(); } catch (IOException) { Assert(true, name); return; } throw new Exception("Expected rejection: " + name); }
 string Game(string name) { var d = Path.Combine(root, name); Directory.CreateDirectory(d); var e = Path.Combine(d, name + ".exe"); File.WriteAllText(e, "fixture"); return e; }

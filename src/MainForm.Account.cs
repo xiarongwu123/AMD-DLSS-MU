@@ -35,37 +35,55 @@ public sealed partial class MainForm
         bool register = accountMode == "register" && !signedIn;
         bool reset = accountMode == "reset" && !signedIn;
         bool change = accountMode == "password" && signedIn;
+        int S(int value) => (int)Math.Round(value * DeviceDpi / 96d);
         var background = new ArtworkPanel("AmdNrAssistant.mu-account-art.png") { BackColor = Base, Radius = 1, ShowBorder = false, FocusX = .5f };
         var headline = new Label { Text = "MU 通行证\n连接你的游戏体验", ForeColor = Ink, Font = new Font(Font.FontFamily, 29, FontStyle.Bold), BackColor = Color.Transparent };
         var description = new Label { Text = "登录 MU 账户后使用客户端功能。\n\n账户安全与会员状态统一管理。\n客户端需联网验证登录与功能权限。\n\nPro 付费服务暂未开放。", ForeColor = Muted, Font = new Font(Font.FontFamily, 12), BackColor = Color.Transparent };
         background.Controls.Add(headline); background.Controls.Add(description);
-        var panel = new GlassPanel { BackColor = Surface, Radius = 22, Padding = new Padding(30) };
-        var form = new TableLayoutPanel { AutoSize = true, ColumnCount = 1, RowCount = 0, Margin = Padding.Empty };
+        var panel = new GlassPanel { BackColor = Color.Transparent, Radius = 22, Padding = Padding.Empty };
+        var form = new TableLayoutPanel { AutoSize = false, ColumnCount = 1, RowCount = 0, Margin = Padding.Empty, BackColor = Color.Transparent };
         form.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        int formHeight = 0;
+        var rowHeights = new List<int>();
         void Row(Control control, int height)
         {
+            rowHeights.Add(height);
+            height = S(height); formHeight += height;
             var row = form.RowCount++; form.RowStyles.Add(new RowStyle(SizeType.Absolute, height));
+            control.Margin = new Padding(0, 0, 0, S(10));
+            if (control is Label or CheckBox or FlowLayoutPanel) control.BackColor = Color.Transparent;
+            if (control is Label && control.ForeColor == Control.DefaultForeColor) control.ForeColor = Ink;
             control.Dock = DockStyle.Fill; form.Controls.Add(control, 0, row);
         }
         TextBox Field(string label, bool secret = false, int max = 254)
         {
-            Row(new Label { Text = label, ForeColor = Muted, TextAlign = ContentAlignment.BottomLeft }, 30);
-            var border = new RoundedPanel { BackColor = Base, Radius = 12, BorderColor = Line, Padding = new Padding(12, 12, 8, 8), Margin = new Padding(0, 5, 0, 0) };
-            var input = new TextBox { Dock = DockStyle.Fill, BorderStyle = BorderStyle.None, BackColor = Base, ForeColor = Ink, UseSystemPasswordChar = secret, AccessibleName = label, MaxLength = max };
+            Row(new Label { Text = label, ForeColor = Muted, TextAlign = ContentAlignment.TopLeft, Font = new Font(Font.FontFamily, 9f) }, 25);
+            var border = new RoundedPanel { BackColor = Base, Radius = 14, BorderColor = Line, Padding = new Padding(S(14), S(13), S(12), S(8)) };
+            var input = new TextBox { Dock = DockStyle.Fill, BorderStyle = BorderStyle.None, BackColor = Base, ForeColor = Ink, UseSystemPasswordChar = secret, AccessibleName = label, MaxLength = max,
+                PlaceholderText = secret ? "至少 8 位字符" : label.Contains("验证码") ? "输入 6 位验证码" : "name@example.com" };
             border.Controls.Add(input);
+            var icon = new Label { Text = secret ? "\uE72E" : label.Contains("验证码") ? "\uE73E" : "\uE715", Dock = DockStyle.Left, Width = S(30), BackColor = Color.Transparent,
+                ForeColor = Muted, Font = new Font("Segoe MDL2 Assets", 13), TextAlign = ContentAlignment.TopLeft };
+            border.Controls.Add(icon);
             if (secret)
             {
-                var show = new Button { Text = "显示", Dock = DockStyle.Right, Width = 52, FlatStyle = FlatStyle.Flat, BackColor = Base, ForeColor = Acid };
-                show.FlatAppearance.BorderSize = 0; show.Click += (_, _) => { input.UseSystemPasswordChar = !input.UseSystemPasswordChar; show.Text = input.UseSystemPasswordChar ? "显示" : "隐藏"; };
+                var show = new RoundedButton { Text = "", Glyph = "\uE890", AccessibleName = "显示密码", Dock = DockStyle.Right, Width = S(32), Radius = 8, BackColor = Base, ForeColor = Muted };
+                show.Click += (_, _) => { input.UseSystemPasswordChar = !input.UseSystemPasswordChar; show.Glyph = input.UseSystemPasswordChar ? "\uE890" : "\uED1A"; show.AccessibleName = input.UseSystemPasswordChar ? "显示密码" : "隐藏密码"; };
                 border.Controls.Add(show);
             }
             Row(border, 55); return input;
         }
         void ButtonRow(string title, EventHandler action, bool primary = false)
         {
-            var button = Action(title, title, action); button.Radius = 14;
+            var button = Action(title, title, action); button.Radius = 14; button.Font = new Font(Font.FontFamily, 11f, primary ? FontStyle.Bold : FontStyle.Regular);
             if (primary) { button.BackColor = Acid; button.ForeColor = OnAccent; }
-            Row(button, 48);
+            Row(button, primary ? 62 : 54);
+        }
+        void LinkRow(string title, EventHandler action)
+        {
+            var link = new LinkLabel { Text = title, LinkColor = Muted, ActiveLinkColor = Acid, VisitedLinkColor = Muted,
+                LinkBehavior = LinkBehavior.HoverUnderline, TextAlign = ContentAlignment.MiddleCenter, BackColor = Color.Transparent };
+            link.LinkClicked += (_, e) => action(link, e); Row(link, 38);
         }
         void Mode(string mode) { accountMode = mode; accountFeedback = ""; RenderAccount(); }
         var feedback = new Label { Text = accountFeedback, ForeColor = Acid, AutoEllipsis = false };
@@ -82,7 +100,20 @@ public sealed partial class MainForm
             return true;
         }
         var title = signedIn ? change ? "修改密码" : "我的账户" : register ? "创建 MU 账户" : reset ? "找回密码" : "登录 MU 账户";
-        Row(new Label { Text = title, Font = new Font(Font.FontFamily, 24, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft }, 65);
+        if (!signedIn && !reset)
+        {
+            var tabs = new TableLayoutPanel { ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty };
+            tabs.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50)); tabs.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            foreach (var item in new[] { ("登录", "login"), ("注册", "register") })
+            {
+                var tab = new UnderlineTabButton { Text = item.Item1, Dock = DockStyle.Fill, Margin = Padding.Empty, BackColor = Surface, ForeColor = Muted,
+                    Selected = register == (item.Item2 == "register"), Font = new Font(Font.FontFamily, 11f, FontStyle.Bold) };
+                tab.Click += (_, _) => Mode(item.Item2); tabs.Controls.Add(tab);
+            }
+            Row(tabs, 54);
+        }
+        Row(new Label { Text = title, ForeColor = Ink, Font = new Font(Font.FontFamily, 23, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft }, 60);
+        if (!signedIn) Row(new Label { Text = register ? "建立账户，管理你的游戏与配置" : reset ? "验证邮箱后设置新密码" : "使用邮箱和密码继续", ForeColor = Muted }, 32);
         if (signedIn && !change)
         {
             var account = accountClient.Account!;
@@ -111,7 +142,7 @@ public sealed partial class MainForm
             if (register || reset)
             {
                 code = Field("邮箱验证码", max: 6);
-                ButtonRow("获取验证码", async (_, _) =>
+                var codeButton = Action("获取验证码", "Send code", async (_, _) =>
                 {
                     if (!ValidateEmail(email!)) return;
                     var address = email!.Text.Trim(); var purpose = register ? "register" : "reset";
@@ -132,6 +163,10 @@ public sealed partial class MainForm
                     }
                     finally { accountRequestBusy = false; if (!form.IsDisposed) form.Enabled = true; }
                 });
+                codeButton.Dock = DockStyle.Right; codeButton.Width = S(110); codeButton.Radius = 8;
+                codeButton.BackColor = SelectedSurface; codeButton.ForeColor = Acid;
+                codeButton.Font = new Font(Font.FontFamily, 9f, FontStyle.Bold);
+                code.Parent!.Controls.Add(codeButton);
             }
             var oldPassword = change ? Field("当前密码", true, 128) : null;
             var password = Field(register || reset || change ? "新密码（至少 8 位）" : "密码", true, 128);
@@ -166,27 +201,38 @@ public sealed partial class MainForm
                 }, "正在连接账户服务…");
                 if (loggedIn && accountClient.IsOnline && !IsDisposed) { SwitchPage(0); await ScanGamesAsync(); }
             }, true);
-            if (!signedIn && !register && !reset) ButtonRow("忘记密码？", (_, _) => Mode("reset"));
-            ButtonRow(signedIn ? "返回账户" : register || reset ? "返回登录" : "没有账户？立即注册", (_, _) => Mode(!signedIn && !register && !reset ? "register" : "login"));
+            if (!signedIn && !register && !reset) LinkRow("忘记密码？", (_, _) => Mode("reset"));
+            LinkRow(signedIn ? "返回账户" : register || reset ? "已有账户？返回登录" : "没有账户？立即注册", (_, _) => Mode(!signedIn && !register && !reset ? "register" : "login"));
         }
-        var legal = new FlowLayoutPanel { WrapContents = false };
+        var legal = new FlowLayoutPanel { WrapContents = false, BackColor = Color.Transparent, Padding = Padding.Empty };
         foreach (var link in new[] { ("用户协议", "terms"), ("隐私政策", "privacy") })
         {
-            var button = Action(link.Item1, link.Item1, (_, _) =>
+            var button = new LinkLabel { Text = link.Item1, LinkColor = Muted, ActiveLinkColor = Acid, VisitedLinkColor = Muted,
+                LinkBehavior = LinkBehavior.HoverUnderline, BackColor = Color.Transparent, AutoSize = true, Margin = new Padding(0, S(4), S(20), 0) };
+            button.LinkClicked += (_, _) =>
             {
                 try { Process.Start(new ProcessStartInfo(AccountApiClient.DefaultBaseUrl + "legal/" + link.Item2) { UseShellExecute = true }); }
                 catch (Exception e) { feedback.Text = e.Message; }
-            }); button.Width = 112; button.ForeColor = Muted; legal.Controls.Add(button);
+            }; legal.Controls.Add(button);
         }
-        Row(legal, 42); Row(feedback, 74);
+        Row(legal, 32); Row(feedback, 48);
         panel.Controls.Add(form); background.Controls.Add(panel); accountPage.Controls.Add(background);
         void LayoutPage()
         {
-            background.SetBounds(0, 0, Math.Max(1000, accountPage.ClientSize.Width), Math.Max(accountPage.ClientSize.Height, form.PreferredSize.Height + 100));
-            headline.SetBounds(58, 122, (int)(background.Width * .43) - 70, 170);
-            description.SetBounds(62, 345, (int)(background.Width * .43) - 74, 280);
-            var x = (int)(background.Width * .52); panel.SetBounds(x, 28, background.Width - x - 32, background.Height - 56);
-            form.Width = Math.Max(320, panel.ClientSize.Width - 60); form.Left = 30; form.Top = 28;
+            formHeight = 0;
+            for (var i = 0; i < rowHeights.Count; i++)
+            {
+                form.RowStyles[i].Height = S(rowHeights[i]); formHeight += S(rowHeights[i]);
+                if (form.GetControlFromPosition(0, i) is { } child) child.Margin = new Padding(0, 0, 0, S(10));
+            }
+            background.SetBounds(0, 0, Math.Max(S(960), accountPage.ClientSize.Width), Math.Max(accountPage.ClientSize.Height, formHeight + S(100)));
+            var panelWidth = Math.Clamp((int)(background.Width * .40), S(410), S(560));
+            var panelHeight = formHeight + S(56);
+            var panelX = background.Width - panelWidth - S(32);
+            panel.SetBounds(panelX, Math.Max(S(24), (background.Height - panelHeight) / 2), panelWidth, panelHeight);
+            headline.SetBounds(S(52), S(105), panelX - S(100), S(155));
+            description.SetBounds(S(54), S(285), panelX - S(104), S(260));
+            form.SetBounds(S(28), S(28), panelWidth - S(56), formHeight);
             accountPage.AutoScrollMinSize = new Size(0, background.Height);
         }
         EventHandler resize = (_, _) => LayoutPage(); accountPage.ClientSizeChanged += resize;
