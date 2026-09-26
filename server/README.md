@@ -20,7 +20,7 @@ Feature snapshots include a monotonically increasing `version` for each implemen
 
 ## Production layout
 
-The deployment root is `/home/xrw/amd-dlss-mu-account`. Copy the files from `deploy/` into that directory, and copy the published Linux files into `releases/<release-id>/`. `current` points to the active immutable release. The container exposes only `127.0.0.1:8089` and runs as the host user with UID/GID 1000. The configured Cloudflare Tunnel forwards `mu-api.claude-api.cn` to `http://127.0.0.1:8089`.
+The deployment root is `/home/xrw/amd-dlss-mu-account`. Copy the files from `deploy/` into that directory, and copy the published Linux files into `releases/<release-id>/`. `current` points to the active immutable release. The container exposes only `127.0.0.1:8089` and runs as the host user with UID/GID 1000. Public access requires publishing a Cloudflare Tunnel route from `mu-api.claude-api.cn` to `http://127.0.0.1:8089`; deployment alone does not publish DNS. The root URL redirects to `/admin`. See the delivery record for the current route status.
 
 Run `initialize.sh` on the server to create private data directories and generate `.env` with a unique random `Auth__CodePepper`. It preserves an existing configuration. Set `Resend__ApiKey` only on the server. The database, verification-code pepper, and data-protection keys must be retained across releases. None belong in Git or client packages. Activation discovers this application's Docker bridge gateway and trusts only that gateway for forwarded HTTPS and client IP headers.
 

@@ -128,6 +128,7 @@ app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapGet("/", () => Results.Redirect("/admin"));
 app.MapGet("/health", async (AppDbContext db) => await db.Database.CanConnectAsync()
     ? Results.Ok(new { status = "ok", service = "mu-accounts" }) : Results.StatusCode(503));
 app.MapGet("/api/health", async (AppDbContext db) => await db.Database.CanConnectAsync()
