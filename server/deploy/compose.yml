@@ -1,0 +1,32 @@
+name: mu-account
+services:
+  account:
+    image: mcr.microsoft.com/dotnet/aspnet:10.0.12
+    container_name: amd-dlss-mu-account
+    restart: unless-stopped
+    user: "1000:1000"
+    working_dir: /app
+    command: ["dotnet", "Mu.Server.dll"]
+    env_file: .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      Database__Path: /data/accounts.sqlite
+      DataProtection__Path: /data/keys
+    ports:
+      - "127.0.0.1:8089:8080"
+    volumes:
+      - ./current:/app:ro
+      - ./data:/data
+      - ./backups:/backups
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

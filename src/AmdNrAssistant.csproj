@@ -7,12 +7,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>AMD-DLSS-MU</AssemblyName>
-    <Version>1.4.0</Version>
-    <AssemblyVersion>1.4.0.0</AssemblyVersion>
-    <FileVersion>1.4.0.0</FileVersion>
+    <Version>2.0.0-preview.2</Version>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.3</FileVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>../assets/amd-dlss-mu.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="../assets/amd-dlss-mu.ico" LogicalName="AmdNrAssistant.AppIcon" />
     <EmbeddedResource Include="..\assets\wechat-xrwCoder.jpg" LogicalName="AmdNrAssistant.WeChatQr" />
     <PackageReference Include="SharpCompress" Version="0.48.1" />
     <EmbeddedResource Include="..\assets\AMD-DLSS-MU.addon64" LogicalName="AmdNrAssistant.LivePanel" />
@@ -30,5 +32,11 @@
   </Target>
   <ItemGroup Condition="Exists('..\assets\amd_dlss_mu_logo.png')">
     <EmbeddedResource Include="..\assets\amd_dlss_mu_logo.png" LogicalName="AmdNrAssistant.amd_dlss_mu_logo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\assets\mu-hero-art.png" LogicalName="AmdNrAssistant.mu-hero-art.png" />
+    <EmbeddedResource Include="..\assets\mu-home-banner-new.png" LogicalName="AmdNrAssistant.mu-home-banner-new.png" />
+    <EmbeddedResource Include="..\assets\mu-add-game-art.png" LogicalName="AmdNrAssistant.mu-add-game-art.png" />
+    <EmbeddedResource Include="..\assets\mu-account-art.png" LogicalName="AmdNrAssistant.mu-account-art.png" />
   </ItemGroup>
 </Project>

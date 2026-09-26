@@ -111,7 +111,9 @@ public sealed class DownloadSession : IDisposable
     readonly object gate = new();
     TaskCompletionSource? resume;
     DownloadSnapshot current = new("连接中", 0, 0, "");
+    bool disposed;
     public Action<DownloadSnapshot>? Changed { get; set; }
+    public event Action? Disposed;
     public CancellationToken Token => cancel.Token;
     public int Percent { get { lock (gate) return current.Percent; } }
     public bool Paused { get { lock (gate) return resume != null; } }
@@ -143,11 +145,12 @@ public sealed class DownloadSession : IDisposable
         Task? task; lock (gate) task = resume?.Task;
         if (task != null) await task.WaitAsync(token);
     }
-    public void Cancel() { lock (gate) { if (current.State is "连接中" or "下载中" or "已暂停") cancel.Cancel(); } }
+    public void Cancel() { lock (gate) { if (!disposed && current.State is ("连接中" or "下载中" or "已暂停")) cancel.Cancel(); } }
     public void Dispose()
     {
-        lock (gate) { resume?.TrySetResult(); resume = null; }
+        lock (gate) { if (disposed) return; disposed = true; resume?.TrySetResult(); resume = null; }
         if (ReferenceEquals(DownloadSources.CurrentSession.Value, this)) DownloadSources.CurrentSession.Value = null;
         cancel.Dispose();
+        Disposed?.Invoke();
     }
 }

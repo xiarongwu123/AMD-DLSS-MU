@@ -1,0 +1,38 @@
+@page "/admin/users"
+@model Mu.Server.Pages.Admin.UsersModel
+@{ ViewData["Title"] = "用户"; }
+<h1>用户</h1>
+<p class="muted">最多显示最近 100 个匹配用户。Pro 续期从当前到期时间与当前服务端时间的较晚者开始。</p>
+<form method="get" class="row"><div><label asp-for="Search">邮箱或用户 ID</label><input asp-for="Search" maxlength="254" /></div><button type="submit">查询</button></form>
+<div asp-validation-summary="All" role="alert"></div>
+<div class="table-scroll"><table><thead><tr><th>账户</th><th>状态</th><th>会员</th><th>注册时间</th><th>操作</th></tr></thead><tbody>
+@foreach (var user in Model.Items)
+{
+    var isAdmin = Model.AdminIds.Contains(user.Id);
+    <tr><td>@user.Email<br /><small>@user.Id</small>@if (isAdmin) { <br /><span class="pill">管理员</span> }</td>
+        <td>@(user.DisabledAt is null ? "正常" : "已禁用")</td>
+        <td><span class="pill">@(user.ProExpiresAt > Model.Now ? "Pro" : "普通用户")</span><br /><small>@Mu.Server.Pages.Admin.AdminPageModel.FormatTime(user.ProExpiresAt)</small></td>
+        <td><small>@Mu.Server.Pages.Admin.AdminPageModel.FormatTime(user.CreatedAt)</small></td>
+        <td>
+        @if (!isAdmin)
+        {
+            <details><summary>账户与会员操作</summary>
+                <form method="post" class="card">
+                    <input type="hidden" name="UserId" value="@user.Id" /><input type="hidden" name="Search" value="@Model.Search" />
+                    <label for="reason-@user.Id">操作原因（必填）</label><input id="reason-@user.Id" name="Reason" required minlength="3" maxlength="500" />
+                    <label for="days-@user.Id">开通或延长天数</label><input id="days-@user.Id" name="Days" type="number" min="1" max="3650" value="30" />
+                    <div class="row" style="margin-top:12px">
+                        <button type="submit" asp-page-handler="Grant">开通 / 延长 Pro</button>
+                        <button type="submit" asp-page-handler="RevokePro" class="quiet">撤销 Pro</button>
+                        <button type="submit" asp-page-handler="RevokeSessions" class="quiet">撤销所有客户端会话</button>
+                        @if (user.DisabledAt is null) { <button type="submit" asp-page-handler="Disable" class="danger">禁用账户</button> }
+                        else { <button type="submit" asp-page-handler="Enable">启用账户</button> }
+                    </div>
+                </form>
+            </details>
+        }
+        else { <small>管理员账号通过服务器维护</small> }
+        </td></tr>
+}
+</tbody></table></div>
+@if (Model.Items.Count == 0) { <p class="muted">没有匹配的用户。</p> }
