@@ -203,7 +203,7 @@ public sealed partial class MainForm
                 TextAlign = ContentAlignment.MiddleCenter, Font = new Font(Font.FontFamily, 11, FontStyle.Bold),
                 ForeColor = Ink, BackColor = Color.Transparent };
             empty.Controls.Add(emptyIcon); empty.Controls.Add(emptyTitle);
-            var browse = Action("前往游戏库", "Open library", (_, _) => SwitchPage(1));
+            var browse = Action("前往游戏库", "Open library", async (_, _) => await NavigateAuthorizedAsync(1));
             browse.Radius = 14; browse.BackColor = SelectedSurface; browse.ForeColor = Acid;
             empty.Controls.Add(browse);
             void PlaceBrowse()
@@ -248,7 +248,7 @@ public sealed partial class MainForm
         var cover = new CoverPictureBox { Dock = DockStyle.Fill, Image = image, Tag = game.CoverPath != null, BackColor = Surface, Cursor = Cursors.Hand, AccessibleName = game.Title };
         cover.Disposed += (_, _) => cover.Image?.Dispose();
         var name = new Label { Text = game.Title, Dock = DockStyle.Bottom, Height = 38, Padding = new Padding(10, 8, 6, 0), BackColor = Surface, ForeColor = Ink, Font = new Font(Font.FontFamily, 9f, FontStyle.Bold), AutoEllipsis = true, Cursor = Cursors.Hand };
-        void Open(object? _, EventArgs __) { SwitchPage(1); RevealGame(game); var target = games.Controls.Cast<Control>().FirstOrDefault(c => ReferenceEquals(c.Tag, game)); if (target != null) games.ScrollControlIntoView(target); }
+        async void Open(object? _, EventArgs __) { if (!await RequireFeatureAsync("library.manage")) return; SwitchPage(1); RevealGame(game); var target = games.Controls.Cast<Control>().FirstOrDefault(c => ReferenceEquals(c.Tag, game)); if (target != null) games.ScrollControlIntoView(target); }
         tile.Click += Open; cover.Click += Open; name.Click += Open;
         tile.Controls.Add(cover); tile.Controls.Add(name);
         return new HoverLiftSlot { Size = new Size(width, height + 9), Content = tile,
@@ -258,6 +258,7 @@ public sealed partial class MainForm
     async Task StartMagpieAsync()
     {
         if (busy) { MessageBox.Show(this, "请等待当前操作完成后再开启大力喜鹊。", Text); return; }
+        if (!await RequireFeatureAsync("magpie.launch") || busy) return;
         if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041) || System.Runtime.InteropServices.RuntimeInformation.OSArchitecture != System.Runtime.InteropServices.Architecture.X64)
         { MessageBox.Show(this, "此集成需要 Windows 10 2004 或更新版本的 x64 系统。", Text); return; }
         // Upstream is single-instance: do not silently switch another installation's settings.
@@ -268,7 +269,7 @@ public sealed partial class MainForm
         busy = true; magpieStart!.Enabled = false; UpdateButtons();
         magpieProgress.Visible = true; magpieProgress.Indeterminate = true;
         magpieStatus.Text = "正在检查大力喜鹊组件…";
-        using var session = BeginDownloadSession("大力喜鹊 · Magpie", StartMagpieAsync);
+        using var session = BeginDownloadSession("大力喜鹊 · Magpie", StartMagpieAsync, "magpie.launch");
         try
         {
             var phase = new Progress<string>(text => { magpieStatus.Text = text; magpieProgress.Indeterminate = true; });
@@ -282,6 +283,7 @@ public sealed partial class MainForm
             var portableConfig = Path.Combine(Path.GetDirectoryName(exe)!, "config", "v4e", "config.json");
             Core.RejectLinks(portableConfig);
             if (!File.Exists(portableConfig)) throw new IOException("独立配置缺失，已停止启动以免使用其他 Magpie 的全局设置。");
+            if (!await RequireFeatureAsync("magpie.launch")) return;
             using var child = Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = Path.GetDirectoryName(exe)!, UseShellExecute = true });
             if (child == null) throw new IOException("未能启动 Magpie。");
             magpieProgress.Indeterminate = false; magpieProgress.Value = 100;

@@ -1,0 +1,15 @@
+@page "/admin/audit"
+@model Mu.Server.Pages.Admin.AuditModel
+@{ ViewData["Title"] = "管理审计"; }
+<h1>管理审计</h1>
+<p class="muted">显示最近 100 条匹配记录。管理变更记录操作者、原因及变更前后数据，不能在此删除或修改。</p>
+<form method="get" class="row"><div><label asp-for="Search">操作名称、完整用户 ID 或操作者 ID</label><input asp-for="Search" maxlength="128" /></div><button type="submit">查询</button></form>
+<div class="table-scroll"><table><thead><tr><th>时间 / 操作</th><th>操作者 / 用户</th><th>原因</th><th>变更详情</th></tr></thead><tbody>
+@foreach (var entry in Model.Items)
+{
+    <tr><td><small>@Mu.Server.Pages.Admin.AdminPageModel.FormatTime(entry.CreatedAt)</small><br /><code>@entry.Action</code></td>
+    <td><small>操作者：@entry.Actor<br />用户：@(entry.UserId ?? "—")</small></td><td>@entry.Reason</td>
+    <td><details><summary>查看变更</summary><p>变更前</p><pre>@entry.BeforeJson</pre><p>变更后</p><pre>@entry.AfterJson</pre></details></td></tr>
+}
+</tbody></table></div>
+@if (Model.Items.Count == 0) { <p class="muted">暂无匹配审计记录。</p> }

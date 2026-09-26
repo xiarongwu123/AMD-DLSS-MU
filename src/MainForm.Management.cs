@@ -9,6 +9,7 @@ public sealed partial class MainForm
     {
         if (selectedGame == null || busy) return;
         var exe = selectedGame;
+        if (!await RequireFeatureAsync("diagnostics.use") || busy) return;
         busy = true; libraryPage.Enabled = false;
         try
         {
@@ -31,6 +32,7 @@ public sealed partial class MainForm
     async Task ExportDiagnosticForAsync(string exe)
     {
         if (busy) return;
+        if (!await RequireFeatureAsync("diagnostics.use") || busy) return;
         busy = true; libraryPage.Enabled = false;
         try
         {
@@ -41,7 +43,7 @@ public sealed partial class MainForm
             preview.Controls.Add(box); preview.Controls.Add(save);
             if (preview.ShowDialog(this) != DialogResult.OK) return;
             using var dialog = new SaveFileDialog { Filter = "诊断文件 (*.json)|*.json", FileName = "AMD-DLSS-MU-diagnostic-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".json" };
-            if (dialog.ShowDialog(this) == DialogResult.OK) { await File.WriteAllTextAsync(dialog.FileName, text); status.Text = "诊断已保存，包含脱敏日志与配置；分享前请再次检查个人信息。"; }
+            if (dialog.ShowDialog(this) == DialogResult.OK && await RequireFeatureAsync("diagnostics.use")) { await File.WriteAllTextAsync(dialog.FileName, text); status.Text = "诊断已保存，包含脱敏日志与配置；分享前请再次检查个人信息。"; }
         }
         catch (Exception e) { status.Text = e.Message; }
         finally { busy = false; libraryPage.Enabled = true; UpdateButtons(); }

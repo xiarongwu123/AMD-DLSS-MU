@@ -19,10 +19,25 @@ internal static class Program
             catch (Exception e) { MessageBox.Show("更新未完成：" + e.Message + "\n旧版本备份保留在程序目录。", "AMD-DLSS-MU 更新"); }
             return;
         }
-        var form = new MainForm();
-        if (args.Length == 2 && args[0] == "--update-health")
-            form.Shown += (_, _) => { try { AutoUpdate.ConfirmStartup(args[1]); } catch { /* Updater will roll back without a health acknowledgement. */ } };
-        Application.Run(form);
+        using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+        var userSid = identity.User?.Value ?? Environment.UserName;
+        using var instance = new Mutex(false, @"Local\AMD-DLSS-MU-" + userSid);
+        bool ownsInstance;
+        try { ownsInstance = instance.WaitOne(0); }
+        catch (AbandonedMutexException) { ownsInstance = true; }
+        if (!ownsInstance)
+        {
+            MessageBox.Show("AMD DLSS MU 已在运行，请切换到已打开的窗口。", "AMD DLSS MU");
+            return;
+        }
+        try
+        {
+            var form = new MainForm();
+            if (args.Length == 2 && args[0] == "--update-health")
+                form.Shown += (_, _) => { try { AutoUpdate.ConfirmStartup(args[1]); } catch { /* Updater will roll back without a health acknowledgement. */ } };
+            Application.Run(form);
+        }
+        finally { instance.ReleaseMutex(); }
     }
 }
 
@@ -1385,6 +1400,7 @@ public sealed partial class MainForm : Form
     async Task ScanGamesAsync()
     {
         if (busy || !scan.Enabled) return;
+        if (!await RequireFeatureAsync("library.manage") || busy || !scan.Enabled) return;
         scan.Enabled = false;
         scan.Text = english ? "Scanning…" : "扫描中…";
         progress.Visible = true;
@@ -1395,6 +1411,7 @@ public sealed partial class MainForm : Form
         {
             var list = await GameScanner.ScanAsync(
                 lifetime.Token);
+            if (!accountClient.IsOnline) return;
 
             // Merge after the asynchronous scan so games added during scanning are not lost.
             var manualWarning = "";
@@ -1678,7 +1695,7 @@ public sealed partial class MainForm : Form
         {
             if (busy) return;
             Pick(null, EventArgs.Empty);
-            if (IsConfigured(game.ExePath)) LaunchGame(game.ExePath);
+            if (IsConfigured(game.ExePath)) await LaunchGameAsync(game.ExePath);
             else await EnableSelectedDlssAsync();
         };
         coverAction.AdvancedRequested += (_, _) => { Pick(null, EventArgs.Empty); ShowAdvanced(); };
@@ -1686,25 +1703,26 @@ public sealed partial class MainForm : Form
         card.TabStop = true; card.AccessibleName = game.Title;
         card.Enter += (_, _) => ShowCoverAction();
         card.Leave += (_, _) => { if (!card.ContainsFocus) coverAction.Visible = false; };
-        card.KeyDown += (_, e) =>
+        card.KeyDown += async (_, e) =>
         {
             if (e.KeyCode is Keys.Enter or Keys.Space)
             {
                 Pick(null, EventArgs.Empty);
-                if (IsConfigured(game.ExePath)) LaunchGame(game.ExePath);
-                else _ = EnableSelectedDlssAsync();
                 e.Handled = true;
                 e.SuppressKeyPress = true;
+                if (IsConfigured(game.ExePath)) await LaunchGameAsync(game.ExePath);
+                else await EnableSelectedDlssAsync();
             }
         };
         return card;
     }
 
-    void SelectGameManually(
+    async void SelectGameManually(
         object? sender,
         EventArgs eventArgs)
     {
         if (busy) return;
+        if (!await RequireFeatureAsync("library.manage") || busy) return;
         using var dialog = new OpenFileDialog
         {
             Filter = "游戏程序 (*.exe)|*.exe",
@@ -1716,7 +1734,7 @@ public sealed partial class MainForm : Form
             return;
         }
 
-        AddPath(dialog.FileName);
+        await AddPathAsync(dialog.FileName);
     }
 
     async Task InstallAsync()
@@ -1729,11 +1747,14 @@ public sealed partial class MainForm : Form
         if (busy) return;
         var targetExe = selectedGame;
         var chosenMode = SelectedInstallMode;
+        var chosenVulkan = optiVulkan;
+        var featureKey = chosenMode == InstallMode.OptiScalerStandard ? "optiscaler.configure" : "dlss.configure";
+        if (!await RequireFeatureAsync(featureKey) || busy) return;
         using var downloadSession = BeginDownloadSession(Path.GetFileNameWithoutExtension(targetExe) + " · " + (chosenMode == InstallMode.Official ? "模式一组件" : "OptiScaler"), async () =>
         {
             selectedGame = targetExe; installMode.SelectedIndex = chosenMode == InstallMode.Official ? 0 : 1;
             selected.Text = Path.GetFileNameWithoutExtension(targetExe); await InstallAsync();
-        });
+        }, featureKey);
         Diagnostics.Record(targetExe, "install", "start", chosenMode.ToString());
         busy = true;
         libraryPage.Enabled = false;
@@ -1742,6 +1763,7 @@ public sealed partial class MainForm : Form
 
         string? state = null;
         bool completed = false;
+        IDisposable? fileTransaction = null;
 
         try
         {
@@ -1757,11 +1779,11 @@ public sealed partial class MainForm : Form
                 throw new IOException("请先恢复此游戏，再安装或切换模式。");
             if (chosenMode == InstallMode.OptiScalerStandard)
             {
-                await InstallOptiScalerStandardAsync(targetExe); return;
+                await InstallOptiScalerStandardAsync(targetExe, chosenVulkan); return;
             }
 
             var gameDirectory = Path.GetDirectoryName(
-                Path.GetFullPath(selectedGame))!;
+                Path.GetFullPath(targetExe))!;
 
             state = Path.Combine(
                 workRoot,
@@ -1880,6 +1902,8 @@ public sealed partial class MainForm : Form
 
             status.Text = "正在准备游戏目录…";
 
+            if (!await RequireFeatureAsync(featureKey)) return;
+            fileTransaction = BeginAccountTransaction();
             GameManagement.Begin(targetExe, 0);
             Diagnostics.Record(targetExe, "game-files", "staging");
 
@@ -1997,8 +2021,8 @@ public sealed partial class MainForm : Form
                 : new HashSet<string>(
                     StringComparer.OrdinalIgnoreCase);
 
-            configured.Remove(selectedGame);
-            configured.Add(selectedGame);
+            configured.Remove(targetExe);
+            configured.Add(targetExe);
 
             File.WriteAllLines(
                 configuredFile,
@@ -2064,6 +2088,7 @@ public sealed partial class MainForm : Form
             busy = false;
             libraryPage.Enabled = true;
             UpdateButtons();
+            fileTransaction?.Dispose();
         }
         if (completed) ShowConfigurationComplete(targetExe, false);
     }
@@ -2081,7 +2106,9 @@ public sealed partial class MainForm : Form
     {
         if (busy || selectedGame == null) return;
         var target = selectedGame;
+        if (!await RequireFeatureAsync("game.restore") || busy) return;
         busy = true; libraryPage.Enabled = false; UpdateButtons();
+        IDisposable? fileTransaction = null;
         try
         {
             if (GameManagement.Read(target) is { Phase: not "restored" } record)
@@ -2089,6 +2116,8 @@ public sealed partial class MainForm : Form
                 var files = string.Join("\n", record.Files.Where(f => f.Before != f.After).Select(f => (f.Before.Length == 0 ? "移除：" : "还原：") + f.Name));
                 if (MessageBox.Show(this, "将恢复安装前备份，移除本次新增组件。改动过的 INI 配置会先另存备份。\n\n" + files,
                     "恢复配置", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+                if (!await RequireFeatureAsync("game.restore")) return;
+                fileTransaction = BeginAccountTransaction();
                 await Task.Run(() => GameManagement.Restore(target, true));
                 status.Text = "已恢复安装前配置，本次新增组件已移除。备份保留在：" + GameManagement.State(target);
             }
@@ -2099,6 +2128,8 @@ public sealed partial class MainForm : Form
                 if (MessageBox.Show(this, "此游戏没有有效的安装前备份，无法保证还原原始状态。\n以下文件可能属于旧版 DLSS 或其他插件；移出后相关插件可能停止工作。\n\n" +
                     string.Join("\n", candidates.Keys) + "\n\n确认将以上文件从游戏目录移到独立备份目录？如需撤销，可关闭游戏后从备份目录复制回原位置。",
                     "恢复配置 — 旧组件清理", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+                if (!await RequireFeatureAsync("game.restore")) return;
+                fileTransaction = BeginAccountTransaction();
                 var archive = await Task.Run(() => GameManagement.QuarantineLegacy(target, candidates));
                 status.Text = "候选组件已移出，可重新配置。备份：" + archive;
                 MessageBox.Show(this, "清理完成。文件及清单已保存到：\n" + archive + "\n\n如游戏异常，关闭游戏后将所需文件复制回游戏 EXE 目录。", "恢复配置");
@@ -2117,6 +2148,7 @@ public sealed partial class MainForm : Form
         {
             busy = false; libraryPage.Enabled = true;
             RefreshHome(); UpdateButtons();
+            fileTransaction?.Dispose();
         }
     }
 
@@ -2135,5 +2167,6 @@ public sealed partial class MainForm : Form
             FilterGames();
         }
         catch (Exception e) { launch.Enabled = install.Enabled = restore.Enabled = false; status.Text = e.Message; }
+        ApplyAccountGate();
     }
 }

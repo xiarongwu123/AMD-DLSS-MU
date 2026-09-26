@@ -47,10 +47,10 @@ public sealed partial class MainForm
         root.Controls.Add(BuildV2Navigation(), 0, 0);
         pageHost.Margin = Padding.Empty; pageHost.BackColor = Base; root.Controls.Add(pageHost, 0, 1);
         Controls.Add(root);
-        BuildLibrary(); BuildV2Home(); BuildAbout(); BuildProductPages(); BuildAccountPage(); BuildMagpiePage(); SwitchPage(0); ApplyTheme(darkMode, false);
-        Shown += async (_, _) => { await ScanGamesAsync(); if (autoCheckUpdates) await CheckAppUpdateAsync(true); };
+        BuildLibrary(); BuildV2Home(); BuildAbout(); BuildProductPages(); BuildAccountPage(); BuildMagpiePage(); SwitchPage(6); ApplyTheme(darkMode, false); ApplyAccountGate();
+        Shown += async (_, _) => await RestoreAccountAsync();
         FormClosing += (_, e) => { if (busy && !lifetime.IsCancellationRequested) { e.Cancel = true; MessageBox.Show(this, "请等待当前操作完成，或先在下载任务中取消下载。", Text); } };
-        FormClosed += (_, _) => { pageTransition?.Stop(); pageTransition?.Dispose(); sectionTransition?.Stop(); sectionTransition?.Dispose(); productToastTimer?.Stop(); productToastTimer?.Dispose(); controlPanel?.Close(); lifetime.Cancel(); };
+        FormClosed += (_, _) => { accountHeartbeat.Stop(); accountHeartbeat.Dispose(); accountClient.Changed -= AccountStateChanged; pageTransition?.Stop(); pageTransition?.Dispose(); sectionTransition?.Stop(); sectionTransition?.Dispose(); productToastTimer?.Stop(); productToastTimer?.Dispose(); controlPanel?.Close(); lifetime.Cancel(); accountClient.Dispose(); };
     }
 
     void BuildLibrary()
@@ -70,18 +70,18 @@ public sealed partial class MainForm
         var filters = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0, 5, 0, 0), Margin = Padding.Empty };
         var all = libraryAllTab = new UnderlineTabButton { Selected = true, Size = new Size(112, 45), Font = new Font(Font.FontFamily, 10f, FontStyle.Bold) };
         var configured = libraryConfiguredTab = new UnderlineTabButton { Size = new Size(112, 45), Font = new Font(Font.FontFamily, 10f, FontStyle.Bold) };
-        all.Click += (_, _) => SetLibraryFilter(LibraryFilter.All);
-        configured.Click += (_, _) => SetLibraryFilter(LibraryFilter.Configured);
+        all.Click += async (_, _) => { if (await RequireFeatureAsync("library.manage")) SetLibraryFilter(LibraryFilter.All); };
+        configured.Click += async (_, _) => { if (await RequireFeatureAsync("library.manage")) SetLibraryFilter(LibraryFilter.Configured); };
         unconfiguredTab = new UnderlineTabButton { Size = new Size(120, 45) };
         attentionTab = new UnderlineTabButton { Size = new Size(120, 45) };
-        unconfiguredTab.Click += (_, _) => SetLibraryFilter(LibraryFilter.Unconfigured);
-        attentionTab.Click += (_, _) => SetLibraryFilter(LibraryFilter.Unsupported);
+        unconfiguredTab.Click += async (_, _) => { if (await RequireFeatureAsync("library.manage")) SetLibraryFilter(LibraryFilter.Unconfigured); };
+        attentionTab.Click += async (_, _) => { if (await RequireFeatureAsync("library.manage")) SetLibraryFilter(LibraryFilter.Unsupported); };
         filters.Controls.Add(all); filters.Controls.Add(configured); filters.Controls.Add(unconfiguredTab); filters.Controls.Add(attentionTab);
         toolbar.Controls.Add(filters, 0, 1); toolbar.SetColumnSpan(filters, 2);
         games.Padding = new Padding(28, 12, 14, 16); games.BackColor = Base; games.Margin = Padding.Empty;
         games.AllowDrop = true;
-        games.DragEnter += (_, e) => e.Effect = !busy && e.Data?.GetDataPresent(DataFormats.FileDrop) == true ? DragDropEffects.Copy : DragDropEffects.None;
-        games.DragDrop += (_, e) => { if (!busy && e.Data?.GetData(DataFormats.FileDrop) is string[] paths && paths.Length > 0) AddPath(paths[0]); };
+        games.DragEnter += (_, e) => e.Effect = accountClient.IsOnline && !busy && e.Data?.GetDataPresent(DataFormats.FileDrop) == true ? DragDropEffects.Copy : DragDropEffects.None;
+        games.DragDrop += async (_, e) => { if (!busy && e.Data?.GetData(DataFormats.FileDrop) is string[] paths && paths.Length > 0) await AddPathAsync(paths[0]); };
         games.ClientSizeChanged += (_, _) => LayoutGameCards();
         installMode.Items.AddRange(new[] { "模式一 · 神经渲染（推荐）", "模式二 · OptiScaler" }); installMode.SelectedIndex = 0;
         installMode.BackColor = Surface; installMode.ForeColor = ink;
@@ -93,6 +93,7 @@ public sealed partial class MainForm
     }
     void SwitchPage(int index)
     {
+        if (index != 6 && !accountClient.IsOnline && !(index == 3 && busy)) index = 6;
         if (sectionTransition != null)
         {
             sectionTransition.Stop();
@@ -166,10 +167,11 @@ public sealed partial class MainForm
         RenderHomeCards();
         RenderMagpieGames();
     }
-    void BrowseFolder() { using var d = new FolderBrowserDialog(); if (d.ShowDialog(this) == DialogResult.OK) AddPath(d.SelectedPath); }
-    void AddPath(string path)
+    async void BrowseFolder() { if (!await RequireFeatureAsync("library.manage")) return; using var d = new FolderBrowserDialog(); if (d.ShowDialog(this) == DialogResult.OK) await AddPathAsync(d.SelectedPath); }
+    async Task AddPathAsync(string path)
     {
         if (busy) return;
+        if (!await RequireFeatureAsync("library.manage") || busy) return;
         if (Directory.Exists(path)) { var exe = GameScanner.FindGameExe(path); if (exe == null) { SelectGameManually(this, EventArgs.Empty); return; } path = exe; }
         try
         {

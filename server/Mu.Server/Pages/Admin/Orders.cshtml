@@ -1,0 +1,15 @@
+@page "/admin/orders"
+@model Mu.Server.Pages.Admin.OrdersModel
+@{ ViewData["Title"] = "订单查询"; }
+<h1>订单查询</h1>
+<p class="muted">只读显示最近 100 条匹配记录。订单和会员开通状态由服务端处理，管理后台不能把订单手工标为已付款。</p>
+<form method="get" class="row"><div><label asp-for="Search">完整订单 ID 或用户 ID</label><input asp-for="Search" maxlength="128" /></div><button type="submit">查询</button></form>
+<div class="table-scroll"><table><thead><tr><th>订单</th><th>用户</th><th>套餐 ID</th><th>金额</th><th>状态</th><th>时间</th></tr></thead><tbody>
+@foreach (var order in Model.Items)
+{
+    <tr><td><code>@order.Id</code></td><td>@Model.Emails.GetValueOrDefault(order.UserId, order.UserId)<br /><small>@order.UserId</small></td>
+    <td><code>@order.PlanId</code></td><td>@order.Currency @((order.AmountMinor / 100m).ToString("0.00"))</td><td>@order.Status</td>
+    <td><small>创建：@Mu.Server.Pages.Admin.AdminPageModel.FormatTime(order.CreatedAt)<br />支付：@Mu.Server.Pages.Admin.AdminPageModel.FormatTime(order.PaidAt)</small></td></tr>
+}
+</tbody></table></div>
+@if (Model.Items.Count == 0) { <p class="muted">暂无订单记录。购买入口当前关闭。</p> }

@@ -80,9 +80,9 @@ public sealed partial class MainForm
         stack.Controls.Add(Action("查看诊断", "Diagnostics", (_, _) => ShowDiagnosticsMenu()));
         stack.Controls.Add(Heading("游戏卡顿或闪退？", "Stuttering or crashes?", 14));
         Paragraph(stack, "退出游戏后，在游戏库悬停对应游戏封面并点击“恢复配置”，再验证原始状态。带反作弊的联网游戏请勿贸然安装图形插件。");
-        stack.Controls.Add(Action("返回游戏库", "Game library", (_, _) => SwitchPage(1)));
+        stack.Controls.Add(Action("返回游戏库", "Game library", async (_, _) => await NavigateAuthorizedAsync(1)));
         stack.Controls.Add(Heading("联系作者", "Contact", 14));
-        stack.Controls.Add(Action("加入讨论组", "Community", (_, _) => SwitchPage(2)));
+        stack.Controls.Add(Action("加入讨论组", "Community", async (_, _) => await NavigateAuthorizedAsync(2)));
     }
     void BuildSettings()
     {
@@ -90,21 +90,29 @@ public sealed partial class MainForm
         Paragraph(stack, "保持简单，把时间留给游戏。");
         stack.Controls.Add(Heading("外观", "Appearance"));
         var themes = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 0, 0, 18) };
-        themes.Controls.Add(Action("夜间模式", "Dark", (_, _) => ApplyTheme(true, true)));
-        themes.Controls.Add(Action("日间模式", "Light", (_, _) => ApplyTheme(false, true)));
+        themes.Controls.Add(Action("夜间模式", "Dark", async (_, _) => { if (await RequireFeatureAsync("configuration.edit")) ApplyTheme(true, true); }));
+        themes.Controls.Add(Action("日间模式", "Light", async (_, _) => { if (await RequireFeatureAsync("configuration.edit")) ApplyTheme(false, true); }));
         stack.Controls.Add(themes);
-        stack.Controls.Add(Action("中文 / EN", "EN / 中文", (_, _) => { english = !english; ApplyLanguage(english); }));
+        stack.Controls.Add(Action("中文 / EN", "EN / 中文", async (_, _) => { if (await RequireFeatureAsync("configuration.edit")) { english = !english; ApplyLanguage(english); ApplyAccountGate(); } }));
         var auto = new CheckBox { Text = "启动时自动检查更新", Checked = autoCheckUpdates, AutoSize = true, Margin = new Padding(0, 28, 0, 12) };
-        auto.CheckedChanged += (_, _) => { autoCheckUpdates = auto.Checked; try { SavePreferences(); } catch (Exception e) { MessageBox.Show(this, e.Message, "设置未保存"); } };
+        bool changingAuto = false;
+        auto.CheckedChanged += async (_, _) =>
+        {
+            if (changingAuto) return; changingAuto = true; auto.Enabled = false;
+            try { if (await RequireFeatureAsync("configuration.edit")) { autoCheckUpdates = auto.Checked; SavePreferences(); } else auto.Checked = autoCheckUpdates; }
+            catch (Exception e) { MessageBox.Show(this, e.Message, "设置未保存"); }
+            finally { changingAuto = false; auto.Enabled = true; }
+        };
         stack.Controls.Add(auto);
         stack.Controls.Add(Heading("下载源", "Download sources"));
         Paragraph(stack, "自动选择与切换，无需手动填写镜像。");
         stack.Controls.Add(Heading("版本", "Version")); Paragraph(stack, "AMD DLSS MU v" + AutoUpdate.DisplayVersion);
         stack.Controls.Add(Action("检查更新", "Check updates", async (_, _) => await CheckAppUpdateAsync(false)));
     }
-    void ShowAdvanced()
+    async void ShowAdvanced()
     {
         if (busy) return;
+        if (!await RequireFeatureAsync("configuration.edit") || busy) return;
         using var dialog = ProductDialog("高级选项", 530, 340);
         var stack = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false };
         stack.Controls.Add(Heading("安装方案", "Installation mode", 16));
@@ -114,7 +122,7 @@ public sealed partial class MainForm
         api.Items.AddRange(new[] { "OptiScaler · DirectX 11 / 12（默认）", "OptiScaler · Vulkan" }); api.SelectedIndex = optiVulkan ? 1 : 0; api.Enabled = mode.SelectedIndex == 1;
         mode.SelectedIndexChanged += (_, _) => api.Enabled = mode.SelectedIndex == 1; stack.Controls.Add(api);
         Paragraph(stack, "两种方案效果不同。已配置游戏请先恢复，再切换方案。");
-        var save = Action("保存", "Save", (_, _) => { installMode.SelectedIndex = mode.SelectedIndex; optiVulkan = api.SelectedIndex == 1; dialog.DialogResult = DialogResult.OK; });
+        var save = Action("保存", "Save", async (_, _) => { if (!await RequireFeatureAsync("configuration.edit") || dialog.IsDisposed) return; installMode.SelectedIndex = mode.SelectedIndex; optiVulkan = api.SelectedIndex == 1; dialog.DialogResult = DialogResult.OK; });
         stack.Controls.Add(save);
         var diagnostics = Action("查看诊断", "Diagnostics", (_, _) => { dialog.Close(); ShowDiagnosticsMenu(); });
         diagnostics.Width = 160; stack.Controls.Add(diagnostics);
@@ -180,9 +188,10 @@ public sealed partial class MainForm
             if (cover is { IsDisposed: false }) { cover.Loading = false; cover.Visible = false; }
         }
     }
-    void LaunchSelectedGame() { if (selectedGame != null && !busy) LaunchGame(selectedGame); }
-    void LaunchGame(string exe)
+    async void LaunchSelectedGame() { if (selectedGame != null && !busy) await LaunchGameAsync(selectedGame); }
+    async Task LaunchGameAsync(string exe)
     {
+        if (busy || !await RequireFeatureAsync("game.launch") || busy) return;
         try
         {
             Core.ValidateGame(exe);
@@ -195,8 +204,9 @@ public sealed partial class MainForm
         }
         catch (Exception e) { MessageBox.Show(this, e.Message, "启动失败"); }
     }
-    void ShowDiagnosticsMenu()
+    async void ShowDiagnosticsMenu()
     {
+        if (!await RequireFeatureAsync("diagnostics.use")) return;
         if (selectedGame == null) { SwitchPage(1); status.Text = "请先选择游戏。"; return; }
         if (busy) return;
         using var dialog = ProductDialog("诊断与运行状态", 540, 290);
@@ -261,17 +271,19 @@ public sealed partial class MainForm
         }
         games.ResumeLayout();
     }
-    DownloadSession BeginDownloadSession(string title, Func<Task> retry)
+    DownloadSession BeginDownloadSession(string title, Func<Task> retry, string featureKey)
     {
         DownloadRow? row = null;
         var session = new DownloadSession();
+        activeAccountDownload = session;
+        session.Disposed += () => { if (ReferenceEquals(activeAccountDownload, session)) activeAccountDownload = null; };
         session.Changed = snapshot =>
         {
             if (IsDisposed || !IsHandleCreated) return;
             void Apply()
             {
                 if (IsDisposed) return;
-                row ??= AddDownloadRow(session, title, retry);
+                row ??= AddDownloadRow(session, title, retry, featureKey);
                 row.State = snapshot.State; row.Percent = snapshot.Percent; row.Size = snapshot.Size; row.Detail = snapshot.Detail;
                 row.Info.Text = $"{title}\n{snapshot.State} · {snapshot.Percent}% · {snapshot.Size / 1048576d:0.00} MB\n{snapshot.Detail}";
                 row.Bar.Value = Math.Clamp(snapshot.Percent, 0, 100);
@@ -288,13 +300,13 @@ public sealed partial class MainForm
         };
         DownloadSources.CurrentSession.Value = session; return session;
     }
-    DownloadRow AddDownloadRow(DownloadSession session, string title, Func<Task> retry)
+    DownloadRow AddDownloadRow(DownloadSession session, string title, Func<Task> retry, string featureKey)
     {
         var card = new RoundedPanel { Width = Math.Max(280, downloadList.ClientSize.Width - 28), Height = 190, BackColor = Surface, Radius = 5, Padding = new Padding(18), Margin = new Padding(0, 0, 0, 14) };
         var info = new Label { Dock = DockStyle.Top, Height = 78, ForeColor = ink, AutoEllipsis = true };
         var bar = new AccentProgressBar { Dock = DockStyle.Top, Height = 14 };
         var actions = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 42 };
-        var pause = Action("暂停", "Pause", (_, _) => session.TogglePause()); pause.Width = 76;
+        var pause = Action("暂停", "Pause", async (_, _) => { if (!session.Paused || await RequireFeatureAsync(featureKey)) session.TogglePause(); }); pause.Width = 76;
         var cancel = Action("取消", "Cancel", (_, _) => session.Cancel()); cancel.Width = 76;
         var again = Action("重试", "Retry", async (_, _) => { if (busy) { MessageBox.Show(this, "请等待当前操作结束。", Text); return; } await retry(); }); again.Width = 76;
         var row = new DownloadRow { Session = session, Card = card, Info = info, Bar = bar, Pause = pause, Cancel = cancel, Retry = again, Title = title };

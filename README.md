@@ -1,5 +1,7 @@
 # AMD DLSS MU
 
+当前开发版 `2.0.0-preview.2` 已接入账号、普通/Pro 会员状态及在线功能授权；登录后才能使用客户端业务功能。后端与管理后台位于同仓 [server/](server/README.md)。注册在真实邮件验证完成前关闭，支付暂未开放；上线进度和 Windows 验收项见 [账号系统交付记录](docs/ACCOUNT-DELIVERY.md)。
+
 v1.3.0 新增 F8 面板、增强诊断和 OptiScaler 自动安装，更新关于页面与微信讨论组入口。详细说明及实验性功能限制见 [面板与 OptiScaler 使用说明](PANEL-AND-OPTISCALER.md)。
 
 这是一个中文 Windows 图形助手，负责：选择游戏目录、释放内置的 `nvngx_dlssnr.dll`、下载并核对官方 `dlssnr_on_amd_setup.exe`，再把两份文件安全准备到游戏 EXE 目录、启动官方安装器，并提供准备阶段的恢复功能。
@@ -12,7 +14,7 @@ v1.3.0 新增 F8 面板、增强诊断和 OptiScaler 自动安装，更新关于
 
 ## 使用
 
-1. 运行助手。
+1. 运行助手，登录 MU 账户并保持网络连接。
 2. 选择游戏本体 EXE，例如 Cyberpunk 2077 的 `bin\\x64\\Cyberpunk2077.exe`。
 3. 点击“一键安装到此游戏”。内置 DLL 会自动释放和校验。助手会下载官方安装器并验证 SHA-256，然后把准备文件放入该游戏目录并启动官方安装器。
 4. 选择模式一（推荐）使用官方运行时；启动游戏，启用 FSR，按 End 调出菜单。

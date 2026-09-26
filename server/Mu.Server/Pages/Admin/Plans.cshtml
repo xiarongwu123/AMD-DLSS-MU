@@ -1,0 +1,28 @@
+@page "/admin/plans"
+@model Mu.Server.Pages.Admin.PlansModel
+@{ ViewData["Title"] = "会员套餐"; }
+<h1>会员套餐</h1>
+<p class="muted">购买入口关闭。保存或上架套餐不会启用收款。既有订单使用创建时保存的价格，不随套餐修改变化。</p>
+<div asp-validation-summary="All" role="alert"></div>
+<section class="card"><h2>新增套餐</h2>
+    <form method="post" class="row">
+        <div><label for="new-name">名称</label><input id="new-name" name="Name" required maxlength="80" /></div>
+        <div><label for="new-days">期限（天）</label><input id="new-days" name="DurationDays" type="number" min="1" max="3650" value="30" required /></div>
+        <div><label for="new-price">价格（人民币元）</label><input id="new-price" name="Price" type="number" min="0" max="1000000" step="0.01" value="0" required /></div>
+        <div><label for="new-reason">操作原因</label><input id="new-reason" name="Reason" required minlength="3" maxlength="500" /></div>
+        <button type="submit">创建未上架套餐</button>
+    </form>
+</section>
+@foreach (var plan in Model.Items)
+{
+    <section class="card"><p><small>套餐 ID：@plan.Id</small></p>
+    <form method="post" class="row">
+        <input type="hidden" name="Id" value="@plan.Id" />
+        <div><label for="name-@plan.Id">名称</label><input id="name-@plan.Id" name="Name" value="@plan.Name" required maxlength="80" /></div>
+        <div><label for="days-@plan.Id">期限（天）</label><input id="days-@plan.Id" name="DurationDays" type="number" min="1" max="3650" value="@plan.DurationDays" required /></div>
+        <div><label for="price-@plan.Id">价格（人民币元）</label><input id="price-@plan.Id" name="Price" type="number" min="0" max="1000000" step="0.01" value="@((plan.PriceMinor / 100m).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))" required /></div>
+        <div><label for="enabled-@plan.Id"><input id="enabled-@plan.Id" name="Enabled" type="checkbox" value="true" checked="@plan.Enabled" /> 上架套餐</label></div>
+        <div><label for="reason-@plan.Id">操作原因</label><input id="reason-@plan.Id" name="Reason" required minlength="3" maxlength="500" /></div>
+        <button type="submit">保存</button>
+    </form></section>
+}

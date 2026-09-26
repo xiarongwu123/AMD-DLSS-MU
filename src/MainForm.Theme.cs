@@ -73,7 +73,7 @@ public sealed partial class MainForm
         File.Move(temporary, PreferencesFile, true);
     }
 
-    void ToggleTheme() => ApplyTheme(!darkMode, true);
+    async void ToggleTheme() { if (await RequireFeatureAsync("configuration.edit")) ApplyTheme(!darkMode, true); }
 
     void ApplyTheme(bool useDark, bool persist)
     {

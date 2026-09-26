@@ -1,0 +1,13 @@
+@page "/admin/login"
+@model Mu.Server.Pages.Admin.LoginModel
+@{ ViewData["Title"] = "管理员登录"; }
+<section class="auth">
+    <h1>管理员登录</h1>
+    <p class="muted">使用服务器创建的管理员账号。登录还需验证身份验证器动态码。</p>
+    <form method="post">
+        <div asp-validation-summary="All" role="alert"></div>
+        <label asp-for="Email">管理员邮箱</label><input asp-for="Email" type="email" autocomplete="username" maxlength="254" required />
+        <label asp-for="Password">密码</label><input asp-for="Password" type="password" autocomplete="current-password" maxlength="128" required />
+        <button type="submit">继续验证</button>
+    </form>
+</section>

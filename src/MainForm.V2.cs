@@ -51,17 +51,16 @@ public sealed partial class MainForm
                 new Rectangle((int)(logoArtwork.Width * .08), (int)(logoArtwork.Height * .11),
                     (int)(logoArtwork.Width * .87), (int)(logoArtwork.Height * .53)), GraphicsUnit.Pixel);
         };
-        logo.Click += (_, _) => SwitchPage(0); logo.Disposed += (_, _) => logoArtwork?.Dispose();
+        logo.Click += async (_, _) => await NavigateAuthorizedAsync(0); logo.Disposed += (_, _) => logoArtwork?.Dispose();
         var brandName = new Label { Text = "AMD DLSS MU", Dock = DockStyle.Fill, AutoEllipsis = true, ForeColor = Ink, TextAlign = ContentAlignment.MiddleLeft, Font = new Font(Font.FontFamily, 10f, FontStyle.Bold), Cursor = Cursors.Hand };
-        brandName.Click += (_, _) => SwitchPage(0);
+        brandName.Click += async (_, _) => await NavigateAuthorizedAsync(0);
         brand.Controls.Add(brandName); brand.Controls.Add(logo); header.Controls.Add(brand); headerBrand = brand;
         var nav = new FlowLayoutPanel { WrapContents = false, Margin = Padding.Empty, Padding = Padding.Empty, BackColor = Color.Transparent };
         foreach (var item in new[] { (0, "首页", "Home"), (1, "游戏库", "Library"), (7, "大力喜鹊", "Magpie"), (3, "下载任务", "Downloads"), (4, "帮助与反馈", "Help") })
         {
-            var b = Action(item.Item2, item.Item3, (_, _) =>
+            var b = Action(item.Item2, item.Item3, async (_, _) =>
             {
-                if (item.Item1 == 1 && activePage == 0) AnimateToLibrary();
-                else SwitchPage(item.Item1);
+                await NavigateAuthorizedAsync(item.Item1);
             });
             b.Size = new Size(item.Item1 == 4 ? 108 : 86, 42); b.Radius = 12; b.Margin = new Padding(0, 0, 7, 0);
             b.Font = new Font(Font.FontFamily, 10f, FontStyle.Bold);
@@ -74,9 +73,9 @@ public sealed partial class MainForm
         themeToggle.AccessibleName = "切换深色或浅色模式";
         themeToggle.Click += (_, _) => ToggleTheme(); utility.Controls.Add(themeToggle);
         var language = new RoundedButton { Size = new Size(54, 34), Text = english ? "EN" : "ZH", Radius = 17, BackColor = Surface, ForeColor = Ink, Margin = new Padding(0, 0, 7, 0) };
-        language.Click += (_, _) => { english = !english; ApplyLanguage(english); language.Text = english ? "EN" : "ZH"; }; utility.Controls.Add(language);
-        var account = Action("登录 / 注册", "Account", (_, _) => SwitchPage(6)); account.Size = new Size(104, 34); account.Radius = 17; account.Margin = new Padding(0, 0, 7, 0); utility.Controls.Add(account);
-        var settings = Action("设置", "Settings", (_, _) => SwitchPage(5)); settings.Size = new Size(60, 34); settings.Radius = 17; settings.Margin = new Padding(0, 0, 8, 0); utility.Controls.Add(settings);
+        language.Click += async (_, _) => { if (!await RequireFeatureAsync("configuration.edit")) return; english = !english; ApplyLanguage(english); language.Text = english ? "EN" : "ZH"; ApplyAccountGate(); }; utility.Controls.Add(language);
+        var account = accountHeader = Action("登录 / 注册", "Account", async (_, _) => await NavigateAuthorizedAsync(6)); account.Size = new Size(104, 34); account.Radius = 17; account.Margin = new Padding(0, 0, 7, 0); utility.Controls.Add(account);
+        var settings = Action("设置", "Settings", async (_, _) => await NavigateAuthorizedAsync(5)); settings.Size = new Size(60, 34); settings.Radius = 17; settings.Margin = new Padding(0, 0, 8, 0); utility.Controls.Add(settings);
         RoundedButton Caption(string symbol, EventHandler click)
         {
             var button = new RoundedButton { Text = symbol, Size = new Size(40, 34), Radius = 8, BackColor = Base, ForeColor = Muted, Margin = Padding.Empty, Cursor = Cursors.Hand, TabStop = false, Font = new Font("Segoe UI", 11f) };
@@ -93,7 +92,7 @@ public sealed partial class MainForm
         var searchIcon = new Label { Text = "\uE721", Dock = DockStyle.Left, Width = 25, ForeColor = Muted, Font = new Font("Segoe MDL2 Assets", 12), TextAlign = ContentAlignment.MiddleCenter, BackColor = Color.Transparent };
         librarySearch.PlaceholderText = english ? "Search games..." : "搜索游戏 / Search games...";
         librarySearch.BackColor = Surface; librarySearch.ForeColor = ink;
-        librarySearch.TextChanged += (_, _) => { FilterGames(); SwitchPage(1); };
+        librarySearch.TextChanged += async (_, _) => { if (accountClient.IsOnline && await RequireFeatureAsync("library.manage")) { FilterGames(); SwitchPage(1); } };
         search.Controls.Add(librarySearch); search.Controls.Add(searchIcon);
         header.Controls.Add(search); header.Controls.Add(update);
         headerSearch = search; headerUpdate = update;
@@ -128,10 +127,10 @@ public sealed partial class MainForm
         games.AutoScroll = false;
         homeHero = new ArtworkPanel("AmdNrAssistant.mu-hero-art.png") { Radius = 18, ShowBorder = true, FadeBottom = true, BackColor = Color.FromArgb(6, 31, 27), FocusX = .5f };
         homeHero.Controls.Add(new HeroTitleControl { Font = new Font(Font.FontFamily, 34f, FontStyle.Bold), Name = "heroTitle" });
-        heroDlss = Action("开启 DLSS5", "Open DLSS5", (_, _) => AnimateToLibrary());
+        heroDlss = Action("开启 DLSS5", "Open DLSS5", async (_, _) => await NavigateAuthorizedAsync(1));
         heroDlss.BackColor = Acid; heroDlss.ForeColor = OnAccent; heroDlss.Radius = 16;
         heroDlss.Glyph = "\uE768"; heroDlss.Font = new Font(Font.FontFamily, 11f, FontStyle.Bold);
-        heroMagpie = Action("开启大力喜鹊", "Open Magpie", (_, _) => SwitchPage(7));
+        heroMagpie = Action("开启大力喜鹊", "Open Magpie", async (_, _) => await NavigateAuthorizedAsync(7));
         heroMagpie.BackColor = SelectedSurface; heroMagpie.ForeColor = Ink; heroMagpie.Radius = 16;
         heroMagpie.Glyph = "\uE945"; heroMagpie.Font = new Font(Font.FontFamily, 11f, FontStyle.Bold);
         homeHero.Controls.Add(heroDlss); homeHero.Controls.Add(heroMagpie);
@@ -140,14 +139,14 @@ public sealed partial class MainForm
         homeSectionHint = new Label { Text = "已扫描到的本地游戏，选择并一键配置。", ForeColor = Muted, AutoSize = false };
         homeSection.Controls.Add(homeSectionTitle); homeSection.Controls.Add(homeSectionHint);
         homeSection.Controls.Add(homeCards);
-        scrollLibrary = Action("下滑查看全部游戏  ↓", "Scroll for all games  ↓", (_, _) => AnimateToLibrary());
+        scrollLibrary = Action("下滑查看全部游戏  ↓", "Scroll for all games  ↓", async (_, _) => await NavigateAuthorizedAsync(1));
         scrollLibrary.BackColor = SelectedSurface; scrollLibrary.ForeColor = Acid; scrollLibrary.Radius = 18;
         scrollLibrary.Font = new Font(Font.FontFamily, 10f, FontStyle.Bold); homeSection.Controls.Add(scrollLibrary);
         libraryPage.Controls.Add(homeSection);
         libraryPage.ClientSizeChanged += (_, _) => LayoutV2Sections();
         libraryPage.Scroll += (_, _) => UpdateScrollNavigation();
         if (libraryPage is LibraryScrollPanel scrollHost)
-            scrollHost.EnterLibraryRequested += (_, _) => AnimateToLibrary();
+            scrollHost.EnterLibraryRequested += async (_, _) => { if (await RequireFeatureAsync("library.manage")) AnimateToLibrary(); };
         RenderHomeCards(); LayoutV2Sections();
     }
 
@@ -239,7 +238,7 @@ public sealed partial class MainForm
             detect.Glyph = "\uE721";
             detect.Font = new Font(Font.FontFamily, 9f, FontStyle.Bold);
             card.Controls.Add(cover); card.Controls.Add(name); card.Controls.Add(state); card.Controls.Add(detect);
-            void OpenGame(object? _, EventArgs __) { SwitchPage(1); RevealGame(game); }
+            async void OpenGame(object? _, EventArgs __) { if (!await RequireFeatureAsync("library.manage")) return; SwitchPage(1); RevealGame(game); }
             card.Click += OpenGame; cover.Click += OpenGame; name.Click += OpenGame;
             card.KeyDown += (_, e) =>
             {
