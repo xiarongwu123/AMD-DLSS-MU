@@ -2,7 +2,7 @@
 
 入口：顶部「大力喜鹊」→「开启大力喜鹊」。首次联网下载约 467 MiB，后续复用本机组件。
 
-1. MU 下载 SAOG0721/Magpie 的 `v0.6.8-experimental.1` 完整主包，核对固定大小和 SHA-256 后解压。
+1. MU 优先从自有 VPS 镜像下载 SAOG0721/Magpie 的 `v0.6.8-experimental.1` 完整主包，失败后依次回退 GitHub Releases 直链、GitHub API。所有来源均核对固定大小和 SHA-256 后解压。
 2. 创建独立便携配置，默认中文、Lanczos 等比适应屏幕缩放；不修改游戏或已有 Magpie 的配置，不设置开机启动，不运行 NGX OTA 脚本。
 3. 程序打开后，将游戏切换为窗口模式并聚焦游戏，按 **Alt + Shift + A** 开启或停止效果。首次快捷键冲突可在 Magpie 内修改。
 4. AI 效果、补帧与画面参数在 Magpie 内选择。默认配置不是 DLSS，也不是帧生成；具体支持由显卡、驱动和效果组件决定。不要叠加多套补帧。
@@ -12,7 +12,7 @@
 安装位置：`%LOCALAPPDATA%\AMD-NR-Assistant\tools\Magpie\v0.6.8-experimental.1`。
 配置位置：该目录中 `Magpie.exe` 旁的 `config\v4e\config.json`。重复启动不覆盖用户修改。
 
-主包在运行时从上游下载，不内置到 MU EXE。保留完整上游包中的许可证与说明。Magpie 是独立进程，不代表游戏内 DLSS 已启用。
+主包在运行时下载，不内置到 MU EXE。镜像保存上游 Releases 原始 ZIP，保留完整包中的许可证与说明，不重新打包。版本与 SHA-256 固定的 HTTPS 地址支持公共缓存和 HTTP Range。Magpie 是独立进程，不代表游戏内 DLSS 已启用。
 
 参考：
 

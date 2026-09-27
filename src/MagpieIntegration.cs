@@ -11,6 +11,7 @@ public static class MagpieIntegration
     public const string Repository = "https://github.com/SAOG0721/Magpie";
     public const string Sha256 = "efb41e5177a628c0742566a887660a5a50e159f824cbfbf9f0620b2cc3b6803c";
     public const long PackageSize = 489787536;
+    public const string MirrorUrl = "https://amd-dlss-mu.claude-api.cn/mirrors/magpie/" + Tag + "/" + Sha256 + "/Magpie-Experimental-x64.zip";
     public static string Root => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AMD-NR-Assistant", "tools", "Magpie");
     public static string InstallDirectory => Path.Combine(Root, Tag);
     public static string ConfigJson => """
@@ -48,10 +49,11 @@ public static class MagpieIntegration
             await Task.Run(() => Core.Hash(archive) == Sha256, token);
         if (!cached)
         {
-            phase.Report("正在下载大力喜鹊完整包（约 467 MiB）…");
+            phase.Report("正在从 MU 镜像下载大力喜鹊完整包（约 467 MiB）…");
             using var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
             await DownloadSources.DownloadAsync(client, Repository + "/releases/download/" + Tag + "/Magpie-Experimental-x64.zip",
-                "https://api.github.com/repos/SAOG0721/Magpie/releases/assets/563188091", Sha256, PackageSize, archive, download, token);
+                "https://api.github.com/repos/SAOG0721/Magpie/releases/assets/563188091", Sha256, PackageSize, archive, download, token,
+                phase.Report, mirror: MirrorUrl);
         }
         phase.Report("正在解压并初始化独立配置…");
         var stage = Path.Combine(Root, ".staging-" + Guid.NewGuid().ToString("N"));

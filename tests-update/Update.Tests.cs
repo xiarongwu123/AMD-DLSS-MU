@@ -24,7 +24,7 @@ if (args.Length == 1)
     // FileVersionInfo on macOS returns empty for native bundled Windows hosts.
     // Read the actual RT_VERSION resource instead of treating that as version zero.
     var version = ReadPeVersion(args[0]);
-    Assert(version == new Version(2, 0, 0, 0));
+    Assert(version == new Version(2, 0, 1, 0));
     Assert(new FileInfo(args[0]).Length > 100_000_000);
     Console.WriteLine("Verified Windows x64 release v" + version + " SHA-256 " + Core.Hash(args[0]));
 }

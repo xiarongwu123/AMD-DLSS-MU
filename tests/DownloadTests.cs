@@ -50,6 +50,31 @@ public static class DownloadTests
         try { DownloadSources.Build("http://github.com/file", api, hash); }
         catch (IOException) { invalid = true; }
         assert(invalid, "reject insecure download address");
+        const string mirror = MagpieIntegration.MirrorUrl;
+        assert(DownloadSources.Build(direct, api, hash, mirror).SequenceEqual(new[] { mirror, direct, api }), "mirror is tried before both upstream entries");
+        using var mirrorOnly = new Handler(r => r.RequestUri!.AbsoluteUri == mirror
+            ? new(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) } : new(HttpStatusCode.ServiceUnavailable));
+        using var mirrorClient = new HttpClient(mirrorOnly);
+        await DownloadSources.DownloadAsync(mirrorClient, direct, api, hash, bytes.Length, target, new ProgressSink(), default, mirror: mirror);
+        assert(mirrorOnly.Calls == 1 && File.ReadAllBytes(target).SequenceEqual(bytes), "healthy mirror avoids GitHub entirely");
+        foreach (var badHash in new[] { false, true })
+        {
+            var requested = new List<string>();
+            using var mirrorFailure = new Handler(r => {
+                requested.Add(r.RequestUri!.AbsoluteUri);
+                return r.RequestUri.AbsoluteUri == api
+                    ? new(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) }
+                    : badHash ? new(HttpStatusCode.OK) { Content = new ByteArrayContent(new byte[bytes.Length]) }
+                    : new(HttpStatusCode.ServiceUnavailable);
+            });
+            using var mirrorFallback = new HttpClient(mirrorFailure);
+            await DownloadSources.DownloadAsync(mirrorFallback, direct, api, hash, bytes.Length, target, new ProgressSink(), default, mirror: mirror);
+            assert(requested.SequenceEqual(new[] { mirror, direct, api }) && File.ReadAllBytes(target).SequenceEqual(bytes),
+                "mirror HTTP/hash failures retain both upstream fallbacks and verify final bytes");
+        }
+        bool badMirror = false;
+        try { DownloadSources.Build(direct, api, hash, "http://mirror.example/file"); } catch (IOException) { badMirror = true; }
+        assert(badMirror, "mirror must use HTTPS");
         using var metadataDown = new Handler(_ => new(HttpStatusCode.ServiceUnavailable));
         using var metadataClient = new HttpClient(metadataDown);
         var release = await Core.GetReleaseAsync(metadataClient, default);
