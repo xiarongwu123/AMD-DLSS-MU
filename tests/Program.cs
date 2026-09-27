@@ -22,10 +22,14 @@ string ReleaseJson(string tag, string digest, long size) => JsonSerializer.Seria
         browser_download_url = Core.Repository + "/releases/download/" + tag + "/" + Core.InstallerName,
         digest = "sha256:" + digest, size } }
 });
-Assert(Core.ParseRelease(ReleaseJson("v0.3.1", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)).Tag == "v0.3.1", "accept pinned upstream v0.3.1");
+Assert(Core.ParseRelease(ReleaseJson("v0.4.0", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)).Tag == "v0.4.0", "accept pinned upstream v0.4.0");
 Reject(() => Core.ParseRelease(ReleaseJson("v0.3.0", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)), "reject old runtime release");
-Reject(() => Core.ParseRelease(ReleaseJson("v0.3.1", new string('0', 64), Core.ReviewedInstallerSize)), "reject replaced upstream asset");
-Reject(() => Core.ParseRelease(ReleaseJson("v0.3.1", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize + 1)), "reject changed upstream size");
+Reject(() => Core.ParseRelease(ReleaseJson("v0.3.1", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)), "reject legacy console installer release");
+Reject(() => Core.ParseRelease(ReleaseJson("v0.4.0", new string('0', 64), Core.ReviewedInstallerSize)), "reject replaced upstream asset");
+Reject(() => Core.ParseRelease(ReleaseJson("v0.4.0", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize + 1)), "reject changed upstream size");
+var guiStart = UpstreamInstaller.CreateStartInfo("installer.exe", a);
+Assert(!guiStart.CreateNoWindow && !guiStart.RedirectStandardInput && !guiStart.RedirectStandardOutput && !guiStart.RedirectStandardError && guiStart.ArgumentList.Count == 0 && guiStart.Arguments == "", "graphical installer is visible and receives no guessed CLI flags or automatic confirmations");
+Assert(guiStart.WorkingDirectory == dir, "graphical installer starts in selected game directory");
 GameLibrary.StorageOverride = Path.Combine(root, "library", "manual-games.json");
 GameLibrary.AddManual(a);
 GameLibrary.AddManual(a);

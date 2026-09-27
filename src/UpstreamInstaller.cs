@@ -9,7 +9,8 @@ public sealed class MissingAmdHipRuntimeException : IOException
     public MissingAmdHipRuntimeException() : base("缺少 AMD HIP 运行时 amdhip64_7.dll。当前安装方案面向 AMD 显卡，不能仅使用 NVIDIA 显卡完成此方案。AMD 用户请检查受支持的显卡及 Adrenalin 驱动；已停止安装，不会忽略依赖警告。") { }
 }
 
-// Only the pinned upstream protocol is accepted. Never send a blanket sequence of Y's.
+// Legacy v0.3.1 protocol retained for regression coverage only.
+// The v0.4.0 runner below never uses this stdin protocol.
 public sealed class InstallerProtocol(string gameExe)
 {
     readonly StringBuilder output = new();
@@ -67,73 +68,43 @@ public static class UpstreamInstaller
         if (new FileInfo(installer).Length != Core.ReviewedInstallerSize ||
             !Core.Hash(installer).Equals(Core.ReviewedInstallerSha256, StringComparison.OrdinalIgnoreCase))
             throw new IOException("安装器不属于已核验的上游版本，拒绝自动执行。");
-        var protocol = new InstallerProtocol(gameExe);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(TimeSpan.FromMinutes(10));
-        using var process = new Process { StartInfo = new ProcessStartInfo(installer)
-        {
-            WorkingDirectory = Path.GetDirectoryName(gameExe)!, UseShellExecute = false,
-            CreateNoWindow = true, RedirectStandardInput = true,
-            RedirectStandardOutput = true, RedirectStandardError = true
-        }};
-        Task stdout = Task.CompletedTask, stderr = Task.CompletedTask;
+        timeout.CancelAfter(TimeSpan.FromMinutes(20));
+        // v0.4.0 is a graphical installer, not the legacy stdin protocol.
+        // Do not invent silent flags or feed confirmations into a GUI process.
+        using var process = new Process { StartInfo = CreateStartInfo(installer, gameExe) };
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (!process.Start()) throw new IOException("无法启动上游安装器。");
-            progress.Report("正在后台运行上游安装器…");
-            var lastOutput = DateTime.UtcNow;
-            async Task ReadOutput(StreamReader reader, bool interactive)
-            {
-                var buffer = new char[2048];
-                var errorOutput = new StringBuilder();
-                while (true)
-                {
-                    var count = await reader.ReadAsync(buffer.AsMemory(), timeout.Token);
-                    if (count == 0) return;
-                    lastOutput = DateTime.UtcNow;
-                    var chunk = new string(buffer, 0, count);
-                    log(chunk);
-                    if (!interactive)
-                    {
-                        errorOutput.Append(chunk);
-                        if (errorOutput.Length > 65536) throw new IOException("安装器错误输出超出预期，已停止。");
-                        InstallerProtocol.CheckWarnings(errorOutput.ToString());
-                        continue;
-                    }
-                    var reply = protocol.Feed(chunk);
-                    if (reply == null) continue;
-                    await process.StandardInput.WriteLineAsync(reply.AsMemory(), timeout.Token);
-                    await process.StandardInput.FlushAsync(timeout.Token);
-                    progress.Report(reply == "y" ? "游戏目录已核对，正在检查依赖…" : "游戏 EXE 已匹配，正在安装组件…");
-                }
-            }
-            stdout = ReadOutput(process.StandardOutput, true);
-            stderr = ReadOutput(process.StandardError, false);
-            var exited = process.WaitForExitAsync(timeout.Token);
-            while (!exited.IsCompleted)
-            {
-                if (stdout.IsFaulted) await stdout;
-                if (stderr.IsFaulted) await stderr;
-                if (DateTime.UtcNow - lastOutput > TimeSpan.FromSeconds(90))
-                    throw new IOException("安装器长时间没有响应，可能等待未知提示或不支持后台输入。已停止自动安装；请查看诊断，不会自动确认未知选项。");
-                await Task.WhenAny(exited, Task.Delay(250, timeout.Token));
-                timeout.Token.ThrowIfCancellationRequested();
-            }
-            await exited;
-            await Task.WhenAll(stdout, stderr);
-            protocol.EnsureCompleted();
+            log($"Started official {Core.ReviewedTag} graphical installer for {gameExe}");
+            progress.Report("请在上游 v0.4.0 安装窗口确认游戏 EXE 并完成安装，然后关闭该窗口；客户端将校验结果。");
+            await process.WaitForExitAsync(timeout.Token);
             if (process.ExitCode != 0) throw new IOException("上游安装器失败，退出码：" + process.ExitCode);
+            var check = Core.CheckInstalled(Path.GetDirectoryName(gameExe)!);
+            if (!check.Ready) throw new IOException("上游安装窗口已关闭，但配置尚未完成：" + check.Message);
+            log("Official graphical installer exited; installed files validated.");
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            throw new IOException("上游安装器超时，已停止；请查看诊断并检查游戏目录。");
+            throw new IOException("等待上游安装窗口超时，已停止；请查看诊断并检查游戏目录。");
         }
         finally
         {
             timeout.Cancel();
             try { if (!process.HasExited) { process.Kill(entireProcessTree: true); await process.WaitForExitAsync(); } }
             catch (InvalidOperationException) { }
-            try { await Task.WhenAll(stdout, stderr); } catch { /* Preserve the original failure after observing reader tasks. */ }
         }
     }
+
+    public static ProcessStartInfo CreateStartInfo(string installer, string gameExe) => new(installer)
+    {
+        WorkingDirectory = Path.GetDirectoryName(gameExe)!,
+        UseShellExecute = false,
+        CreateNoWindow = false,
+        // No arguments: upstream does not document a silent installation API.
+        RedirectStandardInput = false,
+        RedirectStandardOutput = false,
+        RedirectStandardError = false
+    };
 }
