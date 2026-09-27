@@ -27,6 +27,9 @@
 - Sequential 16 MiB samples from the same development network: GitHub 1718775 bytes/s in 9.76 seconds; mirror 2005122 bytes/s in 8.37 seconds, about 17% higher average throughput for this sample. This is a single local-network comparison, not an all-ISP benchmark.
 - Existing website health, compatibility search and old active EXE download remained healthy after the mirror deployment.
 - Website v2.0.1 publish script was exercised against a disposable copy before production activation. It verifies the final package before switching release metadata and preserves the earlier announcement.
+- GitHub v2.0.1 is published as the latest stable release, targeting client commit `bc65325`; its asset digest and size match the final package above. Code and delivery docs are pushed to `main`.
+- Website activation completed: public metadata reports `v2.0.1` / `stable`, download page shows the new mirror announcement, and EXE HEAD returns the expected size and ETag. A full public HTTPS EXE transfer initiated from the VPS returned 200 with 201095999 bytes and the exact final SHA-256.
+- Website metadata/page rollback backup: `/home/xrw/amd-dlss-mu-site/backups/release-v2.0.1-1790524650610`. The v2.0 EXE remains intact.
 - Windows GUI launch, real game use and mainland ISP-specific throughput require device acceptance; compilation and network verification do not establish those results.
 
 Future website deployments must retain `mirrors.mjs` and the added server/Dockerfile hooks; the website source is maintained separately from this client repository. See `deploy/magpie-mirror/README.md` for reproduction and rollback.
