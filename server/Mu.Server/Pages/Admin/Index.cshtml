@@ -1,0 +1,11 @@
+@page "/admin"
+@model Mu.Server.Pages.Admin.IndexModel
+@{ ViewData["Title"] = "管理概览"; }
+<h1>账户管理</h1>
+<p class="muted">当前管理员：@User.Identity?.Name。管理会话有效期为 2 小时。</p>
+<div class="grid">
+    <a class="card" asp-page="/Admin/Users"><h2>用户 @Model.UserCount</h2><p>查询用户、调整会员、管理会话</p></a>
+    <a class="card" asp-page="/Admin/Features"><h2>功能权限 @Model.FeatureCount</h2><p>配置普通用户、Pro 和功能关闭</p></a>
+    <a class="card" asp-page="/Admin/Orders"><h2>订单 @Model.OrderCount</h2><p>查询服务端订单记录</p></a>
+</div>
+<section class="card"><h2>购买入口尚未开放</h2><p>本期支持人工开通和延长 Pro。套餐配置不会自动启用支付；支付商户、价格及权益确认并完成真实支付验收后才能开放购买。</p></section>

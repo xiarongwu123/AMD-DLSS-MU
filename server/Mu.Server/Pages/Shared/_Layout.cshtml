@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>@ViewData["Title"] · MU</title>
+    <link rel="stylesheet" href="~/admin.css" asp-append-version="true" />
+</head>
+<body>
+    <header><a class="brand" href="/admin">MU <span>账户管理</span></a>
+    @if (User.HasClaim("amr", "mfa"))
+    {
+        <nav aria-label="管理导航">
+            <a asp-page="/Admin/Users">用户</a><a asp-page="/Admin/Features">功能权限</a>
+            <a asp-page="/Admin/Plans">套餐</a><a asp-page="/Admin/Orders">订单</a><a asp-page="/Admin/Audit">审计</a>
+        </nav>
+        <form asp-page="/Admin/Logout" method="post"><button class="quiet" type="submit">退出管理</button></form>
+    }
+    </header>
+    <main>
+        @if (TempData["Notice"] is string notice) { <div class="notice" role="status">@notice</div> }
+        @RenderBody()
+    </main>
+    <footer><a href="/legal/terms">服务条款</a> · <a href="/legal/privacy">隐私说明</a></footer>
+</body>
+</html>

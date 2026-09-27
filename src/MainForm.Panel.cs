@@ -35,7 +35,7 @@ public sealed partial class MainForm
                 {
                     GetWindowThreadProcessId(GetForegroundWindow(), out uint pid);
                     using var foreground = Process.GetProcessById((int)pid);
-                    if (pid == Environment.ProcessId || string.Equals(foreground.MainModule?.FileName, p.GameExe, StringComparison.OrdinalIgnoreCase)) p.Show();
+                    if (pid == Environment.ProcessId || string.Equals(foreground.MainModule?.FileName, p.GameExe, StringComparison.OrdinalIgnoreCase)) _ = ShowAuthorizedPanelAsync(p);
                 }
                 catch { }
             }
@@ -53,12 +53,17 @@ public sealed partial class MainForm
             m.Result = (IntPtr)(top ? left ? 13 : right ? 14 : 12 : bottom ? left ? 16 : right ? 17 : 15 : left ? 10 : right ? 11 : 1);
         }
     }
-    void OpenPanel()
+    async Task ShowAuthorizedPanelAsync(ControlPanel panel)
+    {
+        if (await RequireFeatureAsync("diagnostics.use") && !panel.IsDisposed) panel.Show();
+    }
+    async void OpenPanel()
     {
         if (selectedGame == null || busy) return;
+        if (!await RequireFeatureAsync("diagnostics.use") || busy || selectedGame == null) return;
         if (controlPanel is { IsDisposed: false }) controlPanel.Close();
         var exe = selectedGame;
-        controlPanel = new ControlPanel(exe, async () => await ExportDiagnosticForAsync(exe), InstallLivePanel);
+        controlPanel = new ControlPanel(exe, async () => await ExportDiagnosticForAsync(exe), InstallLivePanel, RequireFeatureAsync, BeginAccountTransaction);
         controlPanel.FormClosed += (_, _) => { panelFocusWatch?.Dispose(); panelFocusWatch = null; if (panelHotkeyRegistered) UnregisterHotKey(Handle, PanelHotkey); panelHotkeyRegistered = false; };
         bool native = File.Exists(Path.Combine(Path.GetDirectoryName(selectedGame)!, "AMD-DLSS-MU.addon64"));
         if (!native) panelHotkeyRegistered = RegisterHotKey(Handle, PanelHotkey, 0x4000, 0x77);
@@ -77,12 +82,15 @@ public sealed partial class MainForm
             panelFocusWatch.Start();
         }
     }
-    void InstallLivePanel(string exe)
+    async void InstallLivePanel(string exe)
     {
         try
         {
             if (busy) return;
+            if (!await RequireFeatureAsync("configuration.edit") || busy) return;
             if (MessageBox.Show(this, "实验性实时面板：需要已安装的 ReShade 6.8.0 Add-on 版和指定 RenoDX v4.7。\n\n它不控制 AMD 模式一，也不自动安装这些运行时。连接后提供结构、色调、皮肤、样式等实时控件。\n\n安装到此游戏并纳入恢复记录？", "安装实时面板", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+            if (!await RequireFeatureAsync("configuration.edit") || busy) return;
+            using var transaction = BeginAccountTransaction();
             LivePanel.Install(exe);
             panelFocusWatch?.Dispose(); panelFocusWatch = null;
             if (panelHotkeyRegistered) UnregisterHotKey(Handle, PanelHotkey); panelHotkeyRegistered = false;
@@ -100,10 +108,13 @@ public sealed class ControlPanel : Form
     readonly Label hint = new() { AutoSize = false, Height = 62, Dock = DockStyle.Top };
     readonly Label state = new() { AutoSize = false, Height = 130, Dock = DockStyle.Top };
     readonly System.Windows.Forms.Timer refresh = new() { Interval = 2500 };
+    readonly Func<string, Task<bool>> authorize;
+    readonly Func<IDisposable> beginTransaction;
     bool refreshing;
     public void HotkeyHint(string value) => hint.Text = value;
-    public ControlPanel(string exe, Func<Task> export, Action<string> installNative)
+    public ControlPanel(string exe, Func<Task> export, Action<string> installNative, Func<string, Task<bool>> authorize, Func<IDisposable> beginTransaction)
     {
+        this.authorize = authorize; this.beginTransaction = beginTransaction;
         GameExe = exe; Text = "AMD DLSS MU · 游戏控制面板"; Size = new Size(500, 580); MinimumSize = new Size(440, 520);
         BackColor = Color.FromArgb(23, 29, 27); ForeColor = Color.FromArgb(229, 237, 230); Font = new Font("Microsoft YaHei UI", 10);
         TopMost = true; StartPosition = FormStartPosition.CenterScreen; KeyPreview = true;
@@ -114,7 +125,7 @@ public sealed class ControlPanel : Form
         Add("配置文件（保存后重新启动游戏）", (_, _) => EditConfig());
         Add("导出完整诊断（先预览）", async (_, _) => { try { await export(); } catch (Exception e) { MessageBox.Show(this, e.Message); } });
         Add("安装实时滑块插件 · RenoDX v4.7", (_, _) => installNative(GameExe));
-        Add("打开游戏目录", (_, _) => { try { Process.Start(new ProcessStartInfo("explorer.exe") { ArgumentList = { Path.GetDirectoryName(GameExe)! }, UseShellExecute = true }); } catch (Exception e) { MessageBox.Show(this, e.Message); } });
+        Add("打开游戏目录", async (_, _) => { try { if (await authorize("diagnostics.use")) Process.Start(new ProcessStartInfo("explorer.exe") { ArgumentList = { Path.GetDirectoryName(GameExe)! }, UseShellExecute = true }); } catch (Exception e) { MessageBox.Show(this, e.Message); } });
         body.Controls.Add(new Label { Text = "原生实时菜单：模式一 End；OptiScaler Insert（默认）。\n本窗口不显示推测 FPS；“已加载”不代表神经渲染成功。", Width = 425, Height = 65, Margin = new Padding(0, 12, 0, 0) });
         Controls.Add(body);
         refresh.Tick += async (_, _) => await RefreshState(); Shown += async (_, _) => await RefreshState();
@@ -128,10 +139,11 @@ public sealed class ControlPanel : Form
         catch (Exception e) { if (!IsDisposed) state.Text = e.Message; }
         finally { refreshing = false; }
     }
-    void EditConfig()
+    async void EditConfig()
     {
         try
         {
+            if (!await authorize("configuration.edit") || IsDisposed) return;
             var dir = Path.GetDirectoryName(GameExe)!;
             var names = new[] { "dlssnr_on_amd.ini", "OptiScaler.ini" }.Where(n => File.Exists(Path.Combine(dir, n))).ToArray();
             if (names.Length == 0) throw new IOException("尚未找到配置文件，请先完成安装。");
@@ -141,9 +153,9 @@ public sealed class ControlPanel : Form
             var save = new Button { Text = "保存配置并保留备份（重启游戏生效）", Dock = DockStyle.Bottom, Height = 42 };
             string original = "", path = "";
             select.SelectedIndexChanged += (_, _) => { try { path = Path.Combine(dir, (string)select.SelectedItem!); Core.RejectLinks(path); if (new FileInfo(path).Length > 1024 * 1024) throw new IOException("配置文件过大。"); original = File.ReadAllText(path); text.Text = original; } catch (Exception e) { save.Enabled = false; MessageBox.Show(editor, e.Message); } };
-            save.Click += (_, _) =>
+            save.Click += async (_, _) =>
             {
-                try { LivePanel.SaveConfig(GameExe, path, original, text.Text); original = text.Text; MessageBox.Show(editor, "已保存。重新启动游戏后使用；此操作不是实时滑块。"); }
+                try { if (!await authorize("configuration.edit") || editor.IsDisposed) return; using var transaction = beginTransaction(); LivePanel.SaveConfig(GameExe, path, original, text.Text); original = text.Text; MessageBox.Show(editor, "已保存。重新启动游戏后使用；此操作不是实时滑块。"); }
                 catch (Exception e) { MessageBox.Show(editor, e.Message, "未保存"); }
             };
             editor.Controls.Add(text); editor.Controls.Add(select); editor.Controls.Add(save); select.SelectedIndex = 0; editor.ShowDialog(this);

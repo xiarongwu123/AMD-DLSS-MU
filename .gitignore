@@ -1,8 +1,16 @@
 bin/
 obj/
 publish/
+artifacts/
 *.exe
 assets/*.dll
 .vs/
 assets/*.pdb
 assets/*.lib
+server/**/data/
+server/**/backups/
+server/**/.env
+server/**/.env.*
+!server/**/.env.example
+server/**/appsettings.Local.json
+server/artifacts/

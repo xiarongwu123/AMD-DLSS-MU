@@ -1,0 +1,16 @@
+@page "/admin/setup"
+@model Mu.Server.Pages.Admin.SetupModel
+@{ ViewData["Title"] = "设置管理员双因素验证"; }
+<section class="auth">
+    <h1>绑定身份验证器</h1>
+    <p>首次管理前，请在身份验证器中添加账户，选择“基于时间”，手动输入以下密钥。</p>
+    <p class="muted">账户：@Model.AccountEmail</p>
+    <code class="secret">@Model.SharedKey</code>
+    <p><small>妥善保存此密钥。密钥只在本次绑定流程显示，不发送到二维码或其他外部服务。</small></p>
+    <form method="post">
+        <div asp-validation-summary="All" role="alert"></div>
+        <label asp-for="Code">身份验证器中的 6 位动态码</label>
+        <input asp-for="Code" inputmode="numeric" autocomplete="one-time-code" minlength="6" maxlength="8" required />
+        <button type="submit">验证并进入管理</button>
+    </form>
+</section>

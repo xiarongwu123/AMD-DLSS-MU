@@ -1,0 +1,13 @@
+@page "/admin/verify"
+@model Mu.Server.Pages.Admin.VerifyModel
+@{ ViewData["Title"] = "管理员双因素验证"; }
+<section class="auth">
+    <h1>验证身份</h1>
+    <p class="muted">输入已绑定身份验证器中的动态码。</p>
+    <form method="post">
+        <div asp-validation-summary="All" role="alert"></div>
+        <label asp-for="Code">6 位动态码</label><input asp-for="Code" inputmode="numeric" autocomplete="one-time-code" minlength="6" maxlength="8" required autofocus />
+        <button type="submit">登录管理后台</button>
+    </form>
+    <p><small>验证流程 5 分钟后过期。身份验证器丢失时需通过服务器维护账号，不能通过普通用户邮箱验证取消双因素验证。</small></p>
+</section>

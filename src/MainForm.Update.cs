@@ -8,6 +8,7 @@ public sealed partial class MainForm
     async Task CheckAppUpdateAsync(bool automatic)
     {
         if (checkingUpdate || busy) return;
+        if (!await RequireFeatureAsync("app.update") || checkingUpdate || busy) return;
         checkingUpdate = true;
         bool ownsBusy = false;
         try
@@ -20,16 +21,19 @@ public sealed partial class MainForm
             }
             if (busy || IsDisposed) return;
             if (MessageBox.Show(this, $"发现新版 {release.Tag}（当前 v{AutoUpdate.DisplayVersion}）\n下载大小：{release.Size / 1024d / 1024:0.0} MB\n\n{release.Notes}\n\n现在下载？安装记录与配置会保留。", "启动器更新", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+            if (!await RequireFeatureAsync("app.update") || busy) return;
             busy = true;
             ownsBusy = true;
             UpdateButtons();
             automatic = false;
-            using var session = BeginDownloadSession("启动器更新 " + release.Tag, () => CheckAppUpdateAsync(false));
+            using var session = BeginDownloadSession("启动器更新 " + release.Tag, () => CheckAppUpdateAsync(false), "app.update");
             SwitchPage(3);
             var candidate = await AutoUpdate.DownloadAsync(release,
                 new Progress<int>(n => status.Text = n == 100 ? "下载完成，正在校验…" : $"正在下载更新 {n}%"),
                 lifetime.Token, message => status.Text = message);
             if (MessageBox.Show(this, "新版已下载并校验。现在退出并重启更新？", "准备更新", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+            if (!await RequireFeatureAsync("app.update")) return;
+            using var transaction = BeginAccountTransaction();
             Enabled = false;
             var helper = await Task.Run(() => AutoUpdate.Prepare(candidate, release));
             AutoUpdate.StartHelper(helper);
