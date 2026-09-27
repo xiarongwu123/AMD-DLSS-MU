@@ -1,10 +1,17 @@
-# 安全设计说明
+# AMD DLSS MU · 中文说明
 
-- 内置 DLL SHA-256 已核对为 `8270b350cd82de5ce89806872cdd6b6a9249b80836b91bbeb3573470744cc206`。
+完整中文介绍、下载入口、使用步骤、构建方法及作者联系方式已统一到 [项目 README](README.md)。
 
-官方资源固定为 `danielblnc/DLSS-NR-on-AMD` 最新 release，并核对 tag、资源名、HTTPS 下载地址、大小和 SHA-256。
-- 下载使用临时文件，完整下载且 SHA-256 匹配后才改名；取消、断网或校验失败不会留下安装器。
-- 游戏 EXE 和 DLSS DLL 会检查扩展名、x64 PE 架构、文件类型、版本和重解析点，阻止把符号链接目标当成普通文件。
-- 写入前记录原始哈希，使用临时文件后替换；文件被其他程序改动时停止并保留现场。
-- 写入失败会按日志恢复，恢复前对所有目标和备份做预检查。
-- 官方安装器启动后不自动模拟 U/R，因为其参数没有公开，避免误删或不可逆修改。
+微信号：**`xrwCoder`**。添加时请备注「AMD DLSS MU」。
+
+<p>
+  <img src="assets/wechat-xrwCoder.jpg" width="240" alt="作者微信二维码：xrwCoder">
+</p>
+
+专题说明：
+
+- [大力喜鹊](docs/MAGPIE.md)
+- [游戏管理与诊断](MANAGEMENT.md)
+- [恢复配置](RESTORE.md)
+- [面板与 OptiScaler](PANEL-AND-OPTISCALER.md)
+- [账户服务与管理后台](server/README.md)
