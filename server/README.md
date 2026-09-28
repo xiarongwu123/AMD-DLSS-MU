@@ -18,6 +18,8 @@ The API uses `/api/v1`; `/api/health` is an unauthenticated readiness check. Reg
 
 Feature snapshots include a monotonically increasing `version` for each implemented feature. Every successful administrative configuration write increments that version in the same transaction as the policy and audit entry. Permission checks still read current server state before each client operation; the version is not an offline authorization grant.
 
+The compatibility V1 API shares this service's account authentication and SQLite database. `compatibility.read` and `compatibility.submit` are independently configurable in the feature console. Anonymous website GETs use separate `/api/v1/compatibility/public/` routes and the independent on/off switch `compatibility.public.read`; public access never grants submission or account access. The [compatibility contract](Mu.Server/COMPATIBILITY.md) describes search, GPU filtering, immutable test environments, submission deduplication and public rate limits. Startup transactionally migrates schema versions 1 or 2 to version 3. Back up before upgrading; the older server cannot read schema version 3. Tests run serially because all three projects reference the same server output.
+
 ## Production layout
 
 The deployment root is `/home/xrw/amd-dlss-mu-account`. Copy the files from `deploy/` into that directory, and copy the published Linux files into `releases/<release-id>/`. `current` points to the active immutable release. The container exposes only `127.0.0.1:8089` and runs as the host user with UID/GID 1000. Public access requires publishing a Cloudflare Tunnel route from `mu-api.claude-api.cn` to `http://127.0.0.1:8089`; deployment alone does not publish DNS. The root URL redirects to `/admin`. See the delivery record for the current route status.
@@ -35,6 +37,18 @@ curl --fail http://127.0.0.1:8089/api/health
 ```
 
 Activation backs up an already running database and restores the previous application symlink if the new service fails its health check. This does not automatically reverse a database schema migration. Inspect migration compatibility and use the pre-deployment backup for a coordinated database rollback when necessary.
+
+For schema-changing cutovers, `Maintenance__Enabled=true` starts the new service
+behind a maintenance gate (default: false). Only GET `/health`, `/api/health` and
+`/api/v1/compatibility/public/*` remain available for read-only verification.
+All other requests, including registration, login, refresh, private account and
+compatibility APIs, administrator pages/actions, and non-GET public requests,
+return `503 service_maintenance` with `Retry-After: 30`. The gate runs before
+authentication and business handlers; no request header can bypass it. It is not
+a substitute for stopping the old service before the final pre-upgrade backup.
+Keep the new service in maintenance until data preservation and public reads pass,
+then set `Maintenance__Enabled=false` and recreate the container. See
+[DATABASE.md](Mu.Server/DATABASE.md) for lossless pre-opening recovery boundaries.
 
 ## Administrator setup
 

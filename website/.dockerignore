@@ -1,0 +1,8 @@
+data
+public
+.env
+test-data
+.playwright-cli
+tests
+output
+*.tar.gz

@@ -22,7 +22,7 @@ public sealed class AccountApiException : Exception
         : base(message) { Status = status; Code = code; RetryAfterSeconds = retryAfterSeconds; Account = account; }
 }
 
-public sealed class AccountApiClient : IDisposable
+public sealed partial class AccountApiClient : IDisposable
 {
     public const string DefaultBaseUrl = "https://mu-api.claude-api.cn/";
     public const string TermsVersion = "2026-09-26";
@@ -142,7 +142,7 @@ public sealed class AccountApiClient : IDisposable
         {
             if (e.Account != null) Account = e.Account;
             if (e.Status == HttpStatusCode.Unauthorized || e.Code is "disabled" or "account_disabled" or "user_disabled") ClearLocal();
-            else { IsOnline = e.Status == HttpStatusCode.Forbidden; Changed?.Invoke(); }
+            else { IsOnline = (int)e.Status < 500; Changed?.Invoke(); }
             throw;
         }
         catch { IsOnline = false; Changed?.Invoke(); throw; }

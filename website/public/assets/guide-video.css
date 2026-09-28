@@ -1,0 +1,4 @@
+.guide-content, .guide-video > div { min-width: 0; }
+.tutorial-video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: #000; border: 1px solid #283645; border-radius: 8px; }
+.guide-video .video-fallback { margin-bottom: 0; font-size: .87rem; }
+.video-fallback a { color: var(--acid); text-decoration: underline; text-underline-offset: 3px; }

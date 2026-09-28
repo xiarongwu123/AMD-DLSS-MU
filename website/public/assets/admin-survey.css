@@ -1,0 +1,7 @@
+.survey-metrics { grid-template-columns: repeat(3,minmax(0,1fr)); margin-bottom: 20px; }
+.survey-metrics .survey-leading { font-family: inherit; font-weight: 600; font-size: clamp(1.25rem,2.2vw,2rem); line-height: 1.5; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.survey-charts .distribution-label { align-items: start; gap: 16px; }.survey-charts .distribution-label > b { white-space: nowrap; }
+.survey-first-votes { display: block; color: #a6bba0; margin-top: 7px; font-size: .7rem; }
+[data-survey-table] table { min-width: 740px; }[data-survey-table] td:first-child { white-space: pre-line; min-width: 155px; }[data-survey-table] td:nth-child(2) { min-width: 220px; max-width: 380px; }
+.survey-dialog-close { position: absolute; right: 16px; top: 12px; color: #bacdd8; background: transparent; border: 0; padding: 6px; font-size: 1.6rem !important; cursor: pointer; }
+@media(max-width:740px) { .survey-metrics { grid-template-columns: 1fr; }.survey-metrics .metric-card strong { font-size: 1.6rem; }[data-tab-panel="survey"] .overview-filters { flex-wrap: wrap; }.survey-charts .distribution-label { flex-wrap: wrap; gap: 5px; } }

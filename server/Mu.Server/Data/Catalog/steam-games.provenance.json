@@ -1,0 +1,465 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-09-27T15:40:29.420Z",
+  "completedAt": "2026-09-27T15:46:02.175Z",
+  "observedDate": "2026-09-27",
+  "method": "Steam Store public top-sellers search, Games category 998, Windows platform, US store region, English and Simplified Chinese locales. Explicit continuity AppIDs are additionally verified through official appdetails type, platform, and release fields.",
+  "exclusions": "Bundles/packages/multiple AppIDs, non-Windows entries, demo/playtest/soundtrack/dedicated-server titles, missing or ambiguous release dates, and releases after observedDate are excluded.",
+  "scope": "Catalog identity and release metadata only. No compatibility, rendering API, DLSS support, game build/version, developer, or engine is inferred.",
+  "explicitAppIds": [
+    "271590"
+  ],
+  "statistics": {
+    "inspectedRows": 4200,
+    "rejectedRows": {
+      "future_release": 52,
+      "not_single_app": 42
+    },
+    "englishCandidates": 2051,
+    "supplementalGames": 1,
+    "selected": 2001,
+    "localizedNames": 763
+  },
+  "requests": [
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=0&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:40:31.732Z",
+      "sha256": "4bd03c6f5cf628d5939d688e6d9d75a56c6bb03acab42e916c9fbd3a6b4bb8c8",
+      "bytes": 235911,
+      "file": "responses/4bd03c6f5cf628d5939d688e6d9d75a56c6bb03acab42e916c9fbd3a6b4bb8c8.json",
+      "language": "english",
+      "start": 0,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=0&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:40:33.258Z",
+      "sha256": "0c79ddbea09f01bdbee211daf21a873baadd6f77fa19ef541c06c43ae87d123b",
+      "bytes": 233814,
+      "file": "responses/0c79ddbea09f01bdbee211daf21a873baadd6f77fa19ef541c06c43ae87d123b.json",
+      "language": "schinese",
+      "start": 0,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=100&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:40:34.719Z",
+      "sha256": "ef89418d43b75aa9fd949b62c7dc384e8a0e08528a87ba73597f671325da56da",
+      "bytes": 236069,
+      "file": "responses/ef89418d43b75aa9fd949b62c7dc384e8a0e08528a87ba73597f671325da56da.json",
+      "language": "english",
+      "start": 100,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=100&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:40:36.178Z",
+      "sha256": "ae17b94c7906bab20784603be3655881cdd17c5bf3499c21104fd14b2a5a7224",
+      "bytes": 234578,
+      "file": "responses/ae17b94c7906bab20784603be3655881cdd17c5bf3499c21104fd14b2a5a7224.json",
+      "language": "schinese",
+      "start": 100,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=200&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:40:37.659Z",
+      "sha256": "b476249a30d11a4e13a1f111f903269a06c4f3e9ff6f0420384208c53b3e0024",
+      "bytes": 235784,
+      "file": "responses/b476249a30d11a4e13a1f111f903269a06c4f3e9ff6f0420384208c53b3e0024.json",
+      "language": "english",
+      "start": 200,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=200&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:40:39.181Z",
+      "sha256": "d6b80684b826c664b5c5f657ea130c0aad1f6c37c83f4011d2eafe3128f6e9b2",
+      "bytes": 233497,
+      "file": "responses/d6b80684b826c664b5c5f657ea130c0aad1f6c37c83f4011d2eafe3128f6e9b2.json",
+      "language": "schinese",
+      "start": 200,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=300&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:40:40.766Z",
+      "sha256": "6b567fb2e82cb1520fb61f7b20d514208b91f54fc1d560161a725cb73fbefd6d",
+      "bytes": 235411,
+      "file": "responses/6b567fb2e82cb1520fb61f7b20d514208b91f54fc1d560161a725cb73fbefd6d.json",
+      "language": "english",
+      "start": 300,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=300&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:40:42.326Z",
+      "sha256": "cfaa8268f42ec71ea8bb7f2da4985981cd2e66cb8fe863ae6a70f233fd3e5918",
+      "bytes": 233751,
+      "file": "responses/cfaa8268f42ec71ea8bb7f2da4985981cd2e66cb8fe863ae6a70f233fd3e5918.json",
+      "language": "schinese",
+      "start": 300,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=400&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:40:43.908Z",
+      "sha256": "8de4f540104b48cca011f5a0269f4a586da74a648e12f44b72ab98ae7bad35f8",
+      "bytes": 236712,
+      "file": "responses/8de4f540104b48cca011f5a0269f4a586da74a648e12f44b72ab98ae7bad35f8.json",
+      "language": "english",
+      "start": 400,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=400&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:40:45.474Z",
+      "sha256": "43854ad85235f68b09fac34f9745c2a37e2ca8dc7e3e9d07032ff1f9a4a9c0c0",
+      "bytes": 233721,
+      "file": "responses/43854ad85235f68b09fac34f9745c2a37e2ca8dc7e3e9d07032ff1f9a4a9c0c0.json",
+      "language": "schinese",
+      "start": 400,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=500&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:40:46.941Z",
+      "sha256": "ad6a0ebea2608076eb8aacd59dc9551c62954bd9a77c19bd674c4716faa1771e",
+      "bytes": 236948,
+      "file": "responses/ad6a0ebea2608076eb8aacd59dc9551c62954bd9a77c19bd674c4716faa1771e.json",
+      "language": "english",
+      "start": 500,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=500&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:40:48.444Z",
+      "sha256": "1bcc779b2f46d6895f47cc98ccb8b950a40beb53da735c3aae71eef806b4713a",
+      "bytes": 233832,
+      "file": "responses/1bcc779b2f46d6895f47cc98ccb8b950a40beb53da735c3aae71eef806b4713a.json",
+      "language": "schinese",
+      "start": 500,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=600&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:40:50.005Z",
+      "sha256": "a4497a9991baa8944eb8b3db75c828189cb5d7697fc6c019a94d55d5b05170cf",
+      "bytes": 237063,
+      "file": "responses/a4497a9991baa8944eb8b3db75c828189cb5d7697fc6c019a94d55d5b05170cf.json",
+      "language": "english",
+      "start": 600,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=600&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:40:51.494Z",
+      "sha256": "cd2f6dc60cc0e0c39820e82823598c359df3b39f53196a26a1c45628c0c04136",
+      "bytes": 235258,
+      "file": "responses/cd2f6dc60cc0e0c39820e82823598c359df3b39f53196a26a1c45628c0c04136.json",
+      "language": "schinese",
+      "start": 600,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=700&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:40:52.956Z",
+      "sha256": "05195f060ebd9e0060677eb2404e2280b4f89ce938f62d5e4d4a33e53363b691",
+      "bytes": 236300,
+      "file": "responses/05195f060ebd9e0060677eb2404e2280b4f89ce938f62d5e4d4a33e53363b691.json",
+      "language": "english",
+      "start": 700,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=700&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:40:54.418Z",
+      "sha256": "40af7c32e160c9edfb90ff4f79b3cbc15f5d9fa63415d76be91ea67b8f03ef43",
+      "bytes": 233289,
+      "file": "responses/40af7c32e160c9edfb90ff4f79b3cbc15f5d9fa63415d76be91ea67b8f03ef43.json",
+      "language": "schinese",
+      "start": 700,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=800&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:40:55.868Z",
+      "sha256": "a961fd7df233a0a6d95e8fd112e0c0d39f8129d15fdc001915fca29e9187ad2c",
+      "bytes": 234680,
+      "file": "responses/a961fd7df233a0a6d95e8fd112e0c0d39f8129d15fdc001915fca29e9187ad2c.json",
+      "language": "english",
+      "start": 800,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=800&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:40:57.400Z",
+      "sha256": "d87753c804c169cfb87babc74c577a94f9989c082ec880bd6684ad6946cbce46",
+      "bytes": 231467,
+      "file": "responses/d87753c804c169cfb87babc74c577a94f9989c082ec880bd6684ad6946cbce46.json",
+      "language": "schinese",
+      "start": 800,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=900&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:40:58.918Z",
+      "sha256": "67598c752a291911a1feaea186f50e1d57fad465b4d56985d93ccab8cfc69d78",
+      "bytes": 237440,
+      "file": "responses/67598c752a291911a1feaea186f50e1d57fad465b4d56985d93ccab8cfc69d78.json",
+      "language": "english",
+      "start": 900,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=900&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:41:00.388Z",
+      "sha256": "6bd81788fb4c47bf9cfebf75826762409f28ac51515a2d8b9a96205bb8c2402c",
+      "bytes": 235001,
+      "file": "responses/6bd81788fb4c47bf9cfebf75826762409f28ac51515a2d8b9a96205bb8c2402c.json",
+      "language": "schinese",
+      "start": 900,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1000&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:41:01.851Z",
+      "sha256": "d6ba158be71aef74f2abd2efc7dd5750203f552a9e00d7273ec765eaf60123f2",
+      "bytes": 236320,
+      "file": "responses/d6ba158be71aef74f2abd2efc7dd5750203f552a9e00d7273ec765eaf60123f2.json",
+      "language": "english",
+      "start": 1000,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1000&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:41:03.311Z",
+      "sha256": "badf299f71b7c7bddebfca36fe96811ac3c757dc66a365032fbabd16d482d912",
+      "bytes": 233319,
+      "file": "responses/badf299f71b7c7bddebfca36fe96811ac3c757dc66a365032fbabd16d482d912.json",
+      "language": "schinese",
+      "start": 1000,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1100&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:41:04.875Z",
+      "sha256": "2488a89ee2d3d0c314499f7c7df47147a9ffbb0f7083acb048a07d159ae86746",
+      "bytes": 233656,
+      "file": "responses/2488a89ee2d3d0c314499f7c7df47147a9ffbb0f7083acb048a07d159ae86746.json",
+      "language": "english",
+      "start": 1100,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1100&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:41:06.446Z",
+      "sha256": "8c36499333468add2575108d6c4d67377bf39c649bf948dfee3e5f6f136c2ac7",
+      "bytes": 231659,
+      "file": "responses/8c36499333468add2575108d6c4d67377bf39c649bf948dfee3e5f6f136c2ac7.json",
+      "language": "schinese",
+      "start": 1100,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1200&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:41:07.921Z",
+      "sha256": "c8e81a5163620fe907cd03728c0bd165bd910fcb3ea47bccdb35ba94dd5c6161",
+      "bytes": 234047,
+      "file": "responses/c8e81a5163620fe907cd03728c0bd165bd910fcb3ea47bccdb35ba94dd5c6161.json",
+      "language": "english",
+      "start": 1200,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1200&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:41:09.480Z",
+      "sha256": "282b44c8b1cfc20064eb62034ffd57f806a142bbb180edf2c64f30b0d9eb35c2",
+      "bytes": 231653,
+      "file": "responses/282b44c8b1cfc20064eb62034ffd57f806a142bbb180edf2c64f30b0d9eb35c2.json",
+      "language": "schinese",
+      "start": 1200,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1300&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:41:11.012Z",
+      "sha256": "28a2418cb41318a7e73d73c10c16b9f116ef1e21e20ccd63c4084eab9310c96a",
+      "bytes": 232685,
+      "file": "responses/28a2418cb41318a7e73d73c10c16b9f116ef1e21e20ccd63c4084eab9310c96a.json",
+      "language": "english",
+      "start": 1300,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1300&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:41:12.607Z",
+      "sha256": "b507c2774b1720fd756525a84389d3728154c29fc7108dfbcdaac3b47530fefd",
+      "bytes": 230639,
+      "file": "responses/b507c2774b1720fd756525a84389d3728154c29fc7108dfbcdaac3b47530fefd.json",
+      "language": "schinese",
+      "start": 1300,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1400&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:41:14.142Z",
+      "sha256": "ab25c57c6b8b6d906ebb4b38a5365223fe1aed8c39acb0058eeeab813ff1e3b6",
+      "bytes": 234109,
+      "file": "responses/ab25c57c6b8b6d906ebb4b38a5365223fe1aed8c39acb0058eeeab813ff1e3b6.json",
+      "language": "english",
+      "start": 1400,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1400&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:41:15.634Z",
+      "sha256": "aaf9b62835cd0590f2194dc417679777329e643cdbaca13cb393ff69c89edf2d",
+      "bytes": 231919,
+      "file": "responses/aaf9b62835cd0590f2194dc417679777329e643cdbaca13cb393ff69c89edf2d.json",
+      "language": "schinese",
+      "start": 1400,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1500&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:41:44.204Z",
+      "sha256": "17debba420835451aef6bf5cccd50196dcd2a3f71eefc7eca51b2d8bd19d2383",
+      "bytes": 232290,
+      "file": "responses/17debba420835451aef6bf5cccd50196dcd2a3f71eefc7eca51b2d8bd19d2383.json",
+      "language": "english",
+      "start": 1500,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1500&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:41:45.769Z",
+      "sha256": "5bd23fc9c1f592a32f3979a77976777bc55a5bc69082b2ba5c16cdfe9b03ef39",
+      "bytes": 229436,
+      "file": "responses/5bd23fc9c1f592a32f3979a77976777bc55a5bc69082b2ba5c16cdfe9b03ef39.json",
+      "language": "schinese",
+      "start": 1500,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1600&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:41:47.246Z",
+      "sha256": "8c3bea55887b0445a908d54b96aeff8f877e82a48a46eabf96cdaf5fdf57a15f",
+      "bytes": 233112,
+      "file": "responses/8c3bea55887b0445a908d54b96aeff8f877e82a48a46eabf96cdaf5fdf57a15f.json",
+      "language": "english",
+      "start": 1600,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1600&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:41:48.789Z",
+      "sha256": "09c1bce7fcceaa387bfb803c44735535b500698a7fde3752f79cb273a715d3c9",
+      "bytes": 230750,
+      "file": "responses/09c1bce7fcceaa387bfb803c44735535b500698a7fde3752f79cb273a715d3c9.json",
+      "language": "schinese",
+      "start": 1600,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1700&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:41:50.316Z",
+      "sha256": "655833e9d2b48ddb48462258af7ea194f1e9ec50db3bf9ce3708ffb44f4e21dd",
+      "bytes": 231558,
+      "file": "responses/655833e9d2b48ddb48462258af7ea194f1e9ec50db3bf9ce3708ffb44f4e21dd.json",
+      "language": "english",
+      "start": 1700,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1700&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:41:51.780Z",
+      "sha256": "51dfba5b42dd3a52250781f89320e88e290aa8fe0d5cd75b7d6828328b431165",
+      "bytes": 228445,
+      "file": "responses/51dfba5b42dd3a52250781f89320e88e290aa8fe0d5cd75b7d6828328b431165.json",
+      "language": "schinese",
+      "start": 1700,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1800&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:41:53.264Z",
+      "sha256": "3231caace118f947b93c9bc812a90d711b77e3c3d83325b030dfdfd01a636486",
+      "bytes": 233672,
+      "file": "responses/3231caace118f947b93c9bc812a90d711b77e3c3d83325b030dfdfd01a636486.json",
+      "language": "english",
+      "start": 1800,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1800&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:41:54.773Z",
+      "sha256": "e978bbd4e1c8252582b061a55115f413c6036ee87bd9f1a3ee09a3c7d34eab84",
+      "bytes": 230930,
+      "file": "responses/e978bbd4e1c8252582b061a55115f413c6036ee87bd9f1a3ee09a3c7d34eab84.json",
+      "language": "schinese",
+      "start": 1800,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1900&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:41:56.263Z",
+      "sha256": "989c9c9b26fe03c05419e865e258843666b5d114cc274b57dd01d7e060756050",
+      "bytes": 230347,
+      "file": "responses/989c9c9b26fe03c05419e865e258843666b5d114cc274b57dd01d7e060756050.json",
+      "language": "english",
+      "start": 1900,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=1900&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:41:57.834Z",
+      "sha256": "29a3b903f53e127615a1016d6adc18b8ebd99e738d871b8b2684845f3c1719bf",
+      "bytes": 228190,
+      "file": "responses/29a3b903f53e127615a1016d6adc18b8ebd99e738d871b8b2684845f3c1719bf.json",
+      "language": "schinese",
+      "start": 1900,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=2000&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=english",
+      "retrievedAt": "2026-09-27T15:41:59.295Z",
+      "sha256": "6f0da3556da541875cc648944521c4e30ffef8a62bb027ac6ee3b4983fd71840",
+      "bytes": 233242,
+      "file": "responses/6f0da3556da541875cc648944521c4e30ffef8a62bb027ac6ee3b4983fd71840.json",
+      "language": "english",
+      "start": 2000,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/search/results/?query=&start=2000&count=100&dynamic_data=&sort_by=_ASC&category1=998&os=win&filter=topsellers&infinite=1&cc=us&l=schinese",
+      "retrievedAt": "2026-09-27T15:42:00.833Z",
+      "sha256": "81772245f1a607307b1ff81650ff7f93b9e4dba25c39f4819142f4ba278c88bc",
+      "bytes": 230447,
+      "file": "responses/81772245f1a607307b1ff81650ff7f93b9e4dba25c39f4819142f4ba278c88bc.json",
+      "language": "schinese",
+      "start": 2000,
+      "count": 100
+    },
+    {
+      "url": "https://store.steampowered.com/api/appdetails?appids=271590&l=english&cc=us&filters=basic%2Cplatforms%2Crelease_date",
+      "retrievedAt": "2026-09-27T15:46:00.813Z",
+      "sha256": "eff1e86080a340c87e8ab26cf972e99f708227413d45de1c04858d7938f3ab16",
+      "bytes": 13076,
+      "file": "responses/eff1e86080a340c87e8ab26cf972e99f708227413d45de1c04858d7938f3ab16.json",
+      "kind": "appdetails",
+      "language": "english",
+      "steamAppId": "271590"
+    },
+    {
+      "url": "https://store.steampowered.com/api/appdetails?appids=271590&l=schinese&cc=us&filters=basic%2Cplatforms%2Crelease_date",
+      "retrievedAt": "2026-09-27T15:46:02.171Z",
+      "sha256": "99baaf0e5ac462dc539e6db317a905324b2e762925e5e298e9bb4d9f36779c8c",
+      "bytes": 12592,
+      "file": "responses/99baaf0e5ac462dc539e6db317a905324b2e762925e5e298e9bb4d9f36779c8c.json",
+      "kind": "appdetails",
+      "language": "schinese",
+      "steamAppId": "271590"
+    }
+  ]
+}

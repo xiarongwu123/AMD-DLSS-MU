@@ -1,0 +1,4029 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-27T16:40:33.544Z",
+  "entries": [
+    {
+      "steamAppId": "8500",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "EVE Online",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "16900",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Ground Branch",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "39210",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "FINAL FANTASY XIV Online",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "230410",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Warframe",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "236390",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "War Thunder",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "251570",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "7 Days To Die",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "252490",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Rust",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "261550",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Mount & Blade II: Bannerlord",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "275850",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "No Man's Sky",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "292000",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "No More Room In Hell 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "299970",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Project Motor Racing",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "304390",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "For Honor",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "306130",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The Elder Scrolls Online",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "359550",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Tom Clancy's Rainbow Six Siege",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "386180",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Crossout",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "391220",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Rise of the Tomb Raider",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "392160",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "X4: Foundations",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "393380",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Squad",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "412020",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Metro Exodus",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "414340",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Hellblade: Senua's Sacrifice",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "440900",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Conan Exiles Enhanced",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "494840",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "UBOAT",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "513710",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "SCUM",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "526870",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Satisfactory",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "548430",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Deep Rock Galactic",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "552500",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Warhammer: Vermintide 2",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "553850",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Helldivers 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "578080",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "PUBG: BATTLEGROUNDS",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "594650",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Hunt: Showdown 1896",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "668580",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Atomic Heart",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "747660",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Five Nights At Freddy’s: Security Breach",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "780310",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The Riftbreaker",
+      "features": [
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "782330",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "DOOM Eternal",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "784080",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "MechWarrior 5: Mercenaries",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "805550",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Assetto Corsa Competizione",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "820520",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Deceive Inc.",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "835570",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Conqueror's Blade",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "872670",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "SCP: 5K",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "883710",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Resident Evil 2",
+      "features": [
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "924970",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Back 4 Blood",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "949230",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Cities: Skylines II",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "952060",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Resident Evil 3",
+      "features": [
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "961200",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Predecessor",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "986130",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Shadows of Doubt",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "990080",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Hogwarts Legacy",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "990380",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Metal Eden",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1012790",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Into the Radius VR",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1016950",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Blood Bowl 3",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1056640",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Phantasy Star Online 2 New Genesis",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1063420",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Void Crew",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1084160",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Jagged Alliance 3",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1084600",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "My Time At Sandrock",
+      "features": [
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1086940",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Baldur's Gate 3",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1091500",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Cyberpunk 2077",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "路径追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1106840",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Hydroneer",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1144200",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Ready or Not",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1149460",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "ICARUS",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1151640",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Horizon Zero Dawn Complete Edition",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1153410",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "JDM: Japanese Drift Master",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1154030",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Titan Quest II",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1164940",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Trepang2",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1170950",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Mortal Online 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1171690",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Wayfinder",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1172710",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Dune: Awakening",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1174180",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Red Dead Redemption 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1196590",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Resident Evil Village",
+      "features": [
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1203190",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Wreckfest 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1203220",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "NARAKA: BLADEPOINT",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1203620",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Enshrouded",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1238810",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Battlefield V",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1240440",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Halo Infinite",
+      "features": [
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1244460",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Jurassic World Evolution 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1245620",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Elden Ring",
+      "features": [
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1248130",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Farming Simulator 22",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1250410",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Microsoft Flight Simulator (2020) 40th Anniversary Edition",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1255560",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Myst",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1260320",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Party Animals",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1266540",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Ships At Sea",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1266700",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Destroy All Humans! 2 - Reprobed",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1272080",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "PAYDAY 3",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1282100",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Remnant II",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1282270",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Strinova",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1285190",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Borderlands 4",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1288320",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Way of the Hunter",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1297900",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Gothic 1 Remake",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1304930",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The Outlast Trials",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1321680",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Hello Neighbor 2",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1326470",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Sons Of The Forest",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1340990",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Rise of the Ronin",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1358700",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Stranger of Paradise Final Fantasy Origin",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1361210",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Warhammer 40,000: Darktide",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1363080",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Manor Lords",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1368140",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Corsair Cove",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1371580",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Myth of Empires",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1371980",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "No Rest for the Wicked",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1374490",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "RuneScape: Dragonwilds",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1392860",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Little Nightmares III",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1430190",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Killing Floor 3",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1433140",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The Texas Chain Saw Massacre",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1442430",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Storage Hunter Simulator",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1446780",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Monster Hunter Rise",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1448440",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Wo Long: Fallen Dynasty",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1449110",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The Outer Worlds 2",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1458140",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Pacific Drive",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1465070",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Legendary Tales",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1466060",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Tainted Grail: The Fall of Avalon",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1469610",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Last Train Home",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1486920",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Tempest Rising",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1501750",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Lords of the Fallen",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1517290",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Battlefield 2042",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1547000",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Grand Theft Auto: San Andreas - The Definitive Edition",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1548850",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Six Days in Fallujah",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1551360",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Forza Horizon 5",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1583230",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "High On Life",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1593500",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "God of War",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1599660",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Sackboy: A Big Adventure",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1601570",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The Alters",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1601580",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Frostpunk 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1620730",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Hell Is Us",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1623730",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Palworld",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1627720",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Lies of P",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1631270",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "StarRupture",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1641960",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Forever Skies",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1643320",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1659040",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "HITMAN World of Assassination",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1659420",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Uncharted: Legacy of Thieves Collection",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1669480",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Firefighting Simulator: Ignite",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1677110",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Lightyear Frontier",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1680880",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Forspoken",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1682970",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Uncrashed : FPV Drone Simulator",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1693980",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Dead Space",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1702010",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Sengoku Dynasty",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1716740",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Starfield",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1757300",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Jump Space",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1771300",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Kingdom Come: Deliverance II",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1774580",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Star Wars Jedi: Survivor",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1778820",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "TEKKEN 8",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1783560",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The Last Caretaker",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1808500",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "ARC Raiders",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1812450",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Bellwright",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1817070",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Marvel's Spider-Man Remastered",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1817190",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Marvel's Spider-Man: Miles Morales",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1824220",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Chivalry 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1836730",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Echo Point Nova",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1845910",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Dragon Age: The Veilguard",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1846380",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Need For Speed Unbound",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1849250",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "EA Sports WRC",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1850570",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Death Stranding Director's Cut",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1866130",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Morbid Metal",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1867240",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "WARDOGS",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1888930",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The Last of Us Part I",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1895880",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Ratchet & Clank: Rift Apart",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1903340",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Clair Obscur: Expedition 33",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1929610",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Demonologist",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1941540",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Mafia: The Old Country",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1942110",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Bootstrap Island",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1954200",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Kena: Bridge of Spirits",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1962700",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Subnautica 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1971870",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Mortal Kombat 1",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1985810",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Call of Duty: Black Ops Cold War",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "1995520",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Pax Dei",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2000890",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "MechWarrior 5: Clans",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2000950",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Call of Duty: Modern Warfare",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2001760",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Beast of Reincarnation",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2016590",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Dark and Darker",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2019760",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Necrophosis",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2051620",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Enlisted",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2054970",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Dragon's Dogma 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2069250",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "High On Life 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2073620",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Arena Breakout: Infinite",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2073850",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "THE FINALS",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2074920",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The First Descendant",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2075800",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "STAR WARS Zero Company",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2101960",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Cronos: The New Dawn",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2104890",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "RoadCraft",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2129530",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "REANIMAL",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2138710",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Sifu",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2138720",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "REMATCH",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2139460",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Once Human",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2141730",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Backrooms: Escape Together",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2157830",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "John Carpenter's Toxic Commando",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2163330",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Yet Another Zombie Survivors",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2172010",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Until Dawn",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2183900",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Warhammer 40,000: Space Marine 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2186990",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Fatekeeper",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2215200",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "LEGO Batman: Legacy of the Dark Knight",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2215430",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Ghost of Tsushima Director’s Cut",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2239550",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Watch Dogs: Legion",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2239710",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Into the Dead: Our Darkest Days",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2246340",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Monster Hunter Wilds",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2273980",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Orcs Must Die! Deathtrap",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2277560",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "WUCHANG: Fallen Feathers",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2300320",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Farming Simulator 25",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2322010",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "God of War Ragnarök",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2328760",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Pinball FX",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2344520",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Diablo IV",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2358720",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Black Myth: Wukong",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "路径追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2362060",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "CODE VEIN II",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2369390",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Far Cry 6",
+      "features": [
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2379390",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Tom Clancy's Rainbow Six Extraction",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2384580",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "DYNASTY WARRIORS: ORIGINS",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2393970",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Human Host",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2397300",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Half Sword",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2399830",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "ARK: Survival Ascended",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2406770",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Bodycam",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2412960",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Breathedge 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2416450",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "MOUSE: P.I. For Hire",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2417610",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "METAL GEAR SOLID Δ: SNAKE EATER",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2420110",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Horizon Forbidden West Complete Edition",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2429640",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "THRONE AND LIBERTY",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2437170",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "SMITE 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2440510",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Forza Motorsport",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2452280",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Mecha BREAK",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2456740",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "inZOI",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2457220",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Avowed",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2479650",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "SpongeBob SquarePants: Titans of the Tide",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2479810",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Gray Zone Warfare",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2483190",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Forza Horizon 6",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2489330",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Whiskerwood",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2507950",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Delta Force",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2515020",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "FINAL FANTASY XVI",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2523720",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Gears of War: Reloaded",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2531310",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The Last of Us Part II Remastered",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2537590",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Microsoft Flight Simulator 2024",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2561580",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Horizon Zero Dawn Remastered",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2569760",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The Mound: Omen of Cthulhu",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2582140",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Seafarer: The Ship Sim",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2584270",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Mortal Shell II",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2605790",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Deep Rock Galactic: Rogue Core",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2623190",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The Elder Scrolls IV: Oblivion Remastered",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2627260",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "NINJA GAIDEN 4",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2627570",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Goofy Gorillas",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2638890",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Onimusha: Way of the Sword",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2643390",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Star Trek: Voyager - Across The Unknown",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2646460",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Soulmask",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2651280",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Marvel's Spider-Man 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2668510",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Red Dead Redemption",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2677660",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Indiana Jones and the Great Circle",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "路径追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2680010",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The First Berserker: Khazan",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2688950",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Planet Coaster 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2694490",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Path of Exile 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2695940",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "PANICORE",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2713000",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Resonance: A Plague Tale Legacy",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2767030",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Marvel Rivals",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2806050",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Halo: Campaign Evolved",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2807960",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Battlefield 6",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2808550",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Sudden Strike 5",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2814990",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Screamer",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2820820",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Jotunnslayer: Hordes of Hel",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2821610",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Echoes of the End: Enhanced Edition",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2825860",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The Sinking City 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2840770",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Avatar: Frontiers of Pandora",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2842040",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Star Wars Outlaws",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2852190",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Monster Hunter Stories 3: Twisted Reflection",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2887580",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Active Matter",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2909400",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "FINAL FANTASY VII REBIRTH",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2933130",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The Lord of the Rings: Return to Moria",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2943650",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "FragPunk",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "2958130",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Jurassic World Evolution 3",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3008130",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Dying Light: The Beast",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3017860",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "DOOM: The Dark Ages",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "路径追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3035570",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Assassin's Creed Mirage",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3041230",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Windrose",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3058630",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Assetto Corsa EVO",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3059520",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "F1 25",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "路径追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3065800",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Marathon",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3079210",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Hell Let Loose: Vietnam",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3124540",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Far Far West",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3125250",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "STORROR Parkour Pro",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3156770",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Witchfire",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3159330",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Assassin's Creed Shadows",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3164330",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Infinity Nikki",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3219630",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Halloween: The Game",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3228590",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Deadzone: Rogue",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3240220",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Grand Theft Auto V Enhanced",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3274580",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Anno 117: Pax Romana",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3280350",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Death Stranding 2: On The Beach",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3282300",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Mistfall Hunter",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3287520",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "NINJA GAIDEN 2 Black",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3354750",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "skate.",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3357650",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "PRAGMATA",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "路径追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3404260",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Dead As Disco",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3448650",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Aliens: Fireteam Elite 2",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3450310",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Europa Universalis V",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3472040",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "NBA 2K26",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3489700",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Stellar Blade",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3513350",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Wuthering Waves",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3564740",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Where Winds Meet",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3595230",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Call of Duty: Modern Warfare II",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3595270",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Call of Duty: Modern Warfare III",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3606480",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Call of Duty: Black Ops 7",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3634520",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Samson",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3681010",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Nioh 3",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3751260",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "The Blood of Dawnwalker",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3751950",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Assassin's Creed Black Flag Resynced",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3764200",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Resident Evil Requiem",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "路径追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3768760",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "007 First Light",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLSS 光线重建：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "路径追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3917090",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Assetto Corsa Rally",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3922100",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Forest Doesn’t Care",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3932890",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Escape From Tarkov",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLAA：游戏内开启超分后可经 NVIDIA App 开启，不代表原生 DLAA 支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3949550",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "1666: Amsterdam",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "3950020",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Duet Night Abyss",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "4126040",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Aniimo",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "4162040",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Zenless Zone Zero",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "4317690",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Crimson Moon",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 多帧生成：最高 4X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "4356430",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "NBA 2K27",
+      "features": [
+        "DLSS 超分：原生支持，游戏内开启后可经 NVIDIA App 升级模型（GeForce RTX）",
+        "DLSS 帧生成：原生支持，游戏内开启后可经 NVIDIA App 升级模型（RTX 40/50）",
+        "DLSS 动态多帧生成：最高 6X（RTX 50）；原生或游戏内开启帧生成后经 NVIDIA App 覆盖",
+        "光线追踪：原表列出支持",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    },
+    {
+      "steamAppId": "4384550",
+      "provider": "NVIDIA 官方 RTX 列表",
+      "url": "https://www.nvidia.com/en-us/geforce/news/nvidia-rtx-games-engines-apps/",
+      "retrievedAt": "2026-09-27T15:38:26.179Z",
+      "matchedTitle": "Call of Duty: Black Ops 6",
+      "features": [
+        "DLSS 超分：游戏原生支持（GeForce RTX）",
+        "DLSS 帧生成：游戏原生支持（RTX 40/50）",
+        "DLAA：游戏原生支持（GeForce RTX）",
+        "NVIDIA 官方功能事实；不代表 AMD 显卡或 AMD-DLSS-MU 兼容"
+      ]
+    }
+  ]
+}

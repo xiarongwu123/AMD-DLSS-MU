@@ -28,7 +28,7 @@ public sealed partial class MainForm
         if (shellLayout != null) shellLayout.RowStyles[0].Height = (int)Math.Ceiling(88 * DeviceDpi / 96d);
         if (headerBrand != null) headerBrand.Visible = true;
         if (headerNavigation != null) headerNavigation.Visible = true;
-        if (headerSearch != null) headerSearch.Visible = true;
+        if (headerSearch != null) headerSearch.Visible = page != 0;
         if (headerUpdate != null) headerUpdate.Visible = true;
     }
 
@@ -55,7 +55,7 @@ public sealed partial class MainForm
         brandName.Click += async (_, _) => await NavigateAuthorizedAsync(0);
         brand.Controls.Add(brandName); brand.Controls.Add(logo); header.Controls.Add(brand); headerBrand = brand;
         var nav = new FlowLayoutPanel { WrapContents = false, Margin = Padding.Empty, Padding = Padding.Empty, BackColor = Color.Transparent };
-        foreach (var item in new[] { (0, "首页", "Home"), (1, "游戏库", "Library"), (7, "大力喜鹊", "Magpie"), (3, "下载任务", "Downloads"), (4, "帮助与反馈", "Help") })
+        foreach (var item in new[] { (0, "兼容性", "Compatibility"), (1, "游戏库", "Library"), (7, "大力喜鹊", "Magpie"), (3, "下载任务", "Downloads"), (4, "帮助与反馈", "Help") })
         {
             var b = Action(item.Item2, item.Item3, async (_, _) =>
             {
@@ -304,7 +304,7 @@ public sealed partial class MainForm
 
     void UpdateScrollNavigation()
     {
-        if (activePage is not 0 and not 1) return;
+        if (activePage != 1) return;
         if (!libraryOnly &&
             -libraryPage.AutoScrollPosition.Y >= homeSection.Height - 16)
         {
