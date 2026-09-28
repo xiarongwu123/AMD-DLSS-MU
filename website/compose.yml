@@ -1,0 +1,14 @@
+services:
+  website:
+    build: .
+    container_name: amd-dlss-mu-web
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      COMPATIBILITY_TRUST_CF_IP: "1"
+    ports:
+      - "127.0.0.1:8088:8080"
+    volumes:
+      - ./public:/app/public:ro
+      - ./data:/app/data

@@ -19,8 +19,13 @@ internal static class HttpTests
         if (!condition) throw new InvalidOperationException(message);
     }
 
-    public static async Task Main()
+    public static async Task Main(string[] args)
     {
+        if (args.SequenceEqual(new[] { "--pagination" }))
+        {
+            await CompatibilityPaginationHttpTests.RunAsync();
+            return;
+        }
         using var factory = new AccountFactory();
         using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
         { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
@@ -42,6 +47,7 @@ internal static class HttpTests
         Check((await client.GetAsync("/api/v1/account/me")).IsSuccessStatusCode, "Bearer authentication works");
         Check((await client.PostAsJsonAsync("/api/v1/account/authorize", new { featureKey = "game.launch" })).IsSuccessStatusCode,
             "Initial feature available");
+        assertions += await CompatibilityHttpTests.RunAsync(factory, client);
         using (var scope = factory.Services.CreateScope())
             await scope.ServiceProvider.GetRequiredService<AccountManagementService>()
                 .SetFeatureAsync("game.launch", true, "pro", "HTTP test", "test-admin");
@@ -73,11 +79,14 @@ internal static class HttpTests
         Check((await client.GetAsync("/legal/terms")).IsSuccessStatusCode && (await client.GetAsync("/legal/privacy")).IsSuccessStatusCode,
             "Public agreements available before login");
         assertions += await EmailProviderTests.RunAsync();
+        assertions += await PublicCompatibilityHttpTests.RunAsync();
+        assertions += await MaintenanceHttpTests.RunAsync();
+        assertions += await CompatibilityPaginationHttpTests.RunAsync();
         Console.WriteLine($"HTTP integration passed: {assertions} assertions.");
     }
 }
 
-internal sealed class AccountFactory(Func<IServiceProvider, IVerificationEmailSender>? emailSenderFactory = null) : WebApplicationFactory<Program>
+internal sealed class AccountFactory(Func<IServiceProvider, IVerificationEmailSender>? emailSenderFactory = null, bool maintenanceEnabled = false) : WebApplicationFactory<Program>
 {
     private readonly string directory = Path.Combine(Path.GetTempPath(), "mu-http-" + Guid.NewGuid().ToString("N"));
     public CaptureMail Mail { get; } = new();
@@ -89,6 +98,7 @@ internal sealed class AccountFactory(Func<IServiceProvider, IVerificationEmailSe
         builder.UseSetting("DataProtection:Path", Path.Combine(directory, "keys"));
         builder.UseSetting("Auth:CodePepper", "integration-test-only-pepper-with-at-least-32-bytes");
         builder.UseSetting("Registration:Enabled", "true");
+        builder.UseSetting("Maintenance:Enabled", maintenanceEnabled ? "true" : "false");
         builder.UseSetting("Logging:LogLevel:Default", "Warning");
         builder.ConfigureTestServices(services =>
         {

@@ -18,6 +18,9 @@ public sealed class FeaturesModel(AppDbContext db, AccountManagementService mana
         "configuration.edit" => "客户端与游戏配置",
         "diagnostics.use" => "诊断与独立面板",
         "app.update" => "客户端更新",
+        "compatibility.read" => "游戏兼容性查询",
+        "compatibility.submit" => "提交兼容性测试",
+        "compatibility.public.read" => "官网兼容性公开查询",
         _ => key
     };
 
@@ -30,6 +33,7 @@ public sealed class FeaturesModel(AppDbContext db, AccountManagementService mana
     {
         ValidateReason(Reason);
         if (Access is not ("standard" or "pro" or "disabled")) ModelState.AddModelError("", "无效的权限配置。");
+        if (Key == "compatibility.public.read" && Access == "pro") ModelState.AddModelError("", "公开查询仅可开放或关闭，不适用会员等级。");
         if (!await db.FeatureDefinitions.AnyAsync(feature => feature.Key == Key)) return NotFound();
         if (ModelState.IsValid)
         {

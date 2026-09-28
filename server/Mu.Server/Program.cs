@@ -38,6 +38,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<AccountManagementService>();
+builder.Services.AddScoped<CompatibilityService>();
 builder.Services.AddSingleton<IPaymentProvider, DisabledPaymentProvider>();
 builder.Services.AddHttpClient<IVerificationEmailSender, ResendEmailSender>(client => client.Timeout = TimeSpan.FromSeconds(10));
 builder.Services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ClientBearerHandler>(ClientBearerHandler.SchemeName, _ => { });
@@ -62,6 +63,8 @@ builder.Services.AddRateLimiter(options =>
         _ => new() { PermitLimit = 40, Window = TimeSpan.FromMinutes(15), QueueLimit = 0 }));
     options.AddPolicy("email", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new() { PermitLimit = 10, Window = TimeSpan.FromMinutes(15), QueueLimit = 0 }));
+    options.AddPolicy("compatibility-public", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new() { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     options.OnRejected = async (context, ct) =>
     {
         var seconds = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retry) ? Math.Max(1, (int)Math.Ceiling(retry.TotalSeconds)) : 60;
@@ -95,6 +98,17 @@ app.Use(async (context, next) =>
     context.Response.Headers.XFrameOptions = "DENY";
     context.Response.Headers["Referrer-Policy"] = "no-referrer";
     if (context.Request.Path.StartsWithSegments("/api")) context.Response.Headers.CacheControl = "no-store";
+    var maintenanceRead = HttpMethods.IsGet(context.Request.Method)
+        && (context.Request.Path == "/health" || context.Request.Path == "/api/health"
+            || context.Request.Path.StartsWithSegments("/api/v1/compatibility/public"));
+    if (app.Configuration.GetValue<bool>("Maintenance:Enabled") && !maintenanceRead)
+    {
+        context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+        context.Response.Headers.CacheControl = "no-store";
+        context.Response.Headers.RetryAfter = "30";
+        await context.Response.WriteAsJsonAsync(new ApiError("service_maintenance", "服务维护中，请稍后重试。", 30));
+        return;
+    }
     if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing") && !context.Request.IsHttps && context.Request.Path != "/health" && context.Request.Path != "/api/health")
     {
         context.Response.StatusCode = 400;
@@ -134,6 +148,7 @@ app.MapGet("/health", async (AppDbContext db) => await db.Database.CanConnectAsy
 app.MapGet("/api/health", async (AppDbContext db) => await db.Database.CanConnectAsync()
     ? Results.Ok(new { status = "ok", service = "mu-accounts" }) : Results.StatusCode(503));
 app.MapAccountApi();
+app.MapCompatibilityApi();
 app.MapRazorPages();
 await app.RunAsync();
 

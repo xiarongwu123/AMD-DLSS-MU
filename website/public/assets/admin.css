@@ -1,0 +1,31 @@
+.admin-header { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--line); }
+.admin-header-actions { display: flex; align-items: center; gap: 22px; color: var(--muted); font-size: .85rem; }
+.admin-header-actions > span { color: var(--acid); font: .76rem monospace; letter-spacing: .15em; }
+.admin-header-actions a:hover, .admin-header-actions button:hover { color: var(--acid); }
+.admin-header-actions button { border: 0; padding: 0; color: var(--muted); background: none; cursor: pointer; }
+.admin-main { padding-block: clamp(40px, 7vw, 92px) 110px; }
+.admin-heading { max-width: 760px; margin-bottom: 30px; }
+.admin-heading h1 { margin: 0 0 14px; font-size: clamp(2.8rem, 6vw, 5.7rem); line-height: 1; letter-spacing: -.065em; }
+.admin-heading > p:last-child { color: var(--muted); margin: 0; }
+.admin-status { min-height: 26px; margin-bottom: 20px; color: var(--muted); }
+.admin-status.success { color: var(--acid); }.admin-status.error { color: #ff8b78; }
+.admin-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+.admin-panel { border: 1px solid var(--line); background: rgba(11,17,26,.95); padding: clamp(24px, 3vw, 38px); }
+.admin-panel h2 { margin: 0 0 14px; font-size: 1.75rem; letter-spacing: -.04em; }
+.admin-panel p { color: var(--muted); }
+.admin-panel label { display: block; color: #cbd5de; font-size: .9rem; font-weight: 650; }
+.admin-panel input[type="text"], .admin-panel input[type="password"] { min-height: 52px; width: 100%; padding: 0 15px; border: 1px solid #3c4d5e; border-radius: 0; outline: 0; color: white; background: #070c12; }
+.admin-panel input:focus-visible, .admin-panel button:focus-visible, .admin-header a:focus-visible { outline: 2px solid var(--acid); outline-offset: 3px; }
+.admin-panel button { min-height: 52px; padding: 0 20px; border: 1px solid var(--acid); color: var(--acid); background: transparent; font-weight: 750; cursor: pointer; }
+.admin-panel button:hover { background: rgba(173,255,24,.08); }.admin-panel button:disabled { cursor: not-allowed; opacity: .5; }
+.admin-panel .admin-primary { color: #101907; background: var(--acid); }.admin-panel .admin-primary:hover { background: #c5ff5b; }
+.login-panel { max-width: 620px; display: grid; gap: 24px; }.login-panel form { display: grid; gap: 12px; }.login-panel form button { margin-top: 8px; }
+.panel-title { display: flex; justify-content: space-between; align-items: start; gap: 12px; }.live-chip { color: var(--acid); border: 1px solid #4d7135; padding: 5px 10px; font-size: .75rem; white-space: nowrap; }
+.current-version { margin: 20px 0; color: var(--acid); font: 800 clamp(2.8rem, 6vw, 5rem)/1 monospace; letter-spacing: -.08em; }
+.release-facts { margin: 0; }.release-facts div { display: grid; grid-template-columns: 95px minmax(0,1fr); gap: 16px; border-top: 1px solid var(--line); padding: 14px 0; }.release-facts dt { color: var(--muted); }.release-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }.release-facts a { color: var(--acid); text-decoration: underline; }.mono, .preview-panel code { font: .85rem/1.5 monospace; }
+.tag-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; margin-top: 9px; }.update-panel code { color: var(--acid); }
+.preview-panel { display: grid; gap: 12px; margin-top: 30px; padding: 22px; border: 1px solid #50613d; background: #0c180f; }.preview-panel > span { color: var(--acid); font: .76rem monospace; letter-spacing: .1em; }.preview-panel strong { font-size: 2rem; }.preview-panel p { margin: 0; }.preview-panel code { overflow-wrap: anywhere; }.preview-panel a { color: var(--acid); text-decoration: underline; }
+.publish-check { display: flex !important; align-items: start; gap: 10px; margin-top: 12px; }.publish-check input { margin-top: 5px; accent-color: var(--acid); }
+[hidden] { display: none !important; }
+@media (max-width: 900px) { .admin-workspace { grid-template-columns: 1fr; } }
+@media (max-width: 580px) { .admin-header-actions > span { display: none; }.admin-header { align-items: start; flex-direction: column; padding-block: 14px; }.admin-heading h1 { font-size: 3rem; }.tag-row { grid-template-columns: 1fr; }.release-facts div { grid-template-columns: 1fr; gap: 2px; } }

@@ -2,7 +2,7 @@
 @model Mu.Server.Pages.Admin.FeaturesModel
 @{ ViewData["Title"] = "功能权限"; }
 <h1>功能权限</h1>
-<p class="muted">仅可配置已接入客户端的功能。变更适用于新版客户端的新操作，不会中断正在写入文件的操作或已经启动的游戏。</p>
+<p class="muted">客户端权限变更适用于新版客户端的新操作，不会中断正在写入文件的操作或已经启动的游戏。官网公开查询开关对所有访客生效。</p>
 <div asp-validation-summary="All" role="alert"></div>
 @foreach (var feature in Model.Items)
 {
@@ -10,8 +10,15 @@
         <input type="hidden" name="Key" value="@feature.Key" />
         <div><label>@FeaturesModel.DisplayName(feature.Key)</label><code>@feature.Key</code><div class="muted">配置版本 @feature.Version</div></div>
         <div><label for="access-@feature.Key">允许访问</label><select id="access-@feature.Key" name="Access">
-            <option value="standard" selected="@(feature.Enabled && feature.MinimumTier == "standard")">普通用户和 Pro</option>
-            <option value="pro" selected="@(feature.Enabled && feature.MinimumTier == "pro")">仅 Pro</option>
+            @if (feature.Key == "compatibility.public.read")
+            {
+                <option value="standard" selected="@feature.Enabled">公开访问（含未登录用户）</option>
+            }
+            else
+            {
+                <option value="standard" selected="@(feature.Enabled && feature.MinimumTier == "standard")">普通用户和 Pro</option>
+                <option value="pro" selected="@(feature.Enabled && feature.MinimumTier == "pro")">仅 Pro</option>
+            }
             <option value="disabled" selected="@(!feature.Enabled)">关闭</option>
         </select></div>
         <div><label for="reason-@feature.Key">变更原因</label><input id="reason-@feature.Key" name="Reason" required minlength="3" maxlength="500" /></div>

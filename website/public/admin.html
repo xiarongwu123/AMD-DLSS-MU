@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#070b12">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/app.css?v=20260922-survey1"><link rel="stylesheet" href="/assets/admin.css?v=20260922-analytics"><link rel="stylesheet" href="/assets/dashboard.css?v=20260922-analytics">
+  <title>运营控制台 · AMD DLSS MU</title>
+</head>
+<body data-page="admin">
+  <header class="admin-header section-shell">
+    <a class="brand" href="/"><img src="/assets/logo.png" alt="" width="50" height="50"><span><b>AMD DLSS</b><em>MU</em></span></a>
+    <div class="admin-header-actions"><span>PRIVATE CONSOLE</span><a href="/download" target="_blank" rel="noopener noreferrer">访问官网 ↗</a><button type="button" data-screen hidden>大屏模式</button><button type="button" data-logout hidden>退出登录</button></div>
+  </header>
+  <main class="admin-main section-shell">
+    <div class="admin-heading"><p class="eyebrow">MISSION CONTROL / 管理后台</p><h1>数据与发行控制台</h1><p>掌握访问、下载与反馈，让每次版本迭代都有依据。</p></div>
+    <div class="admin-status" data-status role="status" aria-live="polite"></div>
+
+    <section class="admin-panel login-panel" data-login-panel>
+      <div><p class="eyebrow">AUTHENTICATION</p><h2>管理员登录</h2><p>使用服务器上配置的管理员密码。登录状态仅保留 12 小时。</p></div>
+      <form data-login-form>
+        <label for="admin-password">管理员密码</label>
+        <input id="admin-password" name="password" type="password" autocomplete="current-password" required>
+        <button class="admin-primary" type="submit">登录后台 →</button>
+      </form>
+    </section>
+
+    <div class="console-workspace" data-workspace hidden>
+      <nav class="console-tabs" aria-label="后台功能">
+        <button type="button" data-tab="overview" aria-current="page">数据总览</button>
+        <button type="button" data-tab="release">软件发行</button>
+        <button type="button" data-tab="feedback">用户反馈 <span data-pending-badge>0</span></button>
+        <button type="button" data-tab="survey">Pro 功能调研</button>
+        <button type="button" data-tab="tracking">指标与埋点</button>
+      </nav>
+
+      <section data-tab-panel="overview" aria-label="数据总览">
+        <div class="overview-toolbar">
+          <div><span class="signal-light"></span><strong>运营数据</strong><small data-updated>正在连接数据源…</small></div>
+          <div class="overview-filters"><label for="stats-range" class="sr-only">统计范围</label><select id="stats-range" data-range><option value="1">今天</option><option value="7" selected>近 7 天</option><option value="30">近 30 天</option><option value="90">近 90 天</option></select><label class="auto-refresh"><input type="checkbox" data-auto-refresh checked>自动刷新</label><button type="button" data-refresh>刷新</button></div>
+        </div>
+        <p class="overview-state" data-overview-state role="status"></p>
+        <div class="metric-grid">
+          <article class="metric-card"><span>页面浏览量</span><strong data-kpi="views">—</strong><small>同意匿名统计的页面浏览</small><i>01 / REACH</i></article>
+          <article class="metric-card"><span>访问会话</span><strong data-kpi="sessions">—</strong><small>30 分钟会话，不等于人数</small><i>02 / VISITS</i></article>
+          <article class="metric-card accent-cyan"><span>下载请求</span><strong data-kpi="downloads">—</strong><small>服务器接受的文件下载请求</small><i>03 / DOWNLOAD</i></article>
+          <article class="metric-card"><span>下载会话转化率</span><strong data-kpi="conversionRate">—</strong><small>同一采集范围内的会话转化</small><i>04 / CONVERSION</i></article>
+          <article class="metric-card"><span>新增反馈</span><strong data-kpi="feedback">—</strong><small>所选时间范围内成功入库</small><i>05 / FEEDBACK</i></article>
+          <article class="metric-card accent-amber"><span>待处理反馈</span><strong data-kpi="pending">—</strong><small>全部待处理及处理中记录</small><i>06 / ACTION</i></article>
+        </div>
+        <div class="console-status-strip"><span>近 5 分钟活跃会话 <b data-active>—</b></span><span>当前版本 <b data-live-version>—</b></span><span>GitHub 累计 EXE 下载 <b data-github-total>—</b></span><span>北京时间 <b data-clock>—</b></span></div>
+
+        <div class="dashboard-row chart-row">
+          <section class="dashboard-panel trend-panel"><div class="dashboard-panel-title"><div><span class="eyebrow">TRAFFIC / DOWNLOADS</span><h2>访问与下载趋势</h2></div><div class="chart-legend"><span class="legend-visits">会话 · 已同意</span><span class="legend-downloads">请求 · 全部</span></div></div><div data-trend class="trend-chart"></div><details class="trend-detail"><summary>查看每日明细</summary><div class="table-scroll" data-trend-table></div></details></section>
+          <section class="dashboard-panel conversion-panel"><span class="eyebrow">SESSION CONVERSION</span><h2>从访问到下载</h2><div data-conversion></div><p class="panel-note">仅比较有页面浏览记录的匿名会话。用户可直接下载，不要求先进入下载页。</p><div class="metric-callout"><span>下载次数 ≠ 安装人数</span><p>安装、软件启动与实际效果需要客户端单独上报。</p></div></section>
+        </div>
+        <div class="dashboard-row thirds-row">
+          <section class="dashboard-panel"><span class="eyebrow">ACQUISITION</span><h2>访问来源</h2><div data-sources></div><p class="panel-note">按会话首次来源归属，只统计已同意的会话。</p></section>
+          <section class="dashboard-panel"><span class="eyebrow">RELEASE PERFORMANCE</span><h2>版本下载</h2><div class="table-scroll" data-versions></div><p class="panel-note" data-github-sync>GitHub 每 15 分钟同步累计值。</p></section>
+          <section class="dashboard-panel"><span class="eyebrow">USER SIGNALS</span><h2>反馈类型</h2><div data-categories></div><p class="panel-note">来源于用户主动填写，不作为整体故障率。</p></section>
+        </div>
+        <div class="dashboard-row halves-row">
+          <section class="dashboard-panel"><div class="dashboard-panel-title"><div><span class="eyebrow">FEEDBACK INBOX</span><h2>最近反馈</h2></div><button class="text-action" type="button" data-open-feedback>查看全部 →</button></div><div data-recent-feedback></div></section>
+          <section class="dashboard-panel"><span class="eyebrow">OPERATIONS LOG</span><h2>管理操作记录</h2><div data-audit></div></section>
+        </div>
+        <section class="dashboard-panel health-panel"><div><span class="eyebrow">SERVICE HEALTH · 最近 24 小时</span><h2>关键接口状态</h2></div><div data-health class="health-grid"></div></section>
+        <p class="collection-note" data-collection-note></p>
+      </section>
+
+      <div class="admin-workspace" data-tab-panel="release" hidden>
+      <section class="admin-panel current-panel">
+        <div class="panel-title"><div><p class="eyebrow">LIVE RELEASE</p><h2>当前下载版本</h2></div><span class="live-chip">线上生效</span></div>
+        <div class="current-version" data-current-version>—</div>
+        <dl class="release-facts">
+          <div><dt>附件大小</dt><dd data-current-size>—</dd></div>
+          <div><dt>发布日期</dt><dd data-current-date>—</dd></div>
+          <div><dt>SHA-256</dt><dd class="mono" data-current-hash>—</dd></div>
+          <div><dt>下载目标</dt><dd><a data-current-url href="#" target="_blank" rel="noopener noreferrer">—</a></dd></div>
+        </dl>
+      </section>
+      <section class="admin-panel update-panel">
+        <p class="eyebrow">MANUAL UPDATE</p><h2>切换软件包</h2>
+        <p>填写本仓库正式 Release 的版本标签，例如 <code>v1.3.0</code>。服务器会下载 <code>AMD-DLSS-MU.exe</code> 并校验大小与 SHA-256，全部成功后再切换官网直下载。同步失败时旧版本保持不变，用户无需访问 GitHub。</p>
+        <form data-preview-form>
+          <label for="release-tag">GitHub Release 标签</label>
+          <div class="tag-row"><input id="release-tag" name="tag" type="text" value="v1.3.0" required><button type="submit">校验附件 →</button></div>
+        </form>
+        <div class="preview-panel" data-preview-panel hidden>
+          <span>待发布附件</span><strong data-preview-version>—</strong>
+          <p data-preview-size>—</p><code data-preview-hash>—</code>
+          <a data-preview-url href="#" target="_blank" rel="noopener noreferrer">查看 GitHub Release ↗</a>
+          <label class="publish-check"><input type="checkbox" data-confirm> 我确认切换官网的下载版本与链接</label>
+          <button class="admin-primary" type="button" data-publish disabled>同步到服务器并发布 →</button>
+        </div>
+      </section>
+      </div>
+
+      <section class="dashboard-panel" data-tab-panel="feedback" hidden>
+        <div class="dashboard-panel-title"><div><span class="eyebrow">FEEDBACK MANAGEMENT</span><h2>用户反馈处理</h2></div><label>筛选状态 <select data-feedback-filter><option value="all">全部</option><option value="new">待处理</option><option value="in_progress">处理中</option><option value="resolved">已解决</option><option value="ignored">暂不处理</option></select></label></div>
+        <p class="panel-note">联系方式与详细内容仅在详情中显示，不进入大屏统计。</p><p data-feedback-message role="status"></p><div class="table-scroll" data-feedback-table></div>
+        <div class="feedback-pagination"><span data-feedback-page></span><button type="button" data-feedback-prev>上一页</button><button type="button" data-feedback-next>下一页</button></div>
+      </section>
+
+      <section data-tab-panel="survey" hidden>
+        <div class="overview-toolbar"><div><strong>Pro 功能期待调查</strong><a class="text-action" href="/survey" target="_blank" rel="noopener noreferrer">打开问卷 ↗</a></div><div class="overview-filters"><label for="survey-range">首次提交时间</label><select id="survey-range" data-survey-range><option value="all">全部</option><option value="1">今日</option><option value="7">近 7 天</option><option value="30">近 30 天</option><option value="90">近 90 天</option></select><button type="button" data-survey-refresh>刷新</button></div></div>
+        <p class="overview-state" data-survey-message role="status" aria-live="polite"></p>
+        <div data-survey-report hidden>
+          <div class="metric-grid survey-metrics"><article class="metric-card"><span>有效答卷</span><strong data-survey-total>—</strong><small>每个匿名浏览器标识只计一份</small></article><article class="metric-card accent-cyan"><span>最受期待功能 · 多选票数</span><strong class="survey-leading" data-survey-leading>—</strong><small>按票数排序，同票参考首选票数</small></article><article class="metric-card"><span>明确愿意付费</span><strong data-survey-willing>—</strong><small>不包含“取决于价格和实际效果”</small></article></div>
+          <div class="dashboard-row chart-row survey-charts"><section class="dashboard-panel"><span class="eyebrow">FEATURE PRIORITY</span><h2>功能需求排行</h2><div data-survey-ranking></div><p class="panel-note">比例 = 该功能票数 ÷ 当前范围有效答卷数。支持多选，合计可能超过 100%。首选票数表示最希望优先开发该功能的回答数。</p><p class="panel-note" data-survey-none></p></section><section class="dashboard-panel"><span class="eyebrow">PAYMENT INTENT</span><h2>付费意愿分布</h2><div data-survey-payment-chart></div><p class="panel-note">仅调研意愿，不询问金额，也不预设收费模式。问卷未上线前没有历史数据。</p></section></div>
+          <section class="dashboard-panel"><span class="eyebrow">ANONYMOUS RESPONSES</span><h2>答卷明细</h2><p class="panel-note">以下排行与明细按首次提交时间统一筛选，始终展示每份答卷的最新回答。修改不会重复计票。所有时间均为北京时间。</p><div class="table-scroll" data-survey-table></div><div class="feedback-pagination"><span data-survey-page></span><button type="button" data-survey-prev>上一页</button><button type="button" data-survey-next>下一页</button></div></section>
+          <p class="collection-note" data-survey-updated></p>
+        </div>
+      </section>
+
+      <section class="dashboard-panel tracking-panel" data-tab-panel="tracking" hidden>
+        <span class="eyebrow">MEASUREMENT PLAN</span><h2>指标定义与已接入埋点</h2>
+        <p>所有时间按北京时间展示。官网匿名统计由用户选择，采集前的历史留空；下载请求总量和用户主动提交的反馈由服务端记录。</p>
+        <h3>所选时间范围的交互信号</h3><div class="table-scroll" data-tracking-summary></div><p>浏览器事件只覆盖同意统计的样本；反馈保存成功及校验失败以服务端实际结果为准，因此两者不能直接相除推导完成率。</p>
+        <div class="table-scroll"><table><thead><tr><th>事件</th><th>触发时机</th><th>用于判断</th></tr></thead><tbody>
+          <tr><td><code>page_view</code></td><td>同意统计后页面进入，每次加载一次</td><td>浏览量、会话、来源</td></tr><tr><td><code>session_heartbeat</code></td><td>页面可见时每 60 秒；只更新活跃时间</td><td>近 5 分钟活跃会话</td></tr>
+          <tr><td><code>download_click</code></td><td>点击直接下载按钮</td><td>下载入口的交互意图</td></tr><tr><td><code>download_request / download_redirect</code></td><td>服务器开始传输完整文件或首段；兼容历史跳转</td><td>版本下载请求及会话转化</td></tr>
+          <tr><td><code>feedback_start</code></td><td>首次填写反馈表单</td><td>反馈填写意图</td></tr><tr><td><code>feedback_accepted / rejected</code></td><td>反馈保存成功或校验失败</td><td>提交质量与问题分布</td></tr><tr><td><code>hash_copy</code></td><td>成功复制 SHA-256</td><td>校验功能使用情况</td></tr>
+          <tr><td><code>release_published / publish_failed</code></td><td>版本配置写入成功或失败</td><td>发行操作审计</td></tr><tr><td><code>feedback_status_changed</code></td><td>管理员改变反馈状态</td><td>问题处理进展</td></tr><tr><td><code>admin_login_failed</code></td><td>管理员密码验证失败</td><td>异常登录信号</td></tr>
+        </tbody></table></div>
+        <h3>客户端下一阶段</h3><p>建议增加软件启动、兼容性检查、组件安装/恢复结果、升级结果和结构化错误。当前 EXE 未接入，暂不展示活跃用户、安装成功率、留存率或自动测得的 FPS。</p>
+        <p>客户端应提供独立的匿名统计开关，仅上传软件版本、受控错误码、操作耗时与必要环境分类。游戏路径、账号、原始日志和硬件序列号不进入埋点。</p>
+        <h3>统计边界</h3><ul><li>匿名会话按 30 分钟有效期划分，不是独立人数；拒绝统计的访问不计入会话转化。</li><li>已登录管理员、常见机器人和 HEAD 检查请求不计入访问与下载；过滤无法识别所有自动流量。</li><li>GitHub 累计下载来自官方接口，包括从其他渠道直接下载，不代表下载完成、安装成功或官网下载人数。</li><li>匿名事件明细保留 90 天，接口耗时明细保留 14 天；反馈及处理状态持久保存。</li></ul>
+      </section>
+    </div>
+  </main>
+  <dialog class="feedback-dialog" data-feedback-dialog aria-labelledby="feedback-dialog-title"><button type="button" data-dialog-close aria-label="关闭反馈详情">×</button><p class="eyebrow">FEEDBACK DETAIL</p><h2 id="feedback-dialog-title">反馈详情</h2><div data-feedback-detail></div><form data-feedback-status-form><label for="feedback-status">处理状态</label><select id="feedback-status" name="status"><option value="new">待处理</option><option value="in_progress">处理中</option><option value="resolved">已解决</option><option value="ignored">暂不处理</option></select><button type="submit">保存状态</button><p data-dialog-message role="status"></p></form></dialog>
+  <script src="/assets/admin.js?v=20260922-server-download2" defer></script>
+  <dialog class="feedback-dialog" data-survey-dialog aria-labelledby="survey-dialog-title"><button type="button" class="survey-dialog-close" data-survey-close aria-label="关闭答卷详情">×</button><p class="eyebrow">SURVEY DETAIL</p><h2 id="survey-dialog-title">匿名答卷详情</h2><div data-survey-detail></div></dialog>
+  <link rel="stylesheet" href="/assets/admin-survey.css?v=20260922-survey1">
+  <script src="/assets/dashboard.js?v=20260922-server-download2" defer></script>
+  <script src="/assets/admin-survey.js?v=20260922-survey1" defer></script>
+</body>
+</html>

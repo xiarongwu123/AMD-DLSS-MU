@@ -1,0 +1,2752 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-27T16:50:42.051Z",
+  "method": "separate-gaming-benchmark-cohorts",
+  "sources": [
+    {
+      "id": "gpu-current",
+      "provider": "Tom's Hardware",
+      "label": "2026 GPU / 1080p Ultra",
+      "url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html",
+      "retrievedAt": "2026-09-27T16:24:02.114Z",
+      "sha256": "1e6f709462cc79bd34c48e7dfc3c079d0ddd66a40d2bb391cd234a644e9cb4e2",
+      "observations": 46
+    },
+    {
+      "id": "gpu-legacy",
+      "provider": "Tom's Hardware",
+      "label": "2022–2024 GPU / 1080p Ultra",
+      "url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388-2.html",
+      "retrievedAt": "2026-09-27T16:24:02.513Z",
+      "sha256": "d973a2b87647158fc9c34c0136abfe785df8117199092c7a1fd5d66e2d7cb3be",
+      "observations": 81
+    },
+    {
+      "id": "gpu-legacy-medium",
+      "provider": "Tom's Hardware",
+      "label": "2022–2024 GPU / 1080p Medium",
+      "url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388-2.html",
+      "retrievedAt": "2026-09-27T16:24:02.513Z",
+      "sha256": "d973a2b87647158fc9c34c0136abfe785df8117199092c7a1fd5d66e2d7cb3be",
+      "observations": 85
+    },
+    {
+      "id": "cpu-current",
+      "provider": "Tom's Hardware",
+      "label": "2026 CPU / 1080p Gaming",
+      "url": "https://www.tomshardware.com/reviews/cpu-hierarchy,4312.html",
+      "retrievedAt": "2026-09-27T16:24:02.825Z",
+      "sha256": "f21f4491b54ad5c3cc77cd1b10d62132550609aab4680784095f5432a12a4acd",
+      "observations": 29
+    },
+    {
+      "id": "cpu-legacy-win11",
+      "provider": "Tom's Hardware",
+      "label": "2020–2022 CPU / Windows 11 / 1080p",
+      "url": "https://www.tomshardware.com/reviews/cpu-hierarchy,4312-2.html",
+      "retrievedAt": "2026-09-27T16:24:30.878Z",
+      "sha256": "5c037e4526720d6c1286f8ea5897df677d3a0ee6ba840bb53ba15369abf2409d",
+      "observations": 17
+    },
+    {
+      "id": "cpu-legacy-win10",
+      "provider": "Tom's Hardware",
+      "label": "2020–2022 CPU / Windows 10 / 1080p",
+      "url": "https://www.tomshardware.com/reviews/cpu-hierarchy,4312-2.html",
+      "retrievedAt": "2026-09-27T16:24:30.878Z",
+      "sha256": "5c037e4526720d6c1286f8ea5897df677d3a0ee6ba840bb53ba15369abf2409d",
+      "observations": 51
+    },
+    {
+      "id": "amd-rx9070xt",
+      "provider": "AMD",
+      "label": "Radeon RX 9070 XT / 显存规格",
+      "url": "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9070xt.html",
+      "retrievedAt": "2026-09-27T16:29:50.244Z",
+      "sha256": "a09b8589b1a8648567fbbe9bf35a6dc807b384f3f0fd5749431f5028a555f5f6",
+      "sourceFile": "amd-rx9070xt.html"
+    },
+    {
+      "id": "amd-rx9070",
+      "provider": "AMD",
+      "label": "Radeon RX 9070 / 显存规格",
+      "url": "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9070.html",
+      "retrievedAt": "2026-09-27T16:29:50.562Z",
+      "sha256": "8e60d473709311fd0d60247b94f4c60fff771456dac12e5161a96d5ac25a59fe",
+      "sourceFile": "amd-rx9070.html"
+    },
+    {
+      "id": "amd-rx9070gre",
+      "provider": "AMD",
+      "label": "Radeon RX 9070 GRE / 显存规格",
+      "url": "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9070-gre.html",
+      "retrievedAt": "2026-09-27T16:48:54.944Z",
+      "sha256": "1e9bc18a2eafe7d53785b4812db1b17ee7556a15e5252b061f89bfaf84a9dd9c",
+      "sourceFile": "amd-rx9070gre.html"
+    },
+    {
+      "id": "intel-arcb580",
+      "provider": "Intel",
+      "label": "Intel Arc B580 / 显存规格",
+      "url": "https://www.intel.com/content/www/us/en/products/sku/241598/intel-arc-b580-graphics/specifications.html",
+      "retrievedAt": "2026-09-27T16:48:11.594Z",
+      "sha256": "dee5f951d1f13a05aad77d11ff577689a470f64e17bdcea33760f10f6a616415",
+      "sourceFile": "intel-arcb580.html"
+    },
+    {
+      "id": "intel-arcb570",
+      "provider": "Intel",
+      "label": "Intel Arc B570 / 显存规格",
+      "url": "https://www.intel.com/content/www/us/en/products/sku/241676/intel-arc-b570-graphics/specifications.html",
+      "retrievedAt": "2026-09-27T16:48:11.514Z",
+      "sha256": "4e83422c50b503b21b7b32bb8c93851120bf9cc1e010a96a915b459c5ad6b1ca",
+      "sourceFile": "intel-arcb570.html"
+    },
+    {
+      "id": "xfx-rx5600xt",
+      "provider": "XFX",
+      "label": "Radeon RX 5600 XT / 显存规格",
+      "url": "https://www.xfxforce.com/gpus/xfx-amd-radeon-tm-rx-5600-xt-6gb-gddr6-raw-ii",
+      "retrievedAt": "2026-09-27T16:29:51.898Z",
+      "sha256": "7360fb5f906b794d3d3a33edd87afd63a97ac9df822421d8f3455ce3e491c26f",
+      "sourceFile": "xfx-rx5600xt.html"
+    },
+    {
+      "id": "nvidia-geforce-desktop-memory",
+      "provider": "NVIDIA",
+      "label": "GeForce RTX 50 桌面系列 / 显存规格",
+      "url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "retrievedAt": "2026-09-27T16:47:13.482Z",
+      "sha256": "64082b4a814306ee055cadd66fe0709d6b2810e56e2ac8ac62d95ac7de5141f4",
+      "sourceFile": "nvidia-geforce-compare.html"
+    }
+  ],
+  "gpu": [
+    {
+      "id": "geforcegt1030gddr5",
+      "name": "GeForce GT 1030 GDDR5",
+      "vramMb": 2048,
+      "scores": {
+        "gpu-legacy-medium": {
+          "min": 7.5,
+          "max": 7.5
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx10502gb",
+      "name": "GeForce GTX 1050 2GB",
+      "vramMb": 2048,
+      "scores": {
+        "gpu-legacy-medium": {
+          "min": 15.2,
+          "max": 15.2
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx1050ti",
+      "name": "GeForce GTX 1050 Ti",
+      "vramMb": 4096,
+      "scores": {
+        "gpu-legacy": {
+          "min": 12.9,
+          "max": 12.9
+        },
+        "gpu-legacy-medium": {
+          "min": 19.4,
+          "max": 19.4
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx10603gb",
+      "name": "GeForce GTX 1060 3GB",
+      "vramMb": 3072,
+      "scores": {
+        "gpu-legacy-medium": {
+          "min": 26.8,
+          "max": 26.8
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx10606gb",
+      "name": "GeForce GTX 1060 6GB",
+      "vramMb": 6144,
+      "scores": {
+        "gpu-legacy": {
+          "min": 20.8,
+          "max": 20.8
+        },
+        "gpu-legacy-medium": {
+          "min": 29.5,
+          "max": 29.5
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx1070",
+      "name": "GeForce GTX 1070",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 29,
+          "max": 29
+        },
+        "gpu-legacy-medium": {
+          "min": 38.3,
+          "max": 38.3
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx1070ti",
+      "name": "GeForce GTX 1070 Ti",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 33.1,
+          "max": 33.1
+        },
+        "gpu-legacy-medium": {
+          "min": 43.8,
+          "max": 43.8
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx1080",
+      "name": "GeForce GTX 1080",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 34.4,
+          "max": 34.4
+        },
+        "gpu-legacy-medium": {
+          "min": 45.9,
+          "max": 45.9
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx1080ti",
+      "name": "GeForce GTX 1080 Ti",
+      "vramMb": 11264,
+      "scores": {
+        "gpu-legacy": {
+          "min": 43.1,
+          "max": 43.1
+        },
+        "gpu-legacy-medium": {
+          "min": 56.3,
+          "max": 56.3
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx1630",
+      "name": "GeForce GTX 1630",
+      "vramMb": 4096,
+      "scores": {
+        "gpu-legacy": {
+          "min": 10.9,
+          "max": 10.9
+        },
+        "gpu-legacy-medium": {
+          "min": 17.3,
+          "max": 17.3
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx1650gddr5",
+      "name": "GeForce GTX 1650 GDDR5",
+      "vramMb": 4096,
+      "scores": {
+        "gpu-legacy": {
+          "min": 17.5,
+          "max": 17.5
+        },
+        "gpu-legacy-medium": {
+          "min": 26.2,
+          "max": 26.2
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx1650gddr6",
+      "name": "GeForce GTX 1650 GDDR6",
+      "vramMb": 4096,
+      "scores": {
+        "gpu-legacy": {
+          "min": 18.7,
+          "max": 18.7
+        },
+        "gpu-legacy-medium": {
+          "min": 28.9,
+          "max": 28.9
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx1650super",
+      "name": "GeForce GTX 1650 Super",
+      "vramMb": 4096,
+      "scores": {
+        "gpu-legacy": {
+          "min": 22,
+          "max": 22
+        },
+        "gpu-legacy-medium": {
+          "min": 34.6,
+          "max": 34.6
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx1660",
+      "name": "GeForce GTX 1660",
+      "vramMb": 6144,
+      "scores": {
+        "gpu-legacy": {
+          "min": 27.7,
+          "max": 27.7
+        },
+        "gpu-legacy-medium": {
+          "min": 39.7,
+          "max": 39.7
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx1660super",
+      "name": "GeForce GTX 1660 Super",
+      "vramMb": 6144,
+      "scores": {
+        "gpu-legacy": {
+          "min": 30.3,
+          "max": 30.3
+        },
+        "gpu-legacy-medium": {
+          "min": 43.7,
+          "max": 43.7
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx1660ti",
+      "name": "GeForce GTX 1660 Ti",
+      "vramMb": 6144,
+      "scores": {
+        "gpu-legacy": {
+          "min": 30.3,
+          "max": 30.3
+        },
+        "gpu-legacy-medium": {
+          "min": 43.3,
+          "max": 43.3
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx970",
+      "name": "GeForce GTX 970",
+      "vramMb": 4096,
+      "scores": {
+        "gpu-legacy": {
+          "min": 17.2,
+          "max": 17.2
+        },
+        "gpu-legacy-medium": {
+          "min": 25,
+          "max": 25
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx980",
+      "name": "GeForce GTX 980",
+      "vramMb": 4096,
+      "scores": {
+        "gpu-legacy": {
+          "min": 18.7,
+          "max": 18.7
+        },
+        "gpu-legacy-medium": {
+          "min": 27.4,
+          "max": 27.4
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcegtx980ti",
+      "name": "GeForce GTX 980 Ti",
+      "vramMb": 6144,
+      "scores": {
+        "gpu-legacy": {
+          "min": 23.3,
+          "max": 23.3
+        },
+        "gpu-legacy-medium": {
+          "min": 32,
+          "max": 32
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx20606gb",
+      "name": "GeForce RTX 2060 6GB",
+      "vramMb": 6144,
+      "scores": {
+        "gpu-legacy": {
+          "min": 36,
+          "max": 36
+        },
+        "gpu-legacy-medium": {
+          "min": 51.4,
+          "max": 51.4
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx2060super",
+      "name": "GeForce RTX 2060 Super",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 42.5,
+          "max": 42.5
+        },
+        "gpu-legacy-medium": {
+          "min": 57.2,
+          "max": 57.2
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx2070",
+      "name": "GeForce RTX 2070",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 45.3,
+          "max": 45.3
+        },
+        "gpu-legacy-medium": {
+          "min": 60.8,
+          "max": 60.8
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx2070super",
+      "name": "GeForce RTX 2070 Super",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 50.3,
+          "max": 50.3
+        },
+        "gpu-legacy-medium": {
+          "min": 66.2,
+          "max": 66.2
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx2080",
+      "name": "GeForce RTX 2080",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 53.5,
+          "max": 53.5
+        },
+        "gpu-legacy-medium": {
+          "min": 69.8,
+          "max": 69.8
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx2080super",
+      "name": "GeForce RTX 2080 Super",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 55.8,
+          "max": 55.8
+        },
+        "gpu-legacy-medium": {
+          "min": 72.2,
+          "max": 72.2
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx2080ti",
+      "name": "GeForce RTX 2080 Ti",
+      "vramMb": 11264,
+      "scores": {
+        "gpu-legacy": {
+          "min": 62.5,
+          "max": 62.5
+        },
+        "gpu-legacy-medium": {
+          "min": 77.2,
+          "max": 77.2
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx30508gb",
+      "name": "GeForce RTX 3050 8GB",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 33.7,
+          "max": 33.7
+        },
+        "gpu-legacy-medium": {
+          "min": 45.4,
+          "max": 45.4
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx306012gb",
+      "name": "GeForce RTX 3060 12GB",
+      "vramMb": 12288,
+      "scores": {
+        "gpu-current": {
+          "min": 30.2,
+          "max": 30.2
+        },
+        "gpu-legacy": {
+          "min": 46.9,
+          "max": 46.9
+        },
+        "gpu-legacy-medium": {
+          "min": 61.8,
+          "max": 61.8
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx3060ti",
+      "name": "GeForce RTX 3060 Ti",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-current": {
+          "min": 36.4,
+          "max": 36.4
+        },
+        "gpu-legacy": {
+          "min": 58.9,
+          "max": 58.9
+        },
+        "gpu-legacy-medium": {
+          "min": 75,
+          "max": 75
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx3070",
+      "name": "GeForce RTX 3070",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-current": {
+          "min": 42.8,
+          "max": 42.8
+        },
+        "gpu-legacy": {
+          "min": 64.1,
+          "max": 64.1
+        },
+        "gpu-legacy-medium": {
+          "min": 79.1,
+          "max": 79.1
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx3070ti",
+      "name": "GeForce RTX 3070 Ti",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-current": {
+          "min": 46.4,
+          "max": 46.4
+        },
+        "gpu-legacy": {
+          "min": 67.5,
+          "max": 67.5
+        },
+        "gpu-legacy-medium": {
+          "min": 81.6,
+          "max": 81.6
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx308010gb",
+      "name": "GeForce RTX 3080 10GB",
+      "vramMb": 10240,
+      "scores": {
+        "gpu-legacy": {
+          "min": 76,
+          "max": 76
+        },
+        "gpu-legacy-medium": {
+          "min": 85.6,
+          "max": 85.6
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx308012gb",
+      "name": "GeForce RTX 3080 12GB",
+      "vramMb": 12288,
+      "scores": {
+        "gpu-legacy": {
+          "min": 79.2,
+          "max": 79.2
+        },
+        "gpu-legacy-medium": {
+          "min": 86.5,
+          "max": 86.5
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx3080ti",
+      "name": "GeForce RTX 3080 Ti",
+      "vramMb": 12288,
+      "scores": {
+        "gpu-current": {
+          "min": 58.7,
+          "max": 58.7
+        },
+        "gpu-legacy": {
+          "min": 80.4,
+          "max": 80.4
+        },
+        "gpu-legacy-medium": {
+          "min": 87.8,
+          "max": 87.8
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx3090",
+      "name": "GeForce RTX 3090",
+      "vramMb": 24576,
+      "scores": {
+        "gpu-current": {
+          "min": 60.3,
+          "max": 60.3
+        },
+        "gpu-legacy": {
+          "min": 81.4,
+          "max": 81.4
+        },
+        "gpu-legacy-medium": {
+          "min": 88.9,
+          "max": 88.9
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx3090ti",
+      "name": "GeForce RTX 3090 Ti",
+      "vramMb": 24576,
+      "scores": {
+        "gpu-current": {
+          "min": 64.7,
+          "max": 64.7
+        },
+        "gpu-legacy": {
+          "min": 84.7,
+          "max": 84.7
+        },
+        "gpu-legacy-medium": {
+          "min": 90.5,
+          "max": 90.5
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx4060",
+      "name": "GeForce RTX 4060",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-current": {
+          "min": 35.1,
+          "max": 35.1
+        },
+        "gpu-legacy": {
+          "min": 55.1,
+          "max": 55.1
+        },
+        "gpu-legacy-medium": {
+          "min": 72.7,
+          "max": 72.7
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx4060ti16gb",
+      "name": "GeForce RTX 4060 Ti 16GB",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 43.8,
+          "max": 43.8
+        },
+        "gpu-legacy": {
+          "min": 65.3,
+          "max": 65.3
+        },
+        "gpu-legacy-medium": {
+          "min": 82.6,
+          "max": 82.6
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx4060ti8gb",
+      "name": "GeForce RTX 4060 Ti 8GB",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-current": {
+          "min": 43.2,
+          "max": 43.2
+        },
+        "gpu-legacy": {
+          "min": 65.1,
+          "max": 65.1
+        },
+        "gpu-legacy-medium": {
+          "min": 81.8,
+          "max": 81.8
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx4070",
+      "name": "GeForce RTX 4070",
+      "vramMb": 12288,
+      "scores": {
+        "gpu-current": {
+          "min": 54.7,
+          "max": 54.7
+        },
+        "gpu-legacy": {
+          "min": 79.2,
+          "max": 79.2
+        },
+        "gpu-legacy-medium": {
+          "min": 90.7,
+          "max": 90.7
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx4070super",
+      "name": "GeForce RTX 4070 Super",
+      "vramMb": 12288,
+      "scores": {
+        "gpu-current": {
+          "min": 62.2,
+          "max": 62.2
+        },
+        "gpu-legacy": {
+          "min": 87.1,
+          "max": 87.1
+        },
+        "gpu-legacy-medium": {
+          "min": 94.6,
+          "max": 94.6
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx4070ti",
+      "name": "GeForce RTX 4070 Ti",
+      "vramMb": 12288,
+      "scores": {
+        "gpu-current": {
+          "min": 66.3,
+          "max": 66.3
+        },
+        "gpu-legacy": {
+          "min": 89.8,
+          "max": 89.8
+        },
+        "gpu-legacy-medium": {
+          "min": 95.7,
+          "max": 95.7
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx4070tisuper",
+      "name": "GeForce RTX 4070 Ti Super",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 69.3,
+          "max": 69.3
+        },
+        "gpu-legacy": {
+          "min": 92.3,
+          "max": 92.3
+        },
+        "gpu-legacy-medium": {
+          "min": 96.8,
+          "max": 96.8
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx4080",
+      "name": "GeForce RTX 4080",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 77.2,
+          "max": 77.2
+        },
+        "gpu-legacy": {
+          "min": 95.4,
+          "max": 95.4
+        },
+        "gpu-legacy-medium": {
+          "min": 98.1,
+          "max": 98.1
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx4080super",
+      "name": "GeForce RTX 4080 Super",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 78,
+          "max": 78
+        },
+        "gpu-legacy": {
+          "min": 96.2,
+          "max": 96.2
+        },
+        "gpu-legacy-medium": {
+          "min": 98.5,
+          "max": 98.5
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx4090",
+      "name": "GeForce RTX 4090",
+      "vramMb": 24576,
+      "scores": {
+        "gpu-current": {
+          "min": 90.1,
+          "max": 90.1
+        },
+        "gpu-legacy": {
+          "min": 100,
+          "max": 100
+        },
+        "gpu-legacy-medium": {
+          "min": 100,
+          "max": 100
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "geforcertx5050",
+      "name": "GeForce RTX 5050",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-current": {
+          "min": 34,
+          "max": 34
+        }
+      },
+      "memorySourceId": "nvidia-geforce-desktop-memory"
+    },
+    {
+      "id": "geforcertx5060",
+      "name": "GeForce RTX 5060",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-current": {
+          "min": 43.4,
+          "max": 43.4
+        }
+      },
+      "memorySourceId": "nvidia-geforce-desktop-memory"
+    },
+    {
+      "id": "geforcertx5060ti16gb",
+      "name": "GeForce RTX 5060 Ti 16GB",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 51.6,
+          "max": 51.6
+        }
+      },
+      "memorySourceId": "gpu-current"
+    },
+    {
+      "id": "geforcertx5060ti8gb",
+      "name": "GeForce RTX 5060 Ti 8GB",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-current": {
+          "min": 49.3,
+          "max": 49.3
+        }
+      },
+      "memorySourceId": "gpu-current"
+    },
+    {
+      "id": "geforcertx5070",
+      "name": "GeForce RTX 5070",
+      "vramMb": 12288,
+      "scores": {
+        "gpu-current": {
+          "min": 65.1,
+          "max": 65.1
+        }
+      },
+      "memorySourceId": "nvidia-geforce-desktop-memory"
+    },
+    {
+      "id": "geforcertx5070ti",
+      "name": "GeForce RTX 5070 Ti",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 76.2,
+          "max": 76.2
+        }
+      },
+      "memorySourceId": "nvidia-geforce-desktop-memory"
+    },
+    {
+      "id": "geforcertx5080",
+      "name": "GeForce RTX 5080",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 81.9,
+          "max": 81.9
+        }
+      },
+      "memorySourceId": "nvidia-geforce-desktop-memory"
+    },
+    {
+      "id": "geforcertx5090",
+      "name": "GeForce RTX 5090",
+      "vramMb": 32768,
+      "scores": {
+        "gpu-current": {
+          "min": 100,
+          "max": 100
+        }
+      },
+      "memorySourceId": "nvidia-geforce-desktop-memory"
+    },
+    {
+      "id": "intelarca380",
+      "name": "Intel Arc A380",
+      "vramMb": 6144,
+      "scores": {
+        "gpu-legacy": {
+          "min": 18.4,
+          "max": 18.4
+        },
+        "gpu-legacy-medium": {
+          "min": 27.7,
+          "max": 27.7
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "intelarca580",
+      "name": "Intel Arc A580",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 42.3,
+          "max": 42.3
+        },
+        "gpu-legacy-medium": {
+          "min": 51.6,
+          "max": 51.6
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "intelarca750",
+      "name": "Intel Arc A750",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 45.9,
+          "max": 45.9
+        },
+        "gpu-legacy-medium": {
+          "min": 56.4,
+          "max": 56.4
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "intelarca77016gb",
+      "name": "Intel Arc A770 16GB",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-legacy": {
+          "min": 49.9,
+          "max": 49.9
+        },
+        "gpu-legacy-medium": {
+          "min": 59.4,
+          "max": 59.4
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "intelarca7708gb",
+      "name": "Intel Arc A770 8GB",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 48.9,
+          "max": 48.9
+        },
+        "gpu-legacy-medium": {
+          "min": 59,
+          "max": 59
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "intelarcb570",
+      "name": "Intel Arc B570",
+      "vramMb": 10240,
+      "scores": {
+        "gpu-current": {
+          "min": 31.1,
+          "max": 31.1
+        }
+      },
+      "memorySourceId": "intel-arcb570"
+    },
+    {
+      "id": "intelarcb580",
+      "name": "Intel Arc B580",
+      "vramMb": 12288,
+      "scores": {
+        "gpu-current": {
+          "min": 35.1,
+          "max": 35.1
+        }
+      },
+      "memorySourceId": "intel-arcb580"
+    },
+    {
+      "id": "radeonr9390",
+      "name": "Radeon R9 390",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 19.3,
+          "max": 19.3
+        },
+        "gpu-legacy-medium": {
+          "min": 26.1,
+          "max": 26.1
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonr9furyx",
+      "name": "Radeon R9 Fury X",
+      "vramMb": 4096,
+      "scores": {
+        "gpu-legacy": {
+          "min": 22.9,
+          "max": 22.9
+        },
+        "gpu-legacy-medium": {
+          "min": 32.6,
+          "max": 32.6
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx5504gb",
+      "name": "Radeon RX 550 4GB",
+      "vramMb": 4096,
+      "scores": {
+        "gpu-legacy-medium": {
+          "min": 10,
+          "max": 10
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx5500xt4gb",
+      "name": "Radeon RX 5500 XT 4GB",
+      "vramMb": 4096,
+      "scores": {
+        "gpu-legacy": {
+          "min": 21.6,
+          "max": 21.6
+        },
+        "gpu-legacy-medium": {
+          "min": 34.1,
+          "max": 34.1
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx5500xt8gb",
+      "name": "Radeon RX 5500 XT 8GB",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 25.7,
+          "max": 25.7
+        },
+        "gpu-legacy-medium": {
+          "min": 36.8,
+          "max": 36.8
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx5604gb",
+      "name": "Radeon RX 560 4GB",
+      "vramMb": 4096,
+      "scores": {
+        "gpu-legacy": {
+          "min": 9.6,
+          "max": 9.6
+        },
+        "gpu-legacy-medium": {
+          "min": 16.2,
+          "max": 16.2
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx5600xt",
+      "name": "Radeon RX 5600 XT",
+      "vramMb": 6144,
+      "scores": {
+        "gpu-legacy": {
+          "min": 37.5,
+          "max": 37.5
+        },
+        "gpu-legacy-medium": {
+          "min": 51.1,
+          "max": 51.1
+        }
+      },
+      "memorySourceId": "xfx-rx5600xt"
+    },
+    {
+      "id": "radeonrx5704gb",
+      "name": "Radeon RX 570 4GB",
+      "vramMb": 4096,
+      "scores": {
+        "gpu-legacy": {
+          "min": 18.2,
+          "max": 18.2
+        },
+        "gpu-legacy-medium": {
+          "min": 27.4,
+          "max": 27.4
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx5700",
+      "name": "Radeon RX 5700",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 41.9,
+          "max": 41.9
+        },
+        "gpu-legacy-medium": {
+          "min": 56.6,
+          "max": 56.6
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx5700xt",
+      "name": "Radeon RX 5700 XT",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 47.6,
+          "max": 47.6
+        },
+        "gpu-legacy-medium": {
+          "min": 63.8,
+          "max": 63.8
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx5808gb",
+      "name": "Radeon RX 580 8GB",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 22.9,
+          "max": 22.9
+        },
+        "gpu-legacy-medium": {
+          "min": 31.5,
+          "max": 31.5
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx590",
+      "name": "Radeon RX 590",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 25.5,
+          "max": 25.5
+        },
+        "gpu-legacy-medium": {
+          "min": 35,
+          "max": 35
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx6400",
+      "name": "Radeon RX 6400",
+      "vramMb": 4096,
+      "scores": {
+        "gpu-legacy": {
+          "min": 15.7,
+          "max": 15.7
+        },
+        "gpu-legacy-medium": {
+          "min": 26.1,
+          "max": 26.1
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx6500xt4gb",
+      "name": "Radeon RX 6500 XT 4GB",
+      "vramMb": 4096,
+      "scores": {
+        "gpu-legacy": {
+          "min": 19.9,
+          "max": 19.9
+        },
+        "gpu-legacy-medium": {
+          "min": 33.6,
+          "max": 33.6
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx6600",
+      "name": "Radeon RX 6600",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-current": {
+          "min": 25.5,
+          "max": 25.5
+        },
+        "gpu-legacy": {
+          "min": 42.3,
+          "max": 42.3
+        },
+        "gpu-legacy-medium": {
+          "min": 59.3,
+          "max": 59.3
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx6600xt",
+      "name": "Radeon RX 6600 XT",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-current": {
+          "min": 30.8,
+          "max": 30.8
+        },
+        "gpu-legacy": {
+          "min": 48.5,
+          "max": 48.5
+        },
+        "gpu-legacy-medium": {
+          "min": 68.2,
+          "max": 68.2
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx6650xt",
+      "name": "Radeon RX 6650 XT",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-current": {
+          "min": 31.5,
+          "max": 31.5
+        },
+        "gpu-legacy": {
+          "min": 50.4,
+          "max": 50.4
+        },
+        "gpu-legacy-medium": {
+          "min": 70,
+          "max": 70
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx670010gb",
+      "name": "Radeon RX 6700 10GB",
+      "vramMb": 10240,
+      "scores": {
+        "gpu-legacy": {
+          "min": 55.9,
+          "max": 55.9
+        },
+        "gpu-legacy-medium": {
+          "min": 74.4,
+          "max": 74.4
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx6700xt",
+      "name": "Radeon RX 6700 XT",
+      "vramMb": 12288,
+      "scores": {
+        "gpu-current": {
+          "min": 38.9,
+          "max": 38.9
+        },
+        "gpu-legacy": {
+          "min": 64.3,
+          "max": 64.3
+        },
+        "gpu-legacy-medium": {
+          "min": 80.8,
+          "max": 80.8
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx6750xt",
+      "name": "Radeon RX 6750 XT",
+      "vramMb": 12288,
+      "scores": {
+        "gpu-current": {
+          "min": 40.8,
+          "max": 40.8
+        },
+        "gpu-legacy": {
+          "min": 66.8,
+          "max": 66.8
+        },
+        "gpu-legacy-medium": {
+          "min": 82.6,
+          "max": 82.6
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx6800",
+      "name": "Radeon RX 6800",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-legacy": {
+          "min": 74.4,
+          "max": 74.4
+        },
+        "gpu-legacy-medium": {
+          "min": 86.2,
+          "max": 86.2
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx6800xt",
+      "name": "Radeon RX 6800 XT",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 54.9,
+          "max": 54.9
+        },
+        "gpu-legacy": {
+          "min": 79.6,
+          "max": 79.6
+        },
+        "gpu-legacy-medium": {
+          "min": 88.5,
+          "max": 88.5
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx6900xt",
+      "name": "Radeon RX 6900 XT",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 57.4,
+          "max": 57.4
+        },
+        "gpu-legacy": {
+          "min": 80.9,
+          "max": 80.9
+        },
+        "gpu-legacy-medium": {
+          "min": 89.6,
+          "max": 89.6
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx6950xt",
+      "name": "Radeon RX 6950 XT",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 60.5,
+          "max": 60.5
+        },
+        "gpu-legacy": {
+          "min": 84.7,
+          "max": 84.7
+        },
+        "gpu-legacy-medium": {
+          "min": 91.7,
+          "max": 91.7
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx7600",
+      "name": "Radeon RX 7600",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-current": {
+          "min": 34.3,
+          "max": 34.3
+        },
+        "gpu-legacy": {
+          "min": 53.2,
+          "max": 53.2
+        },
+        "gpu-legacy-medium": {
+          "min": 72.3,
+          "max": 72.3
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx7600xt",
+      "name": "Radeon RX 7600 XT",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 50.1,
+          "max": 50.1
+        },
+        "gpu-legacy": {
+          "min": 59.7,
+          "max": 59.7
+        },
+        "gpu-legacy-medium": {
+          "min": 77.3,
+          "max": 77.3
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx7700xt",
+      "name": "Radeon RX 7700 XT",
+      "vramMb": 12288,
+      "scores": {
+        "gpu-current": {
+          "min": 50.5,
+          "max": 50.5
+        },
+        "gpu-legacy": {
+          "min": 75.3,
+          "max": 75.3
+        },
+        "gpu-legacy-medium": {
+          "min": 87.7,
+          "max": 87.7
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx7800xt",
+      "name": "Radeon RX 7800 XT",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 58.1,
+          "max": 58.1
+        },
+        "gpu-legacy": {
+          "min": 83.9,
+          "max": 83.9
+        },
+        "gpu-legacy-medium": {
+          "min": 91.5,
+          "max": 91.5
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx7900gre",
+      "name": "Radeon RX 7900 GRE",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-legacy": {
+          "min": 88.1,
+          "max": 88.1
+        },
+        "gpu-legacy-medium": {
+          "min": 94.1,
+          "max": 94.1
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx7900xt",
+      "name": "Radeon RX 7900 XT",
+      "vramMb": 20480,
+      "scores": {
+        "gpu-current": {
+          "min": 71.3,
+          "max": 71.3
+        },
+        "gpu-legacy": {
+          "min": 93.4,
+          "max": 93.4
+        },
+        "gpu-legacy-medium": {
+          "min": 95.8,
+          "max": 95.8
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx7900xtx",
+      "name": "Radeon RX 7900 XTX",
+      "vramMb": 24576,
+      "scores": {
+        "gpu-current": {
+          "min": 79.3,
+          "max": 79.3
+        },
+        "gpu-legacy": {
+          "min": 96.7,
+          "max": 96.7
+        },
+        "gpu-legacy-medium": {
+          "min": 97.2,
+          "max": 97.2
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrx9060xt16gb",
+      "name": "Radeon RX 9060 XT 16GB",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 48.2,
+          "max": 48.2
+        }
+      },
+      "memorySourceId": "gpu-current"
+    },
+    {
+      "id": "radeonrx9060xt8gb",
+      "name": "Radeon RX 9060 XT 8GB",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-current": {
+          "min": 45.7,
+          "max": 45.7
+        }
+      },
+      "memorySourceId": "gpu-current"
+    },
+    {
+      "id": "radeonrx9070",
+      "name": "Radeon RX 9070",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 69.1,
+          "max": 69.1
+        }
+      },
+      "memorySourceId": "amd-rx9070"
+    },
+    {
+      "id": "radeonrx9070gre",
+      "name": "Radeon RX 9070 GRE",
+      "vramMb": 12288,
+      "scores": {
+        "gpu-current": {
+          "min": 59.2,
+          "max": 59.2
+        }
+      },
+      "memorySourceId": "amd-rx9070gre"
+    },
+    {
+      "id": "radeonrx9070xt",
+      "name": "Radeon RX 9070 XT",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-current": {
+          "min": 76.9,
+          "max": 76.9
+        }
+      },
+      "memorySourceId": "amd-rx9070xt"
+    },
+    {
+      "id": "radeonrxvega56",
+      "name": "Radeon RX Vega 56",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 32.8,
+          "max": 32.8
+        },
+        "gpu-legacy-medium": {
+          "min": 43,
+          "max": 43
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonrxvega64",
+      "name": "Radeon RX Vega 64",
+      "vramMb": 8192,
+      "scores": {
+        "gpu-legacy": {
+          "min": 36.8,
+          "max": 36.8
+        },
+        "gpu-legacy-medium": {
+          "min": 48.2,
+          "max": 48.2
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    },
+    {
+      "id": "radeonvii",
+      "name": "Radeon VII",
+      "vramMb": 16384,
+      "scores": {
+        "gpu-legacy": {
+          "min": 45.1,
+          "max": 45.1
+        },
+        "gpu-legacy-medium": {
+          "min": 58.2,
+          "max": 58.2
+        }
+      },
+      "memorySourceId": "gpu-legacy-medium"
+    }
+  ],
+  "cpu": [
+    {
+      "id": "corei310100",
+      "name": "Core i3-10100",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 61.88,
+          "max": 61.88
+        }
+      }
+    },
+    {
+      "id": "corei38100",
+      "name": "Core i3-8100",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 48.43,
+          "max": 48.43
+        }
+      }
+    },
+    {
+      "id": "corei38350k",
+      "name": "Core i3-8350K",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 53.84,
+          "max": 53.84
+        }
+      }
+    },
+    {
+      "id": "corei39100",
+      "name": "Core i3-9100",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 51.96,
+          "max": 51.96
+        }
+      }
+    },
+    {
+      "id": "corei39350kf",
+      "name": "Core i3-9350KF",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 56.42,
+          "max": 56.42
+        }
+      }
+    },
+    {
+      "id": "corei510600k",
+      "name": "Core i5-10600K",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 75.42,
+          "max": 75.42
+        }
+      }
+    },
+    {
+      "id": "corei511400",
+      "name": "Core i5-11400",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 80.98,
+          "max": 80.98
+        }
+      }
+    },
+    {
+      "id": "corei511600k",
+      "name": "Core i5-11600K",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 84.06,
+          "max": 84.06
+        }
+      }
+    },
+    {
+      "id": "corei512400",
+      "name": "Core i5-12400",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win11": {
+          "min": 66.62,
+          "max": 66.62
+        }
+      }
+    },
+    {
+      "id": "corei512600k",
+      "name": "Core i5-12600K",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 60.8,
+          "max": 60.8
+        },
+        "cpu-legacy-win10": {
+          "min": 84.32,
+          "max": 90.89
+        }
+      }
+    },
+    {
+      "id": "corei513600k",
+      "name": "Core i5-13600K",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 70.9,
+          "max": 70.9
+        },
+        "cpu-legacy-win11": {
+          "min": 90.03,
+          "max": 90.03
+        }
+      }
+    },
+    {
+      "id": "corei514400",
+      "name": "Core i5-14400",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 58,
+          "max": 58
+        }
+      }
+    },
+    {
+      "id": "corei514600k",
+      "name": "Core i5-14600K",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 72.8,
+          "max": 72.8
+        }
+      }
+    },
+    {
+      "id": "corei58400",
+      "name": "Core i5-8400",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 63.96,
+          "max": 63.96
+        }
+      }
+    },
+    {
+      "id": "corei58600k",
+      "name": "Core i5-8600K",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 65.84,
+          "max": 65.84
+        }
+      }
+    },
+    {
+      "id": "corei59600k",
+      "name": "Core i5-9600K",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 67.06,
+          "max": 67.06
+        }
+      }
+    },
+    {
+      "id": "corei710700k",
+      "name": "Core i7-10700K",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 80.66,
+          "max": 80.66
+        }
+      }
+    },
+    {
+      "id": "corei711700k",
+      "name": "Core i7-11700K",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 86.3,
+          "max": 86.3
+        }
+      }
+    },
+    {
+      "id": "corei712700k",
+      "name": "Core i7-12700K",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 65.8,
+          "max": 65.8
+        },
+        "cpu-legacy-win10": {
+          "min": 91.23,
+          "max": 97.71
+        }
+      }
+    },
+    {
+      "id": "corei713700k",
+      "name": "Core i7-13700K",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 75.8,
+          "max": 75.8
+        },
+        "cpu-legacy-win11": {
+          "min": 96.09,
+          "max": 96.09
+        }
+      }
+    },
+    {
+      "id": "corei714700k",
+      "name": "Core i7-14700K",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 76.4,
+          "max": 76.4
+        }
+      }
+    },
+    {
+      "id": "corei78086k",
+      "name": "Core i7-8086K",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 65.05,
+          "max": 65.05
+        }
+      }
+    },
+    {
+      "id": "corei78700",
+      "name": "Core i7-8700",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 65.57,
+          "max": 65.57
+        }
+      }
+    },
+    {
+      "id": "corei78700k",
+      "name": "Core i7-8700K",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 68.47,
+          "max": 68.47
+        }
+      }
+    },
+    {
+      "id": "corei79700k",
+      "name": "Core i7-9700K",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 73.62,
+          "max": 73.62
+        }
+      }
+    },
+    {
+      "id": "corei910850k",
+      "name": "Core i9-10850K",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 84.6,
+          "max": 84.6
+        }
+      }
+    },
+    {
+      "id": "corei910900k",
+      "name": "Core i9-10900K",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 85.01,
+          "max": 85.01
+        }
+      }
+    },
+    {
+      "id": "corei910980xe",
+      "name": "Core i9-10980XE",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 78.04,
+          "max": 78.04
+        }
+      }
+    },
+    {
+      "id": "corei911900k",
+      "name": "Core i9-11900K",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 92.48,
+          "max": 92.48
+        }
+      }
+    },
+    {
+      "id": "corei912900k",
+      "name": "Core i9-12900K",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 93.51,
+          "max": 100
+        }
+      }
+    },
+    {
+      "id": "corei913900k",
+      "name": "Core i9-13900K",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 76.8,
+          "max": 76.8
+        },
+        "cpu-legacy-win11": {
+          "min": 100,
+          "max": 100
+        }
+      }
+    },
+    {
+      "id": "corei914900k",
+      "name": "Core i9-14900K",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 78.2,
+          "max": 78.2
+        }
+      }
+    },
+    {
+      "id": "corei99900ks",
+      "name": "Core i9-9900KS",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 76.12,
+          "max": 76.12
+        }
+      }
+    },
+    {
+      "id": "coreultra5225",
+      "name": "Core Ultra 5 225",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 62.5,
+          "max": 62.5
+        }
+      }
+    },
+    {
+      "id": "coreultra5245k",
+      "name": "Core Ultra 5 245K",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 67.1,
+          "max": 67.1
+        }
+      }
+    },
+    {
+      "id": "coreultra5250kplus",
+      "name": "Core Ultra 5 250K Plus",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 73.3,
+          "max": 73.3
+        }
+      }
+    },
+    {
+      "id": "coreultra7265k",
+      "name": "Core Ultra 7 265K",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 70.3,
+          "max": 70.3
+        }
+      }
+    },
+    {
+      "id": "coreultra7270kplus",
+      "name": "Core Ultra 7 270K Plus",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 77.5,
+          "max": 77.5
+        }
+      }
+    },
+    {
+      "id": "coreultra9285k",
+      "name": "Core Ultra 9 285K",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 71.8,
+          "max": 71.8
+        }
+      }
+    },
+    {
+      "id": "ryzen32200g",
+      "name": "Ryzen 3 2200G",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 42.16,
+          "max": 42.16
+        }
+      }
+    },
+    {
+      "id": "ryzen33100",
+      "name": "Ryzen 3 3100",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 57.75,
+          "max": 57.75
+        }
+      }
+    },
+    {
+      "id": "ryzen33200g",
+      "name": "Ryzen 3 3200G",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 45.96,
+          "max": 45.96
+        }
+      }
+    },
+    {
+      "id": "ryzen33300x",
+      "name": "Ryzen 3 3300X",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 67.49,
+          "max": 67.49
+        }
+      }
+    },
+    {
+      "id": "ryzen35300g",
+      "name": "Ryzen 3 5300G",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 55.54,
+          "max": 55.54
+        }
+      }
+    },
+    {
+      "id": "ryzen51600x",
+      "name": "Ryzen 5 1600X",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 49.99,
+          "max": 49.99
+        }
+      }
+    },
+    {
+      "id": "ryzen52400g",
+      "name": "Ryzen 5 2400G",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 44.84,
+          "max": 44.84
+        }
+      }
+    },
+    {
+      "id": "ryzen52600x",
+      "name": "Ryzen 5 2600X",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 57.55,
+          "max": 57.55
+        }
+      }
+    },
+    {
+      "id": "ryzen53400g",
+      "name": "Ryzen 5 3400G",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 48.81,
+          "max": 48.81
+        }
+      }
+    },
+    {
+      "id": "ryzen53600",
+      "name": "Ryzen 5 3600",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 68.63,
+          "max": 68.63
+        }
+      }
+    },
+    {
+      "id": "ryzen53600x",
+      "name": "Ryzen 5 3600X",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 68.41,
+          "max": 68.41
+        }
+      }
+    },
+    {
+      "id": "ryzen53600xt",
+      "name": "Ryzen 5 3600XT",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 70.62,
+          "max": 70.62
+        }
+      }
+    },
+    {
+      "id": "ryzen55600g",
+      "name": "Ryzen 5 5600G",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 71.99,
+          "max": 71.99
+        }
+      }
+    },
+    {
+      "id": "ryzen55600x",
+      "name": "Ryzen 5 5600X",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win11": {
+          "min": 67.52,
+          "max": 67.52
+        },
+        "cpu-legacy-win10": {
+          "min": 88.51,
+          "max": 88.51
+        }
+      }
+    },
+    {
+      "id": "ryzen57600",
+      "name": "Ryzen 5 7600",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win11": {
+          "min": 79.74,
+          "max": 79.74
+        }
+      }
+    },
+    {
+      "id": "ryzen57600x",
+      "name": "Ryzen 5 7600X",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 67.3,
+          "max": 67.3
+        },
+        "cpu-legacy-win11": {
+          "min": 83.62,
+          "max": 83.62
+        }
+      }
+    },
+    {
+      "id": "ryzen57600x3d",
+      "name": "Ryzen 5 7600X3D",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 80.6,
+          "max": 80.6
+        }
+      }
+    },
+    {
+      "id": "ryzen59600x",
+      "name": "Ryzen 5 9600X",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 72.6,
+          "max": 72.6
+        }
+      }
+    },
+    {
+      "id": "ryzen71800x",
+      "name": "Ryzen 7 1800X",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 53.86,
+          "max": 53.86
+        }
+      }
+    },
+    {
+      "id": "ryzen72700x",
+      "name": "Ryzen 7 2700X",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 59.19,
+          "max": 59.19
+        }
+      }
+    },
+    {
+      "id": "ryzen73700x",
+      "name": "Ryzen 7 3700X",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 71.43,
+          "max": 71.43
+        }
+      }
+    },
+    {
+      "id": "ryzen73800x",
+      "name": "Ryzen 7 3800X",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 71.3,
+          "max": 71.3
+        }
+      }
+    },
+    {
+      "id": "ryzen73800xt",
+      "name": "Ryzen 7 3800XT",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 71.78,
+          "max": 71.78
+        }
+      }
+    },
+    {
+      "id": "ryzen74750g",
+      "name": "Ryzen 7 4750G",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 58.43,
+          "max": 58.43
+        }
+      }
+    },
+    {
+      "id": "ryzen75700g",
+      "name": "Ryzen 7 5700G",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 76.61,
+          "max": 76.61
+        }
+      }
+    },
+    {
+      "id": "ryzen75700x",
+      "name": "Ryzen 7 5700X",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win11": {
+          "min": 69.5,
+          "max": 69.5
+        }
+      }
+    },
+    {
+      "id": "ryzen75800x",
+      "name": "Ryzen 7 5800X",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win11": {
+          "min": 70.9,
+          "max": 70.9
+        },
+        "cpu-legacy-win10": {
+          "min": 86.85,
+          "max": 86.85
+        }
+      }
+    },
+    {
+      "id": "ryzen75800x3d",
+      "name": "Ryzen 7 5800X3D",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win11": {
+          "min": 94.42,
+          "max": 94.42
+        }
+      }
+    },
+    {
+      "id": "ryzen77700",
+      "name": "Ryzen 7 7700",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win11": {
+          "min": 86.19,
+          "max": 86.19
+        }
+      }
+    },
+    {
+      "id": "ryzen77700x",
+      "name": "Ryzen 7 7700X",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 70.6,
+          "max": 70.6
+        },
+        "cpu-legacy-win11": {
+          "min": 87.13,
+          "max": 87.13
+        }
+      }
+    },
+    {
+      "id": "ryzen77800x3d",
+      "name": "Ryzen 7 7800X3D",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 85.6,
+          "max": 85.6
+        }
+      }
+    },
+    {
+      "id": "ryzen79800x3d",
+      "name": "Ryzen 7 9800X3D",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 97,
+          "max": 97
+        }
+      }
+    },
+    {
+      "id": "ryzen79850x3d",
+      "name": "Ryzen 7 9850X3D",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 100,
+          "max": 100
+        }
+      }
+    },
+    {
+      "id": "ryzen93900xt",
+      "name": "Ryzen 9 3900XT",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 71.67,
+          "max": 71.67
+        }
+      }
+    },
+    {
+      "id": "ryzen93950x",
+      "name": "Ryzen 9 3950X",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win10": {
+          "min": 72.63,
+          "max": 72.63
+        }
+      }
+    },
+    {
+      "id": "ryzen95900x",
+      "name": "Ryzen 9 5900X",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win11": {
+          "min": 71.69,
+          "max": 71.69
+        },
+        "cpu-legacy-win10": {
+          "min": 90.98,
+          "max": 90.98
+        }
+      }
+    },
+    {
+      "id": "ryzen95950x",
+      "name": "Ryzen 9 5950X",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win11": {
+          "min": 72.04,
+          "max": 72.04
+        },
+        "cpu-legacy-win10": {
+          "min": 90.22,
+          "max": 90.22
+        }
+      }
+    },
+    {
+      "id": "ryzen97900",
+      "name": "Ryzen 9 7900",
+      "vramMb": null,
+      "scores": {
+        "cpu-legacy-win11": {
+          "min": 84.75,
+          "max": 84.75
+        }
+      }
+    },
+    {
+      "id": "ryzen97900x",
+      "name": "Ryzen 9 7900X",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 69.2,
+          "max": 69.2
+        },
+        "cpu-legacy-win11": {
+          "min": 87.4,
+          "max": 87.4
+        }
+      }
+    },
+    {
+      "id": "ryzen97950x",
+      "name": "Ryzen 9 7950X",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 71,
+          "max": 71
+        },
+        "cpu-legacy-win11": {
+          "min": 87.25,
+          "max": 87.25
+        }
+      }
+    },
+    {
+      "id": "ryzen97950x3d",
+      "name": "Ryzen 9 7950X3D",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 83.9,
+          "max": 83.9
+        }
+      }
+    },
+    {
+      "id": "ryzen99900x",
+      "name": "Ryzen 9 9900X",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 73.9,
+          "max": 73.9
+        }
+      }
+    },
+    {
+      "id": "ryzen99900x3d",
+      "name": "Ryzen 9 9900X3D",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 86.9,
+          "max": 86.9
+        }
+      }
+    },
+    {
+      "id": "ryzen99950x",
+      "name": "Ryzen 9 9950X",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 76.9,
+          "max": 76.9
+        }
+      }
+    },
+    {
+      "id": "ryzen99950x3d",
+      "name": "Ryzen 9 9950X3D",
+      "vramMb": null,
+      "scores": {
+        "cpu-current": {
+          "min": 95.7,
+          "max": 95.7
+        }
+      }
+    }
+  ]
+}

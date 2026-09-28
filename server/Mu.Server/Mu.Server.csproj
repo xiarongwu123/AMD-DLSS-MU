@@ -5,6 +5,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../src/CompatibilityModels.cs" Link="CompatibilityModels.cs" />
+    <EmbeddedResource Include="Data/Catalog/steam-games.json" />
+    <EmbeddedResource Include="Data/Catalog/technology-references.json" Condition="Exists('Data/Catalog/technology-references.json')" />
+    <EmbeddedResource Include="Data/Catalog/steam-requirements.json" Condition="Exists('Data/Catalog/steam-requirements.json')" />
+    <EmbeddedResource Include="Data/Catalog/optiscaler-compatibility.json" Condition="Exists('Data/Catalog/optiscaler-compatibility.json')" />
+    <InternalsVisibleTo Include="Mu.Server.Tests" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
   </ItemGroup>

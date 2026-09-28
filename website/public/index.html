@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="AMD DLSS MU 2.0 更新：DLSS-NR 性能提升约 40%，新增大力喜鹊窗口缩放，界面与交互全面升级。下载 Windows x64 正式版并查看完整更新公告。">
+  <meta name="theme-color" content="#070b12">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/app.css?v=20260927-v2">
+  <title>AMD DLSS MU · 游戏图形组件配置助手</title>
+  <link rel="stylesheet" href="/assets/compatibility.css?v=20260928-hardware">
+</head>
+<body data-page="home">
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="AMD DLSS MU 首页">
+      <img src="/assets/logo.png" alt="" width="50" height="50">
+      <span><b>AMD DLSS</b><em>MU</em></span>
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="main-nav"><span></span><span></span><span></span><span class="sr-only">展开导航</span></button>
+    <nav id="main-nav" class="main-nav" aria-label="主导航">
+      <a data-nav="home" href="/">官网介绍</a><a data-nav="compatibility" href="/compatibility">兼容查询</a>
+      <a data-nav="download" href="/download">下载</a>
+      <a data-nav="guide" href="/guide">使用说明</a>
+      <a data-nav="feedback" href="/feedback">用户反馈</a><a data-nav="survey" href="/survey">Pro 功能调研</a>
+    </nav>
+    <a class="header-cta" href="/download">下载 <span data-release-version>v2.0.1</span> <span>↘</span></a>
+  </header>
+
+  <main>
+    <section class="section-shell compat-home" aria-labelledby="home-compat-title">
+      <p class="eyebrow">PC GAME CHECK / 我的电脑能玩吗</p>
+      <h2 id="home-compat-title">选游戏，查配置，看看你的电脑能不能玩。</h2>
+      <p>搜索 2,000+ 款游戏，查看 Steam 官方最低与推荐配置。填入显卡、处理器和内存，参考专业硬件基准对比配置档位，同时查阅 OptiScaler 上游适配与限制。</p>
+      <form class="compat-home-search" action="/compatibility" method="get" role="search">
+        <label class="sr-only" for="home-compat-q">搜索游戏名称或 Steam App ID</label>
+        <input id="home-compat-q" name="q" type="search" maxlength="200" placeholder="搜索游戏，例如 Cyberpunk 2077" autocomplete="off">
+        <button class="button button-primary" type="submit">查询游戏配置 <span aria-hidden="true">↗</span></button>
+      </form>
+      <div class="compat-home-links"><a href="/compatibility">浏览全部游戏目录 →</a><a href="/compatibility#compat-hardware">填写我的电脑配置 →</a></div>
+      <p class="compat-hint">公开查询，无需登录。官方要求、专业基准与上游适配分别注明来源；资料不足时保留未知。</p>
+    </section>
+    <section class="section-shell release-spotlight" aria-labelledby="release-spotlight-title">
+      <div>
+        <p class="eyebrow">NEW RELEASE / <span data-release-channel>正式版</span></p>
+        <h2 id="release-spotlight-title">AMD DLSS MU 2.0.1 下载加速更新</h2>
+        <p>大力喜鹊优先使用 MU 自有镜像，首次下载无需直连 GitHub。</p>
+        <small>保留上游原包与 SHA-256 校验，镜像异常自动回退。</small>
+      </div>
+      <a class="button button-primary" href="/download#release-v2-0-1">查看完整公告 <span>→</span></a>
+    </section>
+    <section class="hero section-shell">
+      <div class="hero-copy reveal">
+        <p class="eyebrow"><span class="pulse-dot"></span> WINDOWS x64 · <span data-release-version>v2.0.1</span> · <span data-release-channel>正式版</span></p>
+        <h1>释放每一帧<br><span>图形潜能</span></h1>
+        <p class="hero-lead">把游戏发现、组件配置、安全恢复、实时状态与诊断整合进一个桌面工具。少走配置弯路，把时间留给游戏。</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="/download">立即下载 <span>↓</span></a>
+          <a class="button button-ghost" href="/guide">查看使用说明 <span>→</span></a>
+        </div>
+        <dl class="hero-stats" aria-label="产品摘要">
+          <div><dt>03</dt><dd>画面优化选择</dd></div>
+          <div><dt>F8</dt><dd>控制面板</dd></div>
+          <div><dt>SHA</dt><dd>完整性校验</dd></div>
+        </dl>
+      </div>
+      <div class="hero-visual reveal" aria-label="AMD DLSS MU 产品标识">
+        <div class="hud-corner hud-corner-a"></div><div class="hud-corner hud-corner-b"></div>
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="logo-core"><img src="/assets/logo.png" alt="AMD DLSS MU" width="640" height="640"></div>
+        <div class="hud-tag tag-one"><span>ENGINE</span><b>READY</b></div>
+        <div class="hud-tag tag-two"><span>BUILD</span><b data-release-number>2.0.1</b></div>
+        <div class="power-line"><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+    </section>
+
+    <section class="ticker" aria-label="核心功能">
+      <div>GAME SCAN <i></i> SAFE RESTORE <i></i> LIVE PANEL <i></i> DIAGNOSTICS <i></i> HASH VERIFIED <i></i> GAME SCAN <i></i> SAFE RESTORE <i></i></div>
+    </section>
+
+    <section class="section-shell feature-section">
+      <div class="section-heading reveal">
+        <p class="eyebrow">CORE SYSTEMS / 核心系统</p>
+        <h2>控制简单，边界清楚</h2>
+        <p>所有关键操作围绕“可验证、可恢复、可诊断”设计。</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card feature-card-wide reveal">
+          <span class="card-index">01</span>
+          <div class="feature-icon">⌖</div>
+          <h3>游戏库与快速配置</h3>
+          <p>自动扫描常见游戏目录，也支持拖入文件夹或手动选择游戏 EXE。按游戏分别保存配置记录，切换更清晰。</p>
+          <div class="mini-ui"><span>CYBERPUNK 2077</span><b>已识别</b><i></i></div>
+        </article>
+        <article class="feature-card reveal">
+          <span class="card-index">02</span>
+          <div class="feature-icon">↺</div>
+          <h3>安全恢复</h3>
+          <p>配置前记录原始文件状态；恢复时核验变化，降低覆盖游戏原有组件的风险。</p>
+        </article>
+        <article class="feature-card reveal">
+          <span class="card-index">03</span>
+          <div class="feature-icon">⌁</div>
+          <h3>实时状态与 F8 面板</h3>
+          <p>查看运行状态、打开控制面板，并为兼容环境提供实验性实时调节入口。</p>
+        </article>
+        <article class="feature-card feature-card-wide reveal">
+          <span class="card-index">04</span>
+          <div class="feature-icon">≡</div>
+          <h3>诊断信息一次整理</h3>
+          <p>把安装阶段、日志与关键配置整理成可预览的诊断报告。工具不会自动上传，发送前由你检查内容。</p>
+          <a class="text-link" href="/feedback">提交实测反馈 <span>→</span></a>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-shell mode-section">
+      <div class="mode-intro reveal">
+        <p class="eyebrow">THREE PATHS / 三种优化选择</p>
+        <h2>按游戏环境选择<br>合适的配置路径</h2>
+      </div>
+      <div class="mode-list">
+        <article class="mode-row reveal"><span>MODE 01</span><div><h3>DLSS-NR 神经渲染方案</h3><p>升级至上游 v0.4.0，支持画面风格、曝光与色调调节。上游安装器中的步骤仍需手动完成。</p></div><b class="available">UPDATED</b></article>
+        <article class="mode-row reveal"><span>MODE 02</span><div><h3>OptiScaler 标准方案</h3><p>自动下载固定版本并校验大小与 SHA-256，为兼容游戏提供超分与帧生成配置。</p></div><b class="available">AVAILABLE</b></article>
+        <article class="mode-row reveal"><span>MODE 03</span><div><h3>大力喜鹊窗口缩放</h3><p>一键下载并启动，无需向游戏目录安装代理 DLL。使用 Alt + Shift + A 快速开启或停止，是否允许使用以游戏及反作弊规则为准。</p></div><b class="available">NEW</b></article>
+      </div>
+    </section>
+
+    <section class="section-shell readiness-section">
+      <div class="readiness-panel reveal">
+        <div>
+          <p class="eyebrow">SYSTEM CHECK</p>
+          <h2>开始前只需要确认三件事</h2>
+        </div>
+        <ul class="check-list">
+          <li><span>01</span><div><b>Windows 10 / 11 x64</b><small>安装包已包含运行所需的 .NET 组件</small></div></li>
+          <li><span>02</span><div><b>关闭目标游戏</b><small>配置、切换方案或恢复时不要运行游戏</small></div></li>
+          <li><span>03</span><div><b>先在离线游戏验证</b><small>不要用于绕过反作弊或游戏保护</small></div></li>
+        </ul>
+        <a class="button button-primary" href="/guide">阅读完整说明 <span>→</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-mark"><img src="/assets/logo.png" alt="" width="56" height="56"><div><b>AMD DLSS MU</b><span>独立第三方项目，非 AMD / NVIDIA 官方产品</span></div></div>
+    <div class="footer-links"><a href="/compatibility">兼容查询</a><a href="/download">下载</a><a href="/guide">使用说明</a><a href="/feedback">反馈</a><a href="https://github.com/xiarongwu123/AMD-DLSS-MU" rel="noreferrer">GitHub</a></div>
+    <p>© 2026 codeXia · 商标与第三方组件归各自权利人所有</p>
+  </footer>
+  <link rel="stylesheet" href="/assets/metrics.css?v=20260922-analytics">
+  <script src="/assets/metrics.js?v=20260922-analytics" defer></script>
+  <script src="/assets/app.js?v=20260927-v2" defer></script>
+</body>
+</html>

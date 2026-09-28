@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="提交 AMD DLSS MU 兼容性、错误、性能表现和功能建议反馈。"><meta name="theme-color" content="#070b12">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/app.css?v=20260922-survey1"><title>AMD DLSS MU 用户反馈</title>
+  <link rel="stylesheet" href="/assets/compatibility.css?v=20260927-1">
+</head>
+<body data-page="feedback">
+  <header class="site-header"><a class="brand" href="/" aria-label="AMD DLSS MU 首页"><img src="/assets/logo.png" alt="" width="50" height="50"><span><b>AMD DLSS</b><em>MU</em></span></a><button class="nav-toggle" type="button" aria-expanded="false" aria-controls="main-nav"><span></span><span></span><span></span><span class="sr-only">展开导航</span></button><nav id="main-nav" class="main-nav" aria-label="主导航"><a data-nav="home" href="/">官网介绍</a><a data-nav="compatibility" href="/compatibility">兼容查询</a><a data-nav="download" href="/download">下载</a><a data-nav="guide" href="/guide">使用说明</a><a data-nav="feedback" href="/feedback">用户反馈</a><a data-nav="survey" href="/survey">Pro 功能调研</a></nav><a class="header-cta" href="/download">下载 <span data-release-version>v1.3.0</span> <span>↘</span></a></header>
+  <main>
+    <section class="page-hero section-shell reveal"><p class="eyebrow">FIELD REPORT / 用户反馈</p><h1>把问题讲清楚<br>我们才能更快定位</h1><p>兼容性、异常、性能结果与功能建议都可以提交。请不要填写账号、序列号、完整本机路径等隐私信息。</p></section>
+    <section class="section-shell feedback-layout">
+      <aside class="feedback-aside reveal"><p class="eyebrow">REPORT CHECKLIST</p><h2>高质量反馈包含</h2><ul><li><span>01</span>游戏名称与版本</li><li><span>02</span>显卡与驱动版本</li><li><span>03</span>所选模式与分辨率</li><li><span>04</span>复现步骤与错误表现</li><li><span>05</span>配置前后的帧率</li></ul><div class="privacy-note"><b>隐私提醒</b><p>诊断报告不会由工具自动上传。如需引用，请先检查其中的用户名、目录、日志和其他个人信息。</p></div></aside>
+      <form class="feedback-form reveal" data-feedback-form>
+        <div class="form-status" data-form-status role="status" aria-live="polite"></div>
+        <div class="field-row">
+          <label><span>反馈类型 *</span><select name="category" required><option value="">请选择</option><option value="compatibility">兼容性结果</option><option value="bug">错误 / 崩溃</option><option value="performance">性能表现</option><option value="suggestion">功能建议</option><option value="other">其他</option></select></label>
+          <label><span>使用版本 *</span><input name="appVersion" value="1.3.0" maxlength="30" required></label>
+        </div>
+        <div class="field-row">
+          <label><span>游戏名称与版本 *</span><input name="game" placeholder="例如：Cyberpunk 2077 2.3" maxlength="120" required></label>
+          <label><span>显卡型号 *</span><input name="gpu" placeholder="例如：RX 7900 XT" maxlength="100" required></label>
+        </div>
+        <div class="field-row">
+          <label><span>驱动版本</span><input name="driver" placeholder="例如：Adrenalin 26.x.x" maxlength="80"></label>
+          <label><span>所选模式 *</span><select name="mode" required><option value="">请选择</option><option value="mode1">模式一 · AMD 运行时</option><option value="mode2">模式二 · OptiScaler</option><option value="unknown">不确定</option></select></label>
+        </div>
+        <div class="field-row field-row-three">
+          <label><span>分辨率</span><input name="resolution" placeholder="2560 × 1440" maxlength="40"></label>
+          <label><span>配置前 FPS</span><input name="fpsBefore" inputmode="decimal" placeholder="例如 48" maxlength="12"></label>
+          <label><span>配置后 FPS</span><input name="fpsAfter" inputmode="decimal" placeholder="例如 72" maxlength="12"></label>
+        </div>
+        <label><span>问题描述 / 复现步骤 *</span><textarea name="details" rows="7" maxlength="4000" placeholder="请从启动游戏开始，按顺序描述操作、预期结果和实际结果……" required></textarea><small><b data-char-count>0</b> / 4000</small></label>
+        <label><span>联系方式（选填）</span><input name="contact" placeholder="邮箱、微信或 GitHub 用户名" maxlength="120"><small>仅在需要追问细节时使用。</small></label>
+        <label class="honeypot" aria-hidden="true"><span>Website</span><input name="website" tabindex="-1" autocomplete="off"></label>
+        <label class="consent"><input type="checkbox" name="privacyConfirmed" required><span>我已检查内容，不包含密码、令牌、序列号或其他敏感信息。</span></label>
+        <button class="button button-primary submit-button" type="submit">发送反馈 <span>→</span></button>
+      </form>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="footer-mark"><img src="/assets/logo.png" alt="" width="56" height="56"><div><b>AMD DLSS MU</b><span>感谢每一次真实的兼容性反馈</span></div></div><div class="footer-links"><a href="/compatibility">兼容查询</a><a href="/">首页</a><a href="/download">下载</a><a href="/guide">使用说明</a></div><p>© 2026 codeXia</p></footer>
+  <link rel="stylesheet" href="/assets/metrics.css?v=20260922-analytics">
+  <script src="/assets/metrics.js?v=20260922-analytics" defer></script>
+  <script src="/assets/app.js?v=20260922-analytics" defer></script>
+</body>
+</html>

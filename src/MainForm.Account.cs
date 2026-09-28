@@ -121,10 +121,10 @@ public sealed partial class MainForm
             Row(new Label { Text = account.Membership.Tier == "pro" ? "Pro 用户" : "普通用户", ForeColor = Acid, Font = new Font(Font.FontFamily, 21, FontStyle.Bold) }, 55);
             Row(new Label { Text = account.Membership.ExpiresAt is { } expiry ? "Pro 有效期至 " + expiry.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : account.Membership.Tier == "pro" ? "Pro 长期有效" : "当前账户使用普通用户权限。", ForeColor = Muted }, 44);
             Row(new Label { Text = accountClient.IsOnline ? "已联网验证" : "连接中断：重新联网验证后可使用功能。", ForeColor = accountClient.IsOnline ? Acid : Muted }, 44);
-            ButtonRow(accountClient.IsOnline ? "进入游戏库 →" : "重新连接账户服务", async (_, _) => await RunAccountActionAsync(async () =>
+            ButtonRow(accountClient.IsOnline ? "查看游戏兼容性 →" : "重新连接账户服务", async (_, _) => await RunAccountActionAsync(async () =>
             {
                 await accountClient.HeartbeatAsync(lifetime.Token); accountFeedback = "账户状态已更新。";
-                if (await RequireFeatureAsync("library.manage")) { SwitchPage(0); if (libraryGames.Count == 0) await ScanGamesAsync(); }
+                if (await RequireFeatureAsync("compatibility.read")) { SwitchPage(0); if (libraryGames.Count == 0) await ScanGamesAsync(); }
             }, "正在验证账户…"), true);
             ButtonRow("刷新会员状态", async (_, _) => await RunAccountActionAsync(async () => { await accountClient.HeartbeatAsync(lifetime.Token); accountFeedback = "会员状态已更新。"; }, "正在刷新会员状态…"));
             Row(new Label { Text = "Pro 购买暂未开放。开通方式与可用权益将以正式上线内容为准。", ForeColor = Muted }, 64);

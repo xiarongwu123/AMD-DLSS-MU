@@ -12,7 +12,8 @@ public sealed class AccountService(AppDbContext db, UserManager<ApplicationUser>
 {
     public const string TermsVersion = "2026-09-26";
     public static readonly string[] InitialFeatures = ["library.manage", "dlss.configure", "optiscaler.configure",
-        "magpie.launch", "game.launch", "game.restore", "configuration.edit", "diagnostics.use", "app.update"];
+        "magpie.launch", "game.launch", "game.restore", "configuration.edit", "diagnostics.use", "app.update",
+        "compatibility.read", "compatibility.submit", "compatibility.public.read"];
     public long Now => clock.GetUtcNow().ToUnixTimeSeconds();
     public static string HashToken(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
     private static string Token() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
