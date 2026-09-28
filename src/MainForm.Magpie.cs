@@ -140,7 +140,7 @@ public sealed partial class MainForm
             };
             steps.Controls.Add(step, 0, i + 1);
         }
-        steps.Controls.Add(new Label { Text = "默认 Lanczos 缩放；不会自动开启 DLSS 或补帧。", Dock = DockStyle.Fill, ForeColor = Muted,
+        steps.Controls.Add(new Label { Text = "默认 DLSSNR AI Filter；需兼容显卡及运行组件，不默认补帧。", Dock = DockStyle.Fill, ForeColor = Muted,
             Font = new Font(Font.FontFamily, 9f), Padding = new Padding(5, 0, 0, 0) }, 0, 4);
         instructions.Controls.Add(steps); body.Controls.Add(instructions, 1, 1);
         var configured = new RoundedPanel { Dock = DockStyle.Fill, Radius = 20, BackColor = Surface, BorderColor = Line, Padding = new Padding(18), Margin = new Padding(0, 0, 18, 16) };

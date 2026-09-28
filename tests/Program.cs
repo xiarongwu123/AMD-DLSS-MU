@@ -1,5 +1,6 @@
 using AmdNrAssistant;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 var root = Path.Combine(Path.GetTempPath(), "amd-management-tests-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
@@ -126,8 +127,46 @@ Assert(MagpieIntegration.SafeEntryPath(magpieRoot, "effects/Lanczos.hlsl") == Pa
 using (var config = JsonDocument.Parse(MagpieIntegration.ConfigJson))
 {
     Assert(config.RootElement.GetProperty("shortcuts").GetProperty("scale").GetInt32() == (0x400 | 0x800 | 65), "Magpie shortcut is Alt Shift A");
-    Assert(config.RootElement.GetProperty("scalingModes")[0].GetProperty("effects")[0].GetProperty("scalingType").GetInt32() == 1, "Magpie default scales to fit");
+    var mode = config.RootElement.GetProperty("scalingModes")[0];
+    Assert(mode.GetProperty("effects")[0].GetProperty("name").GetString() == MagpieIntegration.DefaultEffect,
+        "Magpie defaults to real DLSSNR AI Filter effect");
+    Assert(!mode.GetProperty("effects")[0].TryGetProperty("scale", out _) &&
+        config.RootElement.GetProperty("profiles")[0].GetProperty("scalingMode").GetInt32() == 0,
+        "Magpie selects AI filter without forced upscaling");
 }
+var migrationApp = Path.Combine(root, "magpie-migration");
+Directory.CreateDirectory(Path.Combine(migrationApp, "effects", "DLSSNR"));
+File.WriteAllText(Path.Combine(migrationApp, "effects", "DLSSNR", "DLSSNR_AI_Filter.hlsl"), "fixture");
+var migrationConfig = Path.Combine(migrationApp, "config", "v4e", "config.json");
+Directory.CreateDirectory(Path.GetDirectoryName(migrationConfig)!);
+File.WriteAllText(migrationConfig, """{"language":"en","scalingModes":[{"name":"Lanczos","effects":[{"name":"Lanczos"}]}],"profiles":[{"scalingMode":0},{"name":"custom","scalingMode":0}]}""");
+MagpieIntegration.EnsureDefaultEffect(migrationApp, default);
+using (var migrated = JsonDocument.Parse(File.ReadAllText(migrationConfig)))
+{
+    Assert(migrated.RootElement.GetProperty("scalingModes").GetArrayLength() == 2 &&
+        migrated.RootElement.GetProperty("profiles")[0].GetProperty("scalingMode").GetInt32() == 1,
+        "existing Magpie default migrates to appended AI filter");
+    Assert(migrated.RootElement.GetProperty("language").GetString() == "en" &&
+        migrated.RootElement.GetProperty("profiles")[1].GetProperty("scalingMode").GetInt32() == 0,
+        "migration preserves user settings and custom profiles");
+}
+Assert(Directory.GetFiles(Path.GetDirectoryName(migrationConfig)!, "*.bak").Length == 1, "migration backs up original config");
+var savedConfig = File.ReadAllText(migrationConfig);
+MagpieIntegration.EnsureDefaultEffect(migrationApp, default);
+Assert(File.ReadAllText(migrationConfig) == savedConfig && Directory.GetFiles(Path.GetDirectoryName(migrationConfig)!, "*.bak").Length == 1,
+    "AI filter migration is one-time and idempotent");
+var userChoice = JsonNode.Parse(savedConfig)!;
+userChoice["profiles"]![0]!["scalingMode"] = 0;
+File.WriteAllText(migrationConfig, userChoice.ToJsonString());
+MagpieIntegration.EnsureDefaultEffect(migrationApp, default);
+Assert(JsonNode.Parse(File.ReadAllText(migrationConfig))!["profiles"]![0]!["scalingMode"]!.GetValue<int>() == 0,
+    "later explicit user choice is not reset on every launch");
+var missingEffectApp = Path.Combine(root, "magpie-missing-filter");
+Directory.CreateDirectory(Path.Combine(missingEffectApp, "config", "v4e"));
+var missingEffectConfig = Path.Combine(missingEffectApp, "config", "v4e", "config.json");
+File.WriteAllText(missingEffectConfig, MagpieIntegration.ConfigJson);
+Reject(() => MagpieIntegration.EnsureDefaultEffect(missingEffectApp, default), "missing AI effect fails visibly instead of falling back to scaling");
+Assert(File.ReadAllText(missingEffectConfig) == MagpieIntegration.ConfigJson, "missing AI effect leaves configuration untouched");
 var magpieExe = Path.Combine(magpieRoot, "Magpie.exe"); File.WriteAllText(magpieExe, "fixture");
 File.WriteAllText(Path.Combine(magpieRoot, "mu-package.json"), JsonSerializer.Serialize(new Dictionary<string, string> { ["Magpie.exe"] = Core.Hash(magpieExe) }));
 Assert(MagpieIntegration.ValidateInstallation(magpieRoot, default) == magpieExe, "Magpie validates recorded components");

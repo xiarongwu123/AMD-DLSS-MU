@@ -33,7 +33,7 @@
 | --- | --- | --- |
 | DLSS-NR on AMD | 使用上游 AMD 神经渲染运行时 | 要求支持的 AMD 显卡、AMD HIP 运行时和 DX12 + FSR 游戏；游戏内开启 FSR，按 `End` 查看菜单 |
 | OptiScaler 标准版 | 超分与帧生成适配 | 根据游戏接口选择 DX11/DX12 或 Vulkan；使用 `Insert` 菜单；具体效果依赖游戏、显卡及组件 |
-| 大力喜鹊 / Magpie | 独立窗口缩放及效果处理 | 游戏使用窗口模式，聚焦游戏后按 `Alt + Shift + A` 开启或停止；默认效果为 Lanczos |
+| 大力喜鹊 / Magpie | 独立窗口 AI 效果处理 | 游戏使用窗口模式，聚焦游戏后按 `Alt + Shift + A` 开启或停止；默认效果为 DLSSNR AI Filter，需兼容显卡及运行组件 |
 
 OptiScaler 和 Magpie 的默认配置不等同于 DLSS 5 神经渲染。宣传图片、安装成功或「已配置」状态也不代表游戏内效果已经生效，需要进入游戏验证。
 

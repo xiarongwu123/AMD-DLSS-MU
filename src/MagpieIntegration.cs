@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace AmdNrAssistant;
 
@@ -11,6 +12,8 @@ public static class MagpieIntegration
     public const string Repository = "https://github.com/SAOG0721/Magpie";
     public const string Sha256 = "efb41e5177a628c0742566a887660a5a50e159f824cbfbf9f0620b2cc3b6803c";
     public const long PackageSize = 489787536;
+    public const string DefaultEffect = "DLSSNR\\DLSSNR_AI_Filter";
+    public const string DefaultModeName = "MU · DLSSNR AI Filter";
     public const string MirrorUrl = "https://amd-dlss-mu.claude-api.cn/mirrors/magpie/" + Tag + "/" + Sha256 + "/Magpie-Experimental-x64.zip";
     public static string Root => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AMD-NR-Assistant", "tools", "Magpie");
     public static string InstallDirectory => Path.Combine(Root, Tag);
@@ -18,7 +21,10 @@ public static class MagpieIntegration
         {
           "language": "zh-cn",
           "shortcuts": { "scale": 3137, "windowedModeScale": 3153 },
-          "scalingModes": [{ "name": "MU · 通用缩放 Lanczos", "effects": [{ "name": "Lanczos", "scalingType": 1, "scale": { "x": 1, "y": 1 } }] }],
+          "scalingModes": [
+            { "name": "MU · DLSSNR AI Filter", "effects": [{ "name": "DLSSNR\\DLSSNR_AI_Filter" }] },
+            { "name": "MU · 通用缩放 Lanczos", "effects": [{ "name": "Lanczos", "scalingType": 1, "scale": { "x": 1, "y": 1 } }] }
+          ],
           "profiles": [{ "scalingMode": 0 }]
         }
         """;
@@ -42,7 +48,12 @@ public static class MagpieIntegration
         // Cross-process lock prevents two launchers from promoting the same installation.
         using var gate = new FileStream(Path.Combine(Root, "install.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         if (Directory.Exists(InstallDirectory))
-            return await Task.Run(() => ValidateInstallation(InstallDirectory, token), token);
+            return await Task.Run(() =>
+            {
+                var installedExe = ValidateInstallation(InstallDirectory, token);
+                EnsureDefaultEffect(Path.GetDirectoryName(installedExe)!, token);
+                return installedExe;
+            }, token);
         var archive = Path.Combine(Root, Tag + ".zip");
         Core.RejectLinks(archive);
         var cached = File.Exists(archive) && new FileInfo(archive).Length == PackageSize &&
@@ -90,12 +101,60 @@ public static class MagpieIntegration
                 if (File.Exists(config)) throw new IOException("上游包含预置配置，请先审核后接入。");
                 Directory.CreateDirectory(Path.GetDirectoryName(config)!);
                 File.WriteAllText(config, ConfigJson);
+                EnsureDefaultEffect(app, token);
                 token.ThrowIfCancellationRequested();
                 Directory.Move(stage, InstallDirectory);
             }, token);
             return await Task.Run(() => ValidateInstallation(InstallDirectory, token), token);
         }
         finally { if (Directory.Exists(stage)) Directory.Delete(stage, true); }
+    }
+
+    // One-time migration: preserve existing effect groups and custom profiles.
+    // The separate marker survives upstream rewriting its JSON (unknown keys are dropped).
+    public static void EnsureDefaultEffect(string appDirectory, CancellationToken token)
+    {
+        var effect = Path.Combine(appDirectory, "effects", "DLSSNR", "DLSSNR_AI_Filter.hlsl");
+        Core.RejectLinks(effect);
+        if (!File.Exists(effect)) throw new IOException("大力喜鹊缺少 DLSSNR AI Filter 效果，未启动；不会静默改用缩放。");
+        var config = Path.Combine(appDirectory, "config", "v4e", "config.json");
+        var marker = Path.Combine(appDirectory, "config", "v4e", "mu-dlssnr-default-v1.json");
+        Core.RejectLinks(config); Core.RejectLinks(marker);
+        if (File.Exists(marker)) return;
+        token.ThrowIfCancellationRequested();
+        var original = File.ReadAllText(config);
+        JsonObject data;
+        try { data = JsonNode.Parse(original) as JsonObject ?? throw new IOException("大力喜鹊配置格式无效。"); }
+        catch (JsonException e) { throw new IOException("大力喜鹊配置无法读取，未覆盖原配置。", e); }
+        if (data["scalingModes"] is not JsonArray modes || data["profiles"] is not JsonArray profiles ||
+            profiles.Count == 0 || profiles[0] is not JsonObject defaultProfile)
+            throw new IOException("大力喜鹊配置结构不匹配，未覆盖原配置。");
+        var index = -1;
+        for (int i = 0; i < modes.Count; i++)
+        {
+            if (modes[i] is JsonObject mode && mode["name"]?.GetValue<string>() == DefaultModeName &&
+                mode["effects"] is JsonArray effects && effects.Count == 1 &&
+                effects[0]?["name"]?.GetValue<string>() == DefaultEffect) { index = i; break; }
+        }
+        if (index < 0)
+        {
+            index = modes.Count;
+            modes.Add(JsonNode.Parse("""{"name":"MU · DLSSNR AI Filter","effects":[{"name":"DLSSNR\\DLSSNR_AI_Filter"}]}"""));
+        }
+        defaultProfile["scalingMode"] = index;
+        var next = data.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        var temporary = config + ".mu-" + Guid.NewGuid().ToString("N");
+        try
+        {
+            File.WriteAllText(temporary, next);
+            token.ThrowIfCancellationRequested();
+            if (File.ReadAllText(config) != original) throw new IOException("大力喜鹊配置被其他程序修改，请退出 Magpie 后重试。");
+            var backup = config + ".before-ai-filter-" + Guid.NewGuid().ToString("N") + ".bak";
+            File.Copy(config, backup, false);
+            File.Move(temporary, config, true);
+            File.WriteAllText(marker, "{\"defaultEffect\":\"DLSSNR\\\\DLSSNR_AI_Filter\",\"version\":1}");
+        }
+        finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
 
     public static string ValidateInstallation(string directory, CancellationToken token)
