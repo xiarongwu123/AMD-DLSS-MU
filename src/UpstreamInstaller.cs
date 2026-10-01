@@ -10,7 +10,7 @@ public sealed class MissingAmdHipRuntimeException : IOException
 }
 
 // Legacy v0.3.1 protocol retained for regression coverage only.
-// The v0.4.0 runner below never uses this stdin protocol.
+// The current graphical installer runner below never uses this stdin protocol.
 public sealed class InstallerProtocol(string gameExe)
 {
     readonly StringBuilder output = new();
@@ -70,7 +70,7 @@ public static class UpstreamInstaller
             throw new IOException("安装器不属于已核验的上游版本，拒绝自动执行。");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromMinutes(20));
-        // v0.4.0 is a graphical installer, not the legacy stdin protocol.
+        // The reviewed release is a graphical installer, not the legacy stdin protocol.
         // Do not invent silent flags or feed confirmations into a GUI process.
         using var process = new Process { StartInfo = CreateStartInfo(installer, gameExe) };
         try
@@ -78,7 +78,7 @@ public static class UpstreamInstaller
             cancellationToken.ThrowIfCancellationRequested();
             if (!process.Start()) throw new IOException("无法启动上游安装器。");
             log($"Started official {Core.ReviewedTag} graphical installer for {gameExe}");
-            progress.Report("请在上游 v0.4.0 安装窗口确认游戏 EXE 并完成安装，然后关闭该窗口；客户端将校验结果。");
+            progress.Report("请在上游 " + Core.ReviewedTag + " 安装窗口确认游戏 EXE 并完成安装，然后关闭该窗口；客户端将校验结果。");
             await process.WaitForExitAsync(timeout.Token);
             if (process.ExitCode != 0) throw new IOException("上游安装器失败，退出码：" + process.ExitCode);
             var check = Core.CheckInstalled(Path.GetDirectoryName(gameExe)!);
