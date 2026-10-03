@@ -213,14 +213,22 @@ public static class GameManagement
         }
         return result.Count > 0 ? result.ToArray() : new[] { "未读取到显卡/驱动信息" };
     }
+    public static bool IsUnsupportedAmdNeuralGpuOnly(IReadOnlyList<string> hardware) =>
+        hardware.Any(h => Regex.IsMatch(h, @"Radeon.*RX\s*[1-5]\d{3}", RegexOptions.IgnoreCase)) &&
+        !hardware.Any(h => Regex.IsMatch(h, @"Radeon.*RX\s*[679]\d{3}", RegexOptions.IgnoreCase));
+
+    public static bool HasRx6000(IReadOnlyList<string> hardware) =>
+        hardware.Any(h => Regex.IsMatch(h, @"Radeon.*RX\s*6\d{3}", RegexOptions.IgnoreCase));
+
     public static Compatibility Check(string exe, bool checkConflicts = true, bool amdNeural = true)
     {
         var details = new List<string>(); bool blocked = false;
         try { Core.ValidateGame(exe); details.Add("EXE：Windows x64"); } catch (Exception e) { blocked = true; details.Add(e.Message); }
         var hardware = Hardware(); details.AddRange(hardware);
-        if (amdNeural && hardware.Any(h => Regex.IsMatch(h, @"Radeon.*RX\s*[1-6]\d{3}", RegexOptions.IgnoreCase)) &&
-            !hardware.Any(h => Regex.IsMatch(h, @"Radeon.*RX\s*[79]\d{3}", RegexOptions.IgnoreCase)))
+        if (amdNeural && IsUnsupportedAmdNeuralGpuOnly(hardware))
         { blocked = true; details.Add("检测到的 Radeon RX 型号不在当前上游支持范围内。"); }
+        if (amdNeural && HasRx6000(hardware))
+            details.Add("RX 6000 系列需要 AMD HIP 7.2 运行时；请在上游安装器中确认依赖已满足，勿跳过缺失警告。");
         if (amdNeural && OperatingSystem.IsWindows() && !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000)) { blocked = true; details.Add("当前运行时要求 Windows 11。"); }
         details.Add("驱动显示的是 Windows 驱动版本；未自动等同 Adrenalin 版本，最低要求需人工核对。");
         var dir = Path.GetDirectoryName(exe)!;
@@ -233,7 +241,7 @@ public static class GameManagement
         if (record is { Phase: not "restored" }) details.Add($"已记录：{ModeName(record.Mode)}，状态 {record.Phase}；切换前请恢复。");
         var evidence = names.Where(n => Regex.IsMatch(n ?? "", "d3d12|fidelityfx|fsr", RegexOptions.IgnoreCase)).ToArray();
         details.Add(evidence.Length > 0 ? "目录中发现 DX12/FSR 相关文件（不证明正在使用）：" + string.Join(", ", evidence) : "未找到 DX12/FSR 文件证据；可能静态链接或位于子目录。");
-        details.Add(amdNeural ? "显卡兼容、实际图形接口和游戏版本尚未实测；RX 9000 为上游主要测试对象，RX 7000 需验证。" : "OptiScaler 标准版：需要兼容的 DLSS/FSR/XeSS 输入；不代表 DLSS 5 神经渲染支持。");
+        details.Add(amdNeural ? "显卡兼容、实际图形接口和游戏版本尚未实测；上游 v0.6.0 新增 RX 6000 支持（需 AMD HIP 7.2），RX 7000 / RX 9000 的实际效果也需验证。" : "OptiScaler 标准版：需要兼容的 DLSS/FSR/XeSS 输入；不代表 DLSS 5 神经渲染支持。");
         return new(blocked, blocked ? "不支持当前安装条件" : "未验证：基础检查通过", details.ToArray());
     }
     // Only lines observed after monitoring starts in this process session are eligible evidence.

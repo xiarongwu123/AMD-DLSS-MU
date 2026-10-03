@@ -22,13 +22,18 @@ string ReleaseJson(string tag, string digest, long size) => JsonSerializer.Seria
         browser_download_url = Core.Repository + "/releases/download/" + tag + "/" + Core.InstallerName,
         digest = "sha256:" + digest, size } }
 });
-Assert(Core.ParseRelease(ReleaseJson(Core.ReviewedTag, Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)).Tag == "v0.5.1", "accept pinned upstream v0.5.1");
+Assert(Core.ParseRelease(ReleaseJson(Core.ReviewedTag, Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)).Tag == "v0.6.0", "accept pinned upstream v0.6.0");
+Reject(() => Core.ParseRelease(ReleaseJson("v0.5.1", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)), "reject superseded v0.5.1 release");
 Reject(() => Core.ParseRelease(ReleaseJson("v0.4.0", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)), "reject previous reviewed release");
 Reject(() => Core.ParseRelease(ReleaseJson("v0.5.0", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)), "reject superseded v0.5.0 release");
 Reject(() => Core.ParseRelease(ReleaseJson("v0.3.0", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)), "reject old runtime release");
 Reject(() => Core.ParseRelease(ReleaseJson("v0.3.1", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)), "reject legacy console installer release");
 Reject(() => Core.ParseRelease(ReleaseJson(Core.ReviewedTag, new string('0', 64), Core.ReviewedInstallerSize)), "reject replaced upstream asset");
 Reject(() => Core.ParseRelease(ReleaseJson(Core.ReviewedTag, Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize + 1)), "reject changed upstream size");
+Assert(!GameManagement.IsUnsupportedAmdNeuralGpuOnly(["AMD Radeon RX 6800 XT"]), "v0.6.0 allows RX 6000");
+Assert(GameManagement.HasRx6000(["AMD Radeon RX 6800 XT"]), "RX 6000 requires HIP 7.2 guidance");
+Assert(GameManagement.IsUnsupportedAmdNeuralGpuOnly(["AMD Radeon RX 5800"]), "older Radeon remains unsupported");
+Assert(!GameManagement.IsUnsupportedAmdNeuralGpuOnly(["AMD Radeon RX 5800", "AMD Radeon RX 7800 XT"]), "supported GPU is not blocked by older secondary GPU");
 var guiStart = UpstreamInstaller.CreateStartInfo("installer.exe", a);
 Assert(!guiStart.CreateNoWindow && !guiStart.RedirectStandardInput && !guiStart.RedirectStandardOutput && !guiStart.RedirectStandardError && guiStart.ArgumentList.Count == 0 && guiStart.Arguments == "", "graphical installer is visible and receives no guessed CLI flags or automatic confirmations");
 Assert(guiStart.WorkingDirectory == dir, "graphical installer starts in selected game directory");
