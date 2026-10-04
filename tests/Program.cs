@@ -12,6 +12,7 @@ Assert(LibraryPaging.ClampPage(2, 3) == 0, "filtering to three games resets out-
 Assert(LibraryPaging.ClampPage(-1, 24) == 0, "previous page cannot go below zero");
 await DownloadTests.Run(root, Assert);
 InstallerProtocolTests.Run(Assert);
+RestoreRegressionTests.Run(root, Assert);
 void Assert(bool ok, string name) { if (!ok) throw new Exception(name); count++; Console.WriteLine("PASS " + name); }
 void Reject(Action act, string name) { try { act(); } catch (IOException) { Assert(true, name); return; } throw new Exception("Expected rejection: " + name); }
 string Game(string name) { var d = Path.Combine(root, name); Directory.CreateDirectory(d); var e = Path.Combine(d, name + ".exe"); File.WriteAllText(e, "fixture"); return e; }
@@ -69,6 +70,39 @@ Reject(() => GameManagement.Restore(a), "corrupt backup rejected"); Assert(File.
 File.WriteAllText(backup, "original"); GameManagement.Restore(a);
 Assert(File.ReadAllText(proxy) == "original" && !File.Exists(Path.Combine(dir, "dlssnr_on_amd.ini")), "restore originals and remove additions");
 GameManagement.Restore(a); Assert(GameManagement.Read(a)?.Phase == "restored", "idempotent restore");
+var conflictGame = Game("conflict");
+var conflictDll = Path.Combine(Path.GetDirectoryName(conflictGame)!, "version.dll");
+File.WriteAllText(conflictDll, "original");
+GameManagement.Begin(conflictGame, 0);
+File.WriteAllText(conflictDll, "installed"); GameManagement.Finish(conflictGame, true);
+File.WriteAllText(conflictDll, "updated");
+var approvedConflicts = GameManagement.RestoreConflicts(conflictGame);
+File.WriteAllText(conflictDll, "changed again");
+Reject(() => GameManagement.Restore(conflictGame, true, approvedConflicts), "stale conflict approval rejected");
+approvedConflicts = GameManagement.RestoreConflicts(conflictGame);
+var conflictBackup = Path.Combine(GameManagement.State(conflictGame), "version.dll.backup");
+File.WriteAllText(conflictBackup, "corrupt");
+Reject(() => GameManagement.Restore(conflictGame, true, approvedConflicts), "conflict approval cannot bypass original backup validation");
+Assert(File.ReadAllText(conflictDll) == "changed again", "failed validation preserves conflict DLL");
+File.WriteAllText(conflictBackup, "original");
+GameManagement.Restore(conflictGame, true, approvedConflicts);
+Assert(File.ReadAllText(conflictDll) == "original", "approved conflict restores original DLL");
+Assert(Directory.GetFiles(GameManagement.State(conflictGame), "version.dll", SearchOption.AllDirectories).Any(p => File.ReadAllText(p) == "changed again"), "conflicting DLL preserved in separate archive");
+var unchangedGame = Game("unchanged");
+var unchangedDll = Path.Combine(Path.GetDirectoryName(unchangedGame)!, "version.dll");
+File.WriteAllText(unchangedDll, "unrelated"); GameManagement.Begin(unchangedGame, 0); GameManagement.Finish(unchangedGame, true);
+File.WriteAllText(unchangedDll, "other mod updated"); GameManagement.Restore(unchangedGame);
+Assert(File.ReadAllText(unchangedDll) == "other mod updated", "unmodified-at-install file is left untouched during restore");
+var addedGame = Game("added-conflict");
+var addedDll = Path.Combine(Path.GetDirectoryName(addedGame)!, "version.dll");
+GameManagement.Begin(addedGame, 0); File.WriteAllText(addedDll, "installed"); GameManagement.Finish(addedGame, true);
+File.WriteAllText(addedDll, "new upstream");
+GameManagement.Restore(addedGame, true, GameManagement.RestoreConflicts(addedGame));
+Assert(!File.Exists(addedDll) && Directory.GetFiles(GameManagement.State(addedGame), "version.dll", SearchOption.AllDirectories).Any(p => File.ReadAllText(p) == "new upstream"), "updated newly-added DLL archived before removal");
+GameManagement.Begin(conflictGame, 0); File.WriteAllText(conflictDll, "installed again"); GameManagement.Finish(conflictGame, true);
+File.Delete(conflictDll);
+GameManagement.Restore(conflictGame, true, GameManagement.RestoreConflicts(conflictGame));
+Assert(File.ReadAllText(conflictDll) == "original", "missing replaced DLL can be restored with approved conflict");
 GameManagement.Begin(b, 1); Reject(() => GameManagement.Restore(b), "interrupted external install fails closed");
 var record = GameManagement.Read(a)!;
 File.WriteAllText(Path.Combine(GameManagement.State(a), "record.json"), JsonSerializer.Serialize(record with { Files = new() { new("../outside.dll", "", "") } }));

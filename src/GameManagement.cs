@@ -104,22 +104,46 @@ public static class GameManagement
         if (!Tracked(name)) throw new IOException("记录包含非法路径。");
         var p = Path.Combine(Path.GetDirectoryName(exe)!, name); Core.RejectLinks(p); return p;
     }
-    public static void Restore(string exe, bool preserveChangedSettings = false)
+    public static Dictionary<string, string> RestoreConflicts(string exe)
+    {
+        var r = Read(exe) ?? throw new IOException("没有可恢复记录。");
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var f in r.Files)
+        {
+            var p = Target(exe, f.Name);
+            if (f.Before == f.After) continue;
+            var current = File.Exists(p) ? Core.Hash(p) : "";
+            if (current != f.Before && current != f.After) result.Add(f.Name, current);
+        }
+        return result;
+    }
+
+    public static void Restore(string exe, bool preserveChangedSettings = false,
+        IReadOnlyDictionary<string, string>? approvedConflicts = null)
     {
         EnsureClosed(exe);
         var r = Read(exe) ?? throw new IOException("没有可恢复记录；旧版安装请使用原安装器卸载。");
+        foreach (var f in r.Files) _ = Target(exe, f.Name);
+        if (r.Phase == "restored") return;
         if (r.Phase == "installing") throw new IOException("检测到安装意外中断。无法确认外部安装器修改范围，请使用原安装器恢复并保留诊断记录。");
-        var changedSettings = new List<string>();
+        var changedSettings = new Dictionary<string, string>();
+        var snapshots = new Dictionary<string, string>();
         // Check all files and all backups before the first mutation; a second attempt is safe.
         foreach (var f in r.Files)
         {
-            var p = Target(exe, f.Name); var current = File.Exists(p) ? Core.Hash(p) : "";
+            var p = Target(exe, f.Name);
+            if (f.Before == f.After) continue;
+            var current = File.Exists(p) ? Core.Hash(p) : "";
+            snapshots.Add(f.Name, current);
             if (current != f.Before && current != f.After)
             {
-                if (preserveChangedSettings && f.After.Length > 0 && current.Length > 0 &&
-                    f.Before != f.After && Path.GetExtension(f.Name).Equals(".ini", StringComparison.OrdinalIgnoreCase))
-                    changedSettings.Add(p);
-                else throw new IOException("文件已被其他程序修改，未执行恢复：" + f.Name);
+                if ((approvedConflicts != null && approvedConflicts.TryGetValue(f.Name, out var approved) && approved == current) ||
+                    (preserveChangedSettings && f.After.Length > 0 && current.Length > 0 &&
+                    Path.GetExtension(f.Name).Equals(".ini", StringComparison.OrdinalIgnoreCase)))
+                {
+                    if (current.Length > 0) changedSettings.Add(f.Name, current);
+                }
+                else throw new IOException("文件与安装记录不一致，未执行恢复：" + f.Name + "。请关闭其他安装器后重新点击恢复配置。");
             }
             if (f.Before.Length > 0)
             {
@@ -131,11 +155,21 @@ public static class GameManagement
         {
             var archive = Path.Combine(State(exe), "settings-" + Guid.NewGuid().ToString("N"));
             Core.RejectLinks(archive); Directory.CreateDirectory(archive);
-            foreach (var p in changedSettings)
+            foreach (var entry in changedSettings)
             {
-                var copy = Path.Combine(archive, Path.GetFileName(p)); File.Copy(p, copy);
-                if (Core.Hash(copy) != Core.Hash(p)) throw new IOException("配置备份校验失败，未恢复。");
+                var p = Target(exe, entry.Key);
+                var copy = Path.Combine(archive, entry.Key);
+                Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
+                File.Copy(p, copy);
+                if (Core.Hash(copy) != entry.Value) throw new IOException("冲突文件备份校验失败，未恢复。");
             }
+            File.WriteAllText(Path.Combine(archive, "conflicts.json"), JsonSerializer.Serialize(changedSettings, Core.JsonOptions));
+        }
+        foreach (var entry in snapshots)
+        {
+            var p = Target(exe, entry.Key);
+            if ((File.Exists(p) ? Core.Hash(p) : "") != entry.Value)
+                throw new IOException("恢复期间文件再次变化，未执行恢复：" + entry.Key + "。请关闭其他安装器后重试。");
         }
         foreach (var f in r.Files.Where(f => f.Before != f.After))
         {

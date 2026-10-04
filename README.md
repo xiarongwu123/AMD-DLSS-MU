@@ -14,7 +14,7 @@
 
 ## 当前版本
 
-`v2.0.4` 在 v2.0.3 基础上将 DLSS-NR on AMD 更新至 v0.6.0，新增 RX 6000 系列支持，并包含上游画质与闪烁修复。
+`v2.0.5` 修复更新组件后 `version.dll` 与安装记录不一致导致无法恢复的问题：有安装记录的游戏自动备份冲突文件后恢复，无需额外确认；重复恢复不会误清理已还原的文件。继续集成 DLSS-NR on AMD v0.6.0，支持 RX 6000 系列。
 
 发布版本请以 [GitHub Releases](https://github.com/xiarongwu123/AMD-DLSS-MU/releases) 中的 EXE 为准。需要自行构建时，请按下方说明操作。
 

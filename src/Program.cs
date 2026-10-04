@@ -2050,15 +2050,20 @@ public sealed partial class MainForm : Form
         IDisposable? fileTransaction = null;
         try
         {
-            if (GameManagement.Read(target) is { Phase: not "restored" } record)
+            if (GameManagement.Read(target) is { Phase: not "restored" })
             {
-                var files = string.Join("\n", record.Files.Where(f => f.Before != f.After).Select(f => (f.Before.Length == 0 ? "移除：" : "还原：") + f.Name));
-                if (MessageBox.Show(this, "将恢复安装前备份，移除本次新增组件。改动过的 INI 配置会先另存备份。\n\n" + files,
-                    "恢复配置", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
-                if (!await RequireFeatureAsync("game.restore")) return;
                 fileTransaction = BeginAccountTransaction();
-                await Task.Run(() => GameManagement.Restore(target, true));
-                status.Text = "已恢复安装前配置，本次新增组件已移除。备份保留在：" + GameManagement.State(target);
+                status.Text = "正在备份并恢复配置…";
+                await Task.Run(() =>
+                {
+                    var conflicts = GameManagement.RestoreConflicts(target);
+                    GameManagement.Restore(target, true, conflicts);
+                });
+                status.Text = "已恢复配置，可以重新开启。文件备份已保留。";
+            }
+            else if (GameManagement.Read(target) is { Phase: "restored" })
+            {
+                status.Text = "已恢复配置，可以重新开启。";
             }
             else
             {
