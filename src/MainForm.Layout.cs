@@ -81,7 +81,7 @@ public sealed partial class MainForm
         toolbar.Controls.Add(filters, 0, 1); toolbar.SetColumnSpan(filters, 2);
         games.Padding = new Padding(28, 12, 14, 16); games.BackColor = Base; games.Margin = Padding.Empty;
         games.AllowDrop = true;
-        games.DragEnter += (_, e) => e.Effect = accountClient.IsOnline && !busy && e.Data?.GetDataPresent(DataFormats.FileDrop) == true ? DragDropEffects.Copy : DragDropEffects.None;
+        games.DragEnter += (_, e) => e.Effect = accountClient.CanKeepVerifiedView && !busy && e.Data?.GetDataPresent(DataFormats.FileDrop) == true ? DragDropEffects.Copy : DragDropEffects.None;
         games.DragDrop += async (_, e) => { if (!busy && e.Data?.GetData(DataFormats.FileDrop) is string[] paths && paths.Length > 0) await AddPathAsync(paths[0]); };
         games.ClientSizeChanged += (_, _) => LayoutGameCards();
         installMode.Items.AddRange(new[] { "模式一 · 神经渲染（推荐）", "模式二 · OptiScaler" }); installMode.SelectedIndex = 0;
@@ -94,7 +94,7 @@ public sealed partial class MainForm
     }
     void SwitchPage(int index)
     {
-        if (index != 6 && !accountClient.IsOnline && !(index == 3 && busy)) index = 6;
+        if (index != 6 && !accountClient.CanKeepVerifiedView && !(index == 3 && busy)) index = 6;
         if (index == 0 && accountClient.Account?.Features.Any(f => f.Key == "compatibility.read" && f.Allowed) != true) index = 6;
         pageHost.SuspendLayout();
         try

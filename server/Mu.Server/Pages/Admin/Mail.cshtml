@@ -1,0 +1,37 @@
+@page "/admin/mail"
+@model Mu.Server.Pages.Admin.MailModel
+@{ ViewData["Title"] = "邮箱监控"; }
+<h1>邮箱监控</h1>
+<p class="muted">记录每次实际发信尝试，不保存验证码或邮件正文。被限流或因账号条件而未发送的请求不计入。上线前的邮件没有完整记录。</p>
+<div class="grid mail-stats">
+    <section class="card"><h2>@Model.Counts.Values.Sum()</h2><span>近 24 小时发信尝试</span></section>
+    <section class="card"><h2>@Model.Counts.GetValueOrDefault("delivered")</h2><span>收件服务器已接受</span></section>
+    <section class="card"><h2>@(Model.Counts.GetValueOrDefault("submission_failed") + Model.Counts.GetValueOrDefault("bounced"))</h2><span>提交异常 / 投递失败</span></section>
+    <section class="card"><h2>@Model.Counts.GetValueOrDefault("deferred")</h2><span>暂缓投递</span></section>
+</div>
+<p class="@(Model.CollectorHealthy ? "muted" : "mail-warning")">投递日志同步：@(Model.CollectorHealthy ? "正常" : "尚未同步或已延迟") · 最近采集：@Mu.Server.Pages.Admin.AdminPageModel.FormatTime(Model.LastCollectionAt)</p>
+<p class="muted">投递状态约 1–2 分钟同步，点击查询刷新。“收件服务器已接受”不代表进入收件箱或已读；SMTP 超时也可能已被接收，请勿仅凭异常重复发送。</p>
+<form method="get" class="row">
+    <div><label asp-for="Search">邮箱 / 记录 ID / 队列编号</label><input asp-for="Search" maxlength="254" /></div>
+    <div><label asp-for="Purpose">用途</label><select asp-for="Purpose"><option value="">全部</option><option value="register">注册验证码</option><option value="reset">找回密码</option></select></div>
+    <div><label asp-for="Status">状态</label><select asp-for="Status"><option value="">全部</option>@foreach (var status in Mu.Server.Pages.Admin.MailModel.Labels) { <option value="@status.Key">@status.Value</option> }</select></div>
+    <div><label asp-for="From">开始日期（UTC+8）</label><input asp-for="From" type="date" /></div>
+    <div><label asp-for="To">结束日期（UTC+8）</label><input asp-for="To" type="date" /></div>
+    <button type="submit">查询 / 刷新</button><a asp-page="/Admin/Mail">重置筛选</a>
+</form>
+<p class="muted">共 @Model.Total 条 · 第 @Model.PageNumber / @Model.TotalPages 页 · 每页 50 条</p>
+<div class="table-scroll"><table><thead><tr><th>发送时间</th><th>收件邮箱 / 用途</th><th>通道 / 状态</th><th>最近结果</th><th>追踪</th></tr></thead><tbody>
+@foreach (var item in Model.Items)
+{
+    <tr><td><small>@Mu.Server.Pages.Admin.AdminPageModel.FormatTime(item.CreatedAt)</small></td>
+        <td>@item.Email<br /><small>@(item.Purpose == "register" ? "注册验证码" : "找回密码")</small></td>
+        <td><small>@item.Provider</small><br /><span class="pill">@Mu.Server.Pages.Admin.MailModel.Label(item.Status)</span></td>
+        <td><small>@Mu.Server.Pages.Admin.AdminPageModel.FormatTime(item.UpdatedAt)</small><p class="mail-detail">@(item.Detail ?? "等待后续投递结果")</p></td>
+        <td><details><summary>查看编号</summary><small>记录 ID</small><code class="mail-id">@item.Id</code><small>SMTP 队列</small><code class="mail-id">@(item.QueueId ?? "—")</code></details></td></tr>
+}
+</tbody></table></div>
+@if (Model.Items.Count == 0) { <p class="muted">暂无匹配的发送日志。</p> }
+<nav class="mail-pagination" aria-label="日志分页">
+@if (Model.PageNumber > 1) { <a asp-page="/Admin/Mail" asp-route-PageNumber="@(Model.PageNumber - 1)" asp-route-Search="@Model.Search" asp-route-Status="@Model.Status" asp-route-Purpose="@Model.Purpose" asp-route-From="@(Model.From?.ToString("yyyy-MM-dd"))" asp-route-To="@(Model.To?.ToString("yyyy-MM-dd"))">上一页</a> }
+@if (Model.PageNumber < Model.TotalPages) { <a asp-page="/Admin/Mail" asp-route-PageNumber="@(Model.PageNumber + 1)" asp-route-Search="@Model.Search" asp-route-Status="@Model.Status" asp-route-Purpose="@Model.Purpose" asp-route-From="@(Model.From?.ToString("yyyy-MM-dd"))" asp-route-To="@(Model.To?.ToString("yyyy-MM-dd"))">下一页</a> }
+</nav>

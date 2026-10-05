@@ -11,6 +11,7 @@ services:
       POSTFIX_mynetworks: ${SMTP_TRUSTED_NETWORKS:?Set the account Docker network subnet}
       POSTFIX_inet_protocols: ipv4
       POSTFIX_smtp_tls_security_level: encrypt
+      POSTFIX_smtp_tls_policy_maps: texthash:/etc/postfix/mu-tls-policy
       POSTFIX_message_size_limit: 262144
       POSTFIX_maximal_queue_lifetime: 10m
       POSTFIX_bounce_queue_lifetime: 10m
@@ -25,6 +26,7 @@ services:
       - smtp-queue:/var/spool/postfix
       - smtp-keys:/etc/opendkim/keys
       - ./smtp-init.sh:/docker-init.d/90-mu.sh:ro
+      - ./smtp-tls-policy:/etc/postfix/mu-tls-policy:ro
     networks:
       account:
         aliases: [mu-smtp]

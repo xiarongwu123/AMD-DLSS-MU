@@ -91,7 +91,7 @@ public sealed partial class MainForm
         var searchIcon = new Label { Text = "\uE721", Dock = DockStyle.Left, Width = 25, ForeColor = Muted, Font = new Font("Segoe MDL2 Assets", 12), TextAlign = ContentAlignment.MiddleCenter, BackColor = Color.Transparent };
         librarySearch.PlaceholderText = english ? "Search games..." : "搜索游戏 / Search games...";
         librarySearch.BackColor = Surface; librarySearch.ForeColor = ink;
-        librarySearch.TextChanged += (_, _) => { if (accountClient.IsOnline && CanNavigateToPage(1)) { FilterGames(); if (activePage != 1) SwitchPage(1); } };
+        librarySearch.TextChanged += (_, _) => { if (accountClient.CanKeepVerifiedView && CanNavigateToPage(1)) { FilterGames(); if (activePage != 1) SwitchPage(1); } };
         search.Controls.Add(librarySearch); search.Controls.Add(searchIcon);
         header.Controls.Add(search); header.Controls.Add(update);
         headerSearch = search; headerUpdate = update;

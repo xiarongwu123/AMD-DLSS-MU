@@ -8,6 +8,7 @@ import { createAnalytics, syncGithub, sessionId, entryName } from './analytics.m
 import { createSurveyStore, surveyDefinition, validateSurvey } from './survey.mjs';
 import { createPackageStore, sourceUrl } from './packages.mjs';
 import { createCompatibilityProxy } from './compatibility.mjs';
+import { publicPages, canonicalRedirect, sitemapXml, renderSeoPage } from './seo.mjs';
 
 const port = Number(process.env.PORT || 8080);
 const host = process.env.HOST || '0.0.0.0';
@@ -394,22 +395,25 @@ async function handleSurvey(req, res) {
 }
 
 function serveFile(req, res, pathname) {
-  const routes = { '/': 'index.html', '/download': 'download.html', '/guide': 'guide.html', '/feedback': 'feedback.html', '/survey': 'survey.html', '/compatibility': 'compatibility.html' };
-  const relative = routes[pathname] || pathname.replace(/^\/+/, '');
+  const relative = publicPages.get(pathname)?.file || pathname.replace(/^\/+/, '');
   const file = resolve(publicRoot, normalize(relative));
   if (!file.startsWith(`${publicRoot}/`) || !existsSync(file) || !statSync(file).isFile()) return send(res, 404, '404 · SIGNAL LOST', 'text/plain; charset=utf-8');
   const extension = extname(file).toLowerCase();
   if (extension === '.exe') return send(res, 404, '请使用官网下载入口。', 'text/plain; charset=utf-8');
   const fileSize = statSync(file).size;
+  const rendered = extension === '.html' && publicPages.has(pathname)
+    ? renderSeoPage(readFileSync(file, 'utf8'), pathname, {
+      google: process.env.GOOGLE_SITE_VERIFICATION, baidu: process.env.BAIDU_SITE_VERIFICATION
+    }) : null;
   const headers = {
     'Content-Type': mime[extension] || 'application/octet-stream',
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-    'Content-Security-Policy': "default-src 'self'; img-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+    'Content-Security-Policy': `default-src 'self'; img-src 'self'; style-src 'self'; script-src 'self'${rendered?.scriptHash ? ` 'sha256-${rendered.scriptHash}'` : ''}; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`,
     'Cache-Control': pathname.startsWith('/assets/') ? 'public, max-age=86400' : 'no-cache',
-    'Content-Length': fileSize
+    'Content-Length': rendered ? Buffer.byteLength(rendered.html) : fileSize
   };
   let status = 200;
   let start = 0;
@@ -433,6 +437,7 @@ function serveFile(req, res, pathname) {
   }
   res.writeHead(status, headers);
   if (req.method === 'HEAD') return res.end();
+  if (rendered) return res.end(rendered.html);
   const stream = createReadStream(file, extension === '.mp4' ? { start, end } : undefined);
   stream.on('error', () => res.destroy());
   res.on('close', () => stream.destroy());
@@ -442,6 +447,22 @@ function serveFile(req, res, pathname) {
 createServer(async (req, res) => {
   try {
     const url = new URL(req.url || '/', 'http://localhost');
+    if (url.pathname === '/admin' || url.pathname === '/admin.html' || url.pathname.startsWith('/api/') ||
+        url.pathname.startsWith('/download/') || url.pathname.startsWith('/files/') || url.pathname.startsWith('/mirrors/')) {
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    }
+    if (req.method === 'GET' || req.method === 'HEAD') {
+      const redirect = canonicalRedirect(url.pathname);
+      if (redirect !== null) {
+        res.writeHead(301, { Location: redirect + url.search, 'Cache-Control': 'public, max-age=3600' });
+        return res.end();
+      }
+      if (url.pathname === '/sitemap.xml') {
+        const xml = sitemapXml();
+        res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600', 'Content-Length': Buffer.byteLength(xml), 'X-Content-Type-Options': 'nosniff' });
+        return res.end(req.method === 'HEAD' ? undefined : xml);
+      }
+    }
     if (await handleMirror(req, res)) return;
     const measuredRoutes = new Set(['/api/survey', '/api/feedback', '/api/admin/login', '/api/admin/preview', '/api/admin/release', '/download/file', '/files/AMD-DLSS-MU.exe']);
     if (req.method !== 'HEAD' && measuredRoutes.has(url.pathname) && !isBot(req) &&
@@ -477,4 +498,4 @@ createServer(async (req, res) => {
     if (!res.headersSent) send(res, 500, { message: '服务暂时不可用。' });
     else res.destroy();
   }
-}).listen(port, host, () => console.log(`AMD DLSS MU website listening on ${host}:${port}`));
+}).listen(port, host, function () { console.log(`AMD DLSS MU website listening on ${host}:${this.address().port}`); });

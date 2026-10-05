@@ -31,6 +31,9 @@ td code, pre { overflow-wrap: anywhere; word-break: break-word; } pre { white-sp
 .pill { display: inline-block; border: 1px solid #64748b; border-radius: 999px; padding: 2px 9px; font-size: 12px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; }
 .secret { display: block; padding: 12px; background: #111720; user-select: all; overflow-wrap: anywhere; font-size: 17px; letter-spacing: 2px; }
+.mail-stats .card { margin: 8px 0 18px; padding: 18px; } .mail-stats h2 { font-size: 30px; margin: 0; }
+.mail-warning { color: #ffcf83; } .mail-detail { max-width: 380px; overflow-wrap: anywhere; font-size: 13px; }
+.mail-id { display: block; max-width: 240px; } .mail-pagination { margin-top: 24px; }
 footer { padding: 20px 4vw; border-top: 1px solid #323b49; color: #9eabba; font-size: 13px; }
 details > summary { cursor: pointer; color: #91b8ff; } .legal { max-width: 840px; margin: auto; }
 @media (max-width: 600px) { main { padding: 24px 18px; } header { padding: 16px 18px; gap: 14px; } th, td { padding: 10px 8px; } .row > * { width: 100%; } }

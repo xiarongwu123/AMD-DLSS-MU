@@ -8,7 +8,7 @@ a public SMTP account or a replacement for the Cloudflare inbox UI.
 
 ## Deploy
 
-Copy `compose.smtp.yml`, `start-smtp.sh`, and `smtp-init.sh` into the existing
+Copy `compose.smtp.yml`, `start-smtp.sh`, `smtp-init.sh`, and `smtp-tls-policy` into the existing
 account deployment directory, then run `bash start-smtp.sh`. The script pins
 the tested image digest and discovers the account network subnet. DKIM keys
 and queues use named persistent volumes; never use `docker compose down -v`.
@@ -50,7 +50,7 @@ Smtp__StartTls=false
 Smtp__AllowPrivatePlaintext=true
 ```
 
-Cleartext is limited to the same-host trusted Docker network. External relays
+Cleartext application submission is limited to the same-host trusted Docker network. External relays
 must use STARTTLS and should not enable `AllowPrivatePlaintext`. This adapter
 supports STARTTLS, not implicit TLS on port 465. It does not retry uncertain
 submissions or silently fall back to Resend. Missing configuration, rejection,
@@ -61,6 +61,17 @@ delivery. Watch `docker logs amd-dlss-mu-smtp` and `postqueue -j` for deferred o
 bounced messages. Queue lifetime is 10 minutes, matching the verification-code
 lifetime; logs rotate at 3 x 5 MB. MX acceptance and inbox placement must be
 verified separately. Low sending rate is intentional for the new server IP.
+
+Outbound SMTP requires TLS by default. On 2026-10-05, after explaining the
+plaintext-transmission tradeoff, the user authorized a compatibility fix for
+`sina.com`, whose three MX nodes did not advertise STARTTLS from this VPS.
+The read-only `smtp-tls-policy` map sets only that exact destination to `may`:
+TLS is preferred but plaintext is allowed when unavailable. Other domains
+retain `encrypt`. This does not bypass recipient validation or anti-spam checks.
+Verify with `postmap -q sina.com texthash:/etc/postfix/mu-tls-policy` inside
+the SMTP container; unrelated domains must return no override. To roll back,
+remove the exception from the policy file and reload Postfix. Do not delete
+queued mail or DKIM volumes.
 
 Rollback: restore the previous account `.env` and release, then recreate only
 the account container. Leave queued emails and DKIM volumes intact. Stop SMTP
@@ -95,3 +106,53 @@ it never sends internet mail. Production acceptance is a separate step.
 
 The former Resend settings remain only for rollback. The active SMTP provider
 does not call Resend or fall back to it automatically.
+
+## Administrator email monitoring
+
+`/admin/mail` requires the existing administrator role and completed MFA. It
+lists actual send attempts, with email/purpose/status/date filtering and 50-row
+pagination. Rejected API requests and account-condition suppression are not
+send attempts. Historical messages sent before monitoring cannot be reconstructed.
+
+The service creates `mail-logs.sqlite` alongside `accounts.sqlite`, without
+changing the account schema. It records submission before calling the provider,
+never stores codes or message bodies, and distinguishes submission from delivery.
+An interrupted submission is uncertain; administrators must not assume it failed
+or resend it automatically. These records currently have no automatic deletion.
+
+Copy `collect-mail-events.py` to the deployment root and set
+`EmailMonitor__SnapshotPath=/data/smtp-events.json`. Run the collector as the
+existing deployment user once per minute, using Python 3 and Docker CLI:
+
+```cron
+* * * * * /usr/bin/python3 /home/xrw/amd-dlss-mu-account/collect-mail-events.py >/dev/null 2>&1
+```
+
+The collector reads only the SMTP container logs and exports bounded metadata
+atomically into the private data directory. It preserves 48 hours of correlation
+state, rereads available logs from the last 24 hours, and locks against overlapping
+runs. The API imports every 30 seconds; no Docker socket, public ingest endpoint,
+or additional admin credential is exposed. The UI flags snapshots older than
+three minutes. Prolonged collector outages or Docker log rotation can leave
+delivery unconfirmed; they must not be interpreted as successful delivery.
+
+Each SMTP message has a random request Message-ID mapped to a Postfix queue ID.
+`sent` means the receiving mail server accepted it, not inbox placement/read.
+`deferred` may later succeed or bounce. Terminal statuses do not regress when
+logs are replayed. Resend submissions do not receive SMTP delivery events.
+
+The updated `--backup` command creates a matching `.mail.sqlite` sidecar backup;
+the updated `backup.sh` rotates it with the seven account snapshots. Restore
+mail logs independently with the account container stopped, preserving the
+current database and removing only stale WAL/SHM after archiving them. Rollback
+to an older release leaves mail logs intact but pauses their collection into
+the database; retain the collector snapshot for later import.
+
+Monitoring was activated as `20261005-mail-monitor` on 2026-10-05, with the
+previous environment and cron saved under `backups/mail-monitor-20261005T070356Z`.
+HTTP integration passed 348 assertions and admin/backup integration passed 100.
+Three collector tests passed on the VPS's Python 3.10 as well as locally; Docker
+nanosecond timestamps are normalized before parsing. Production acceptance
+confirmed a real Gmail registration message joined to queue `0B2F7160063` as
+`delivered`, with three accepted messages and one recipient rejection persisted
+at verification time. These are transport results, not inbox/read receipts.

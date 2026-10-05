@@ -5,10 +5,11 @@ import { resolve, dirname } from 'node:path';
 const [baselineArg, outputArg] = process.argv.slice(2);
 if (!baselineArg || !outputArg) throw new Error('Usage: node prepare-website-patch.mjs BASELINE_DIRECTORY OUTPUT_DIRECTORY');
 const baseline = resolve(baselineArg), output = resolve(outputArg), site = resolve('website');
-const files = ['server.mjs', 'compatibility.mjs', 'Dockerfile', 'compose.yml',
+const files = ['server.mjs', 'compatibility.mjs', 'seo.mjs', 'Dockerfile', 'compose.yml',
   'public/index.html', 'public/download.html', 'public/guide.html', 'public/feedback.html', 'public/survey.html', 'public/compatibility.html',
-  'public/assets/compatibility.css', 'public/assets/compatibility.js', 'public/assets/hardware-check.js', 'public/assets/hardware-reference.json'];
-const dependencies = ['analytics.mjs', 'survey.mjs', 'packages.mjs', 'mirrors.mjs', 'public/assets/app.css', 'public/assets/app.js'];
+  'public/assets/compatibility.css', 'public/assets/compatibility.js', 'public/assets/hardware-check.js', 'public/assets/hardware-reference.json',
+  'public/dlss5.html', 'public/robots.txt', 'public/llms.txt', 'public/assets/seo.css', 'public/assets/app.css', 'public/assets/app.js'];
+const dependencies = ['analytics.mjs', 'survey.mjs', 'packages.mjs', 'mirrors.mjs'];
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 await mkdir(output, { recursive: false });
 const manifest = [], checks = [];

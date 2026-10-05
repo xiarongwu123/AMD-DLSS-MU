@@ -16,15 +16,22 @@
   const form = document.querySelector('[data-feedback-form]');
   const initialAppVersion = form?.elements.appVersion?.value;
 
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible');
-        observer.unobserve(entry.target);
-      }
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          entry.target.classList.remove('reveal-pending');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.reveal').forEach((el) => {
+      // Keep the initial viewport visible even before the observer fires.
+      if (el.getBoundingClientRect().top > window.innerHeight) el.classList.add('reveal-pending');
+      observer.observe(el);
     });
-  }, { threshold: 0.08 });
-  document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+  }
 
   async function loadRelease() {
     const size = document.querySelector('[data-file-size]');
@@ -43,7 +50,6 @@
       if (date) date.textContent = release.publishedAt.replaceAll('-', '.');
       const notes = document.querySelector('[data-release-notes]');
       if (notes) notes.href = release.releaseUrl;
-      if (current === 'download') document.title = `下载 AMD DLSS MU ${release.tag} · ${channelLabel}`;
       if (form && form.elements.appVersion.value === initialAppVersion) form.elements.appVersion.value = release.version;
       if (size) size.textContent = release.sizeDisplay;
       if (hash) hash.textContent = release.sha256;

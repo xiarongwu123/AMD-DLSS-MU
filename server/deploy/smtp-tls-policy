@@ -1,0 +1,3 @@
+# Exact destination exception: prefer TLS, permit plaintext if unavailable.
+# All other destinations retain smtp_tls_security_level=encrypt.
+sina.com may

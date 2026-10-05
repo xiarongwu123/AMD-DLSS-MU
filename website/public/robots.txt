@@ -1,3 +1,11 @@
 User-agent: *
 Allow: /
-Disallow: /admin
+Disallow: /api/
+Disallow: /download/file
+Disallow: /download/AMD-DLSS-MU-
+Disallow: /files/
+Disallow: /mirrors/
+
+# Admin pages are crawlable only to expose their noindex directive; authentication protects APIs.
+# The wildcard policy also allows Googlebot, Baiduspider, Bingbot and OAI-SearchBot.
+Sitemap: https://amd-dlss-mu.claude-api.cn/sitemap.xml

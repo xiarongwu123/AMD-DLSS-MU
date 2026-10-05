@@ -38,15 +38,18 @@ internal static class AdminConsoleTests
         }
 
         Check((await client.GetAsync("/admin/users")).StatusCode == HttpStatusCode.Redirect, "Anonymous administrator access blocked");
+        Check((await client.GetAsync("/admin/mail")).StatusCode == HttpStatusCode.Redirect, "Anonymous mail logs blocked");
         Check((await Post(client, "/admin/login", new() { ["Email"] = AdminEmail, ["Password"] = Password })).StatusCode == HttpStatusCode.BadRequest,
             "Admin login requires CSRF");
         var loginToken = await Token(client, "/admin/login");
         Check((await Post(client, "/admin/login", new() { ["Email"] = UserEmail, ["Password"] = Password }, loginToken)).StatusCode == HttpStatusCode.OK,
             "Ordinary user credentials cannot sign into admin");
         Check((await client.GetAsync("/admin/users")).StatusCode == HttpStatusCode.Redirect, "Ordinary account has no admin cookie");
+        Check((await client.GetAsync("/admin/mail")).StatusCode == HttpStatusCode.Redirect, "Ordinary account cannot read mail logs");
         var passwordStep = await Post(client, "/admin/login", new() { ["Email"] = AdminEmail, ["Password"] = Password }, loginToken);
         Check(passwordStep.StatusCode == HttpStatusCode.Redirect && passwordStep.Headers.Location?.OriginalString == "/admin/setup", "First admin login requires TOTP setup");
         Check((await client.GetAsync("/admin/users")).StatusCode == HttpStatusCode.Redirect, "Password-only pending cookie cannot manage");
+        Check((await client.GetAsync("/admin/mail")).StatusCode == HttpStatusCode.Redirect, "Mail logs require completed MFA");
         var setup = await client.GetAsync("/admin/setup");
         var setupHtml = await setup.Content.ReadAsStringAsync();
         var key = Regex.Match(setupHtml, "<code class=\"secret\">([^<]+)</code>").Groups[1].Value;
@@ -58,8 +61,24 @@ internal static class AdminConsoleTests
         var adminCookie = setupPost.Headers.GetValues("Set-Cookie").Single(value => value.StartsWith("__Host-MuAdmin=", StringComparison.Ordinal)).Split(';')[0];
         Check(setupPost.Headers.GetValues("Set-Cookie").Any(value => value.Contains("secure", StringComparison.OrdinalIgnoreCase)
             && value.Contains("httponly", StringComparison.OrdinalIgnoreCase) && value.Contains("samesite=strict", StringComparison.OrdinalIgnoreCase)), "Admin cookie protected");
-        foreach (var path in new[] { "/admin", "/admin/users", "/admin/features", "/admin/plans", "/admin/orders", "/admin/audit" })
+        foreach (var path in new[] { "/admin", "/admin/users", "/admin/features", "/admin/plans", "/admin/orders", "/admin/audit", "/admin/mail" })
             Check((await client.GetAsync(path)).IsSuccessStatusCode, "Authorized page renders: " + path);
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            await using var mailDb = await scope.ServiceProvider.GetRequiredService<IDbContextFactory<MailLogDbContext>>().CreateDbContextAsync();
+            for (var i = 0; i < 55; i++) mailDb.MailLogs.Add(new() { Id = Guid.NewGuid().ToString("N"), Email = $"monitor{i}@example.test",
+                Purpose = "register", Provider = "smtp", Status = "delivered", CreatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                Detail = "<script>alert('test')</script>" });
+            await mailDb.SaveChangesAsync();
+        }
+        var mailResponse = await client.GetAsync("/admin/mail?Search=monitor&Status=delivered&PageNumber=2");
+        var mailHtml = await mailResponse.Content.ReadAsStringAsync();
+        Check(mailResponse.IsSuccessStatusCode && mailResponse.Headers.CacheControl?.NoStore == true, "Mail logs are private and uncached");
+        Check(Regex.Matches(mailHtml, "@example.test").Count == 5, "Mail log pagination limits results");
+        Check(!mailHtml.Contains("<script>alert"), "SMTP results are HTML encoded");
+        var filtered = await (await client.GetAsync("/admin/mail?Search=monitor&Status=bounced")).Content.ReadAsStringAsync();
+        Check(!filtered.Contains("monitor0@example.test"), "Mail status filtering applied");
 
         Check((await Post(client, "/admin/users?handler=Grant", new() { ["UserId"] = userId, ["Days"] = "30", ["Reason"] = "test grant" })).StatusCode == HttpStatusCode.BadRequest,
             "Management mutations require CSRF");

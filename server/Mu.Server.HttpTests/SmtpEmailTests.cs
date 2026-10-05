@@ -55,7 +55,7 @@ internal static class SmtpEmailTests
                 NullLogger<SmtpVerificationEmailSender>.Instance);
             try
             {
-                await sender.SendAsync("recipient@example.test", "123456", "register", "test", deadline.Token);
+                await sender.SendAsync("recipient@example.test", "123456", "register", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", deadline.Token);
                 Check(accept, "Rejected SMTP recipient must fail");
             }
             catch (ApiException error)
@@ -67,6 +67,7 @@ internal static class SmtpEmailTests
             if (accept)
             {
                 Check(body.ToString().Contains("recipient@example.test"), "SMTP envelope and message submitted");
+                Check(body.ToString().Contains("<mu.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.test>"), "Message ID correlates submission and delivery without the code");
                 var mime = body.ToString();
                 var content = mime[(mime.IndexOf("\n\n", StringComparison.Ordinal) + 2)..];
                 if (mime.Contains("Content-Transfer-Encoding: base64", StringComparison.OrdinalIgnoreCase))

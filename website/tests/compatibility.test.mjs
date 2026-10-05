@@ -312,7 +312,7 @@ test('real local website and upstream servers verify routing, CSP, read-only acc
   const temporary = await mkdtemp(join(tmpdir(), 'mu-compatibility-website-test-'));
   const publicRoot = join(temporary, 'public');
   await mkdir(publicRoot);
-  await writeFile(join(publicRoot, 'compatibility.html'), '<!doctype html><title>Compatibility route fixture</title>');
+  await writeFile(join(publicRoot, 'compatibility.html'), '<!doctype html><html><head><title>Fixture</title></head><body>Compatibility route fixture</body></html>');
   const child = spawn(process.execPath, [resolve(import.meta.dirname, '../server.mjs')], { env: {
     ...process.env, HOST: '127.0.0.1', PORT: String(port), PUBLIC_ROOT: publicRoot, DATA_ROOT: join(temporary, 'data'),
     PUBLIC_ORIGIN: base, COMPATIBILITY_API_BASE: `${upstreamBase}/api/v1/compatibility/public/`,
@@ -334,7 +334,8 @@ test('real local website and upstream servers verify routing, CSP, read-only acc
   const page = await fetch(`${base}/compatibility`);
   assert.equal(page.status, 200);
   assert.match(await page.text(), /Compatibility route fixture/u);
-  assert.match(page.headers.get('content-security-policy'), /script-src 'self'; connect-src 'self'/u);
+  assert.match(page.headers.get('content-security-policy'), /script-src 'self' 'sha256-[A-Za-z0-9+/=]+'; connect-src 'self'/u);
+  assert.ok(!page.headers.get('content-security-policy').includes('unsafe-inline'));
   assert.equal(page.headers.get('x-frame-options'), 'DENY');
 
   const found = await fetch(`${base}/api/compatibility/games?q=Local%20%26%20fixture`, {

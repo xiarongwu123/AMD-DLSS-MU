@@ -168,6 +168,97 @@ using (var client = new AccountApiClient(new HttpClient(new Handler(request => T
     await Throws(() => client.HeartbeatAsync(default), e => e is IOException, "invalid account response fails closed");
     Check(!client.IsOnline, "invalid account response cannot leave verified online state");
 }
+var clock = new ManualClock();
+var outage = true;
+var authorizationCalls = 0;
+store = new MemoryStore();
+using (var client = new AccountApiClient(new HttpClient(new Handler(request =>
+{
+    var path = request.RequestUri!.AbsolutePath;
+    if (path.EndsWith("login")) return Task.FromResult(Ok(Session()));
+    if (path.EndsWith("authorize")) authorizationCalls++;
+    if (outage) throw new HttpRequestException("connection reset");
+    return Task.FromResult(path.EndsWith("authorize") ? Ok(new AuthorizationResponse(true, null, account)) : Ok(account));
+})), store, clock))
+{
+    await client.LoginAsync(account.Email, "password123", true, default);
+    await Throws(() => client.HeartbeatAsync(default), e => e is HttpRequestException, "heartbeat interruption surfaces");
+    Check(!client.IsOnline && client.IsReconnecting && client.CanKeepVerifiedView, "one interruption keeps the verified view during reconnection");
+    await Throws(() => client.AuthorizeAsync("library.manage", default), e => e is HttpRequestException, "grace cannot authorize an operation from cached features");
+    Check(authorizationCalls == 1, "operation during grace still contacts the server");
+    clock.Advance(TimeSpan.FromSeconds(119));
+    await Throws(() => client.HeartbeatAsync(default), e => e is HttpRequestException, "repeated heartbeat interruption surfaces");
+    Check(client.CanKeepVerifiedView, "view remains available before the two-minute boundary");
+    clock.Advance(TimeSpan.FromSeconds(1));
+    Check(!client.CanKeepVerifiedView && !client.IsReconnecting, "retries do not extend grace past the two-minute boundary");
+    Check(client.HasSession && store.Value != null, "grace expiry retains the recovery session");
+    outage = false;
+    await client.HeartbeatAsync(default);
+    Check(client.IsOnline && client.CanKeepVerifiedView, "successful heartbeat recovers without another password login");
+    outage = true;
+    await Throws(() => client.HeartbeatAsync(default), e => e is HttpRequestException, "a later outage surfaces");
+    clock.Advance(TimeSpan.FromSeconds(119));
+    Check(client.CanKeepVerifiedView, "a verified recovery resets grace for a later outage");
+}
+
+foreach (var failure in new[] { "timeout", "unavailable", "rate_limit" })
+{
+    using var client = new AccountApiClient(new HttpClient(new Handler(request =>
+    {
+        if (request.RequestUri!.AbsolutePath.EndsWith("login")) return Task.FromResult(Ok(Session()));
+        if (failure == "timeout") throw new TaskCanceledException("request timeout");
+        return Task.FromResult(Error(failure == "unavailable" ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.TooManyRequests, failure));
+    })), new MemoryStore(), new ManualClock());
+    await client.LoginAsync(account.Email, "password123", false, default);
+    await Throws(() => client.HeartbeatAsync(default), e => e is OperationCanceledException or AccountApiException, failure + " surfaces without clearing login");
+    Check(!client.IsOnline && client.CanKeepVerifiedView && client.HasSession, failure + " permits only the temporary verified view");
+}
+
+foreach (var failure in new[] { "revoked", "disabled", "invalid_response" })
+{
+    var phase = 0;
+    store = new MemoryStore();
+    using var client = new AccountApiClient(new HttpClient(new Handler(request =>
+    {
+        if (request.RequestUri!.AbsolutePath.EndsWith("login")) return Task.FromResult(Ok(Session()));
+        if (phase is 0 or 2) throw new HttpRequestException("temporary outage");
+        return Task.FromResult(failure == "invalid_response" ? Ok(new { id = "user-1" })
+            : Error(failure == "disabled" ? HttpStatusCode.Forbidden : HttpStatusCode.Unauthorized,
+                failure == "disabled" ? "account_disabled" : "session_invalid"));
+    })), store, new ManualClock());
+    await client.LoginAsync(account.Email, "password123", true, default);
+    await Throws(() => client.HeartbeatAsync(default), e => e is HttpRequestException, failure + " fixture enters grace");
+    phase = 1;
+    await Throws(() => client.HeartbeatAsync(default), e => e is AccountApiException or IOException, failure + " surfaces during grace");
+    Check(!client.CanKeepVerifiedView, failure + " ends grace immediately");
+    if (failure != "invalid_response") Check(!client.HasSession && store.Value == null, failure + " clears credentials immediately");
+    else
+    {
+        phase = 2;
+        await Throws(() => client.HeartbeatAsync(default), e => e is HttpRequestException, "transport interruption after invalid response surfaces");
+        Check(!client.CanKeepVerifiedView, "a hard failure cannot reopen grace without fresh server verification");
+    }
+}
+
+using (var client = new AccountApiClient(new HttpClient(new Handler(_ => throw new HttpRequestException("offline"))),
+    new MemoryStore { Value = "saved-refresh" }, new ManualClock()))
+{
+    await Throws(() => client.RestoreAsync(default), e => e is HttpRequestException, "unverified startup restoration fails");
+    Check(!client.CanKeepVerifiedView, "saved credentials alone cannot grant a verified view");
+}
+
+using (var cancel = new CancellationTokenSource())
+using (var client = new AccountApiClient(new HttpClient(new Handler(request =>
+{
+    if (request.RequestUri!.AbsolutePath.EndsWith("login")) return Task.FromResult(Ok(Session()));
+    cancel.Cancel(); throw new OperationCanceledException(cancel.Token);
+})), new MemoryStore()))
+{
+    await client.LoginAsync(account.Email, "password123", false, default);
+    await Throws(() => client.HeartbeatAsync(cancel.Token), e => e is OperationCanceledException, "caller cancellation surfaces");
+    Check(client.IsOnline && !client.IsReconnecting, "caller cancellation does not mark the connection offline");
+}
+
 Console.WriteLine($"Account tests passed: {passed}");
 
 sealed class MemoryStore : IAccountTokenStore
@@ -180,4 +271,11 @@ sealed class MemoryStore : IAccountTokenStore
 sealed class Handler(Func<HttpRequestMessage, Task<HttpResponseMessage>> send) : HttpMessageHandler
 {
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => send(request);
+}
+sealed class ManualClock : TimeProvider
+{
+    long ticks;
+    public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+    public override long GetTimestamp() => ticks;
+    public void Advance(TimeSpan duration) => ticks += duration.Ticks;
 }

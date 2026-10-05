@@ -41,6 +41,8 @@ public sealed class SmtpVerificationEmailSender(IConfiguration config, ILogger<S
                 BodyEncoding = Encoding.UTF8,
                 IsBodyHtml = false
             };
+            if (Guid.TryParseExact(requestId, "N", out _))
+                message.Headers.Add("Message-ID", $"<mu.{requestId}@{new MailAddress(from).Host}>");
             // SMTP acceptance is queue acceptance, not proof of inbox delivery. No automatic resend on timeout.
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(TimeSpan.FromSeconds(10));

@@ -15,11 +15,12 @@ stamp=$(date -u +%Y%m%dT%H%M%SZ)-$$
 backup=
 changed=0
 manifest="$bundle/manifest.tsv"
-files=(server.mjs compatibility.mjs Dockerfile compose.yml
+files=(server.mjs compatibility.mjs seo.mjs Dockerfile compose.yml
   public/index.html public/download.html public/guide.html public/feedback.html public/survey.html public/compatibility.html
   public/assets/compatibility.css public/assets/compatibility.js
-  public/assets/hardware-check.js public/assets/hardware-reference.json)
-dependencies=(analytics.mjs survey.mjs packages.mjs mirrors.mjs public/assets/app.css public/assets/app.js)
+  public/assets/hardware-check.js public/assets/hardware-reference.json
+  public/dlss5.html public/robots.txt public/llms.txt public/assets/seo.css public/assets/app.css public/assets/app.js)
+dependencies=(analytics.mjs survey.mjs packages.mjs mirrors.mjs)
 
 fail() { printf '%s\n' "$*" >&2; exit 1; }
 for command in docker sha256sum curl jq flock; do command -v "$command" >/dev/null || fail "Missing command: $command"; done
@@ -169,7 +170,7 @@ while IFS=$'\t' read -r path before after; do
   fi
 done < "$manifest"
 for path in analytics.mjs survey.mjs packages.mjs mirrors.mjs; do cp -p -- "$app_root/$path" "$backup/build/$path"; done
-for path in server.mjs compatibility.mjs Dockerfile; do cp -- "$bundle/payload/$path" "$backup/build/$path"; done
+for path in server.mjs compatibility.mjs seo.mjs Dockerfile; do cp -- "$bundle/payload/$path" "$backup/build/$path"; done
 candidate_image="mu-website-compatibility:$stamp"
 docker build --pull=false --tag "$candidate_image" "$backup/build"
 docker image inspect --format '{{.Id}}' "$candidate_image" > "$backup/new-image-id"
@@ -191,6 +192,14 @@ done < "$manifest"
 docker image tag "$candidate_image" "$old_image_name"
 docker compose up -d --no-build --no-deps --force-recreate "$service"
 wait_health
+
+curl --fail --silent --show-error --max-time 12 http://127.0.0.1:8088/dlss5 > "$backup/seo-check.html"
+grep -F 'rel="canonical" href="https://amd-dlss-mu.claude-api.cn/dlss5"' "$backup/seo-check.html" >/dev/null
+grep -F 'application/ld+json' "$backup/seo-check.html" >/dev/null
+curl --fail --silent --show-error --max-time 12 http://127.0.0.1:8088/sitemap.xml > "$backup/sitemap-check.xml"
+grep -F '<loc>https://amd-dlss-mu.claude-api.cn/dlss5</loc>' "$backup/sitemap-check.xml" >/dev/null
+curl --fail --silent --show-error --max-time 12 http://127.0.0.1:8088/llms.txt > "$backup/llms-check.txt"
+grep -F 'DLSS5' "$backup/llms-check.txt" >/dev/null
 
 curl --fail --silent --show-error --max-time 12 http://127.0.0.1:8088/compatibility > "$backup/page-check.html"
 grep -F '/assets/compatibility.js' "$backup/page-check.html" >/dev/null

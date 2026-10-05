@@ -85,6 +85,7 @@ internal static class HttpTests
             "Public agreements available before login");
         assertions += await EmailProviderTests.RunAsync();
         assertions += await SmtpEmailTests.RunAsync();
+        assertions += await MailMonitoringTests.RunAsync();
         assertions += await PublicCompatibilityHttpTests.RunAsync();
         assertions += await MaintenanceHttpTests.RunAsync();
         assertions += await CompatibilityPaginationHttpTests.RunAsync();
