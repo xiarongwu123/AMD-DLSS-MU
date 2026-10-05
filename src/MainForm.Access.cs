@@ -7,6 +7,7 @@ public sealed partial class MainForm
 {
     readonly AccountApiClient accountClient = new(new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(12) }, new AccountTokenStore());
     readonly System.Windows.Forms.Timer accountHeartbeat = new() { Interval = 30000 };
+    CancellationTokenSource? activeHeartbeatRequest;
     RoundedButton? accountHeader;
     bool heartbeatRunning, accountRequestBusy, lastAccountViewAvailable;
     int accountTransactionDepth;
@@ -17,7 +18,18 @@ public sealed partial class MainForm
     {
         accountClient.Changed += AccountStateChanged;
         accountHeartbeat.Tick += async (_, _) => await RefreshAccountHeartbeatAsync();
-        accountHeartbeat.Start();
+    }
+
+    void UpdateAccountHeartbeatSchedule()
+    {
+        if (IsDisposed || Disposing) return;
+        if (activePage != 6 && accountClient.HasSession && !lifetime.IsCancellationRequested)
+            accountHeartbeat.Start();
+        else
+        {
+            accountHeartbeat.Stop();
+            activeHeartbeatRequest?.Cancel();
+        }
     }
 
     async Task RestoreAccountAsync()
@@ -44,24 +56,34 @@ public sealed partial class MainForm
 
     async Task RefreshAccountHeartbeatAsync()
     {
-        if (heartbeatRunning || accountRequestBusy || !accountClient.HasSession || IsDisposed) return;
+        if (activePage == 6 || heartbeatRunning || accountRequestBusy || !accountClient.HasSession || IsDisposed || Disposing) return;
         heartbeatRunning = true;
+        using var requestLifetime = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
+        activeHeartbeatRequest = requestLifetime;
         var wasOffline = !accountClient.IsOnline;
         try
         {
-            await accountClient.HeartbeatAsync(lifetime.Token);
+            await accountClient.HeartbeatAsync(requestLifetime.Token);
+            if (requestLifetime.IsCancellationRequested || activePage == 6 || IsDisposed || Disposing) return;
             if (wasOffline)
             {
                 accountFeedback = accountClient.StorageWarning ?? "账户连接已恢复。";
                 if (!busy && !accountRequestBusy) status.Text = accountFeedback;
             }
         }
+        catch (OperationCanceledException) when (requestLifetime.IsCancellationRequested) { }
         catch (Exception e)
         {
+            if (requestLifetime.IsCancellationRequested || activePage == 6 || IsDisposed || Disposing) return;
             accountFeedback = accountClient.IsReconnecting ? "账户连接暂时波动，正在重试…" : AccountError(e);
             if (!busy && !accountRequestBusy) status.Text = accountFeedback;
         }
-        finally { heartbeatRunning = false; if (!IsDisposed) { ApplyAccountGate(); if (activePage == 6 && !accountRequestBusy && accountMode == "login") RenderAccount(); } }
+        finally
+        {
+            activeHeartbeatRequest = null;
+            heartbeatRunning = false;
+            if (!IsDisposed && !Disposing) ApplyAccountGate();
+        }
     }
 
     void AccountStateChanged()
@@ -79,6 +101,7 @@ public sealed partial class MainForm
         }
         if (accountClient.Account?.Features.FirstOrDefault(f => f.Key == "diagnostics.use") is { Allowed: false }) controlPanel?.Close();
         ApplyAccountGate();
+        if (lost && activePage == 6 && !accountRequestBusy) RenderAccount();
     }
 
     void ApplyAccountGate()
@@ -102,6 +125,7 @@ public sealed partial class MainForm
         }
         magpiePage.Enabled = viewAvailable && !busy;
         if (!viewAvailable && !busy && accountTransactionDepth == 0 && activePage != 6) SwitchPage(6);
+        UpdateAccountHeartbeatSchedule();
     }
 
     async Task<bool> RequireFeatureAsync(string featureKey)

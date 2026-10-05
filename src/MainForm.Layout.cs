@@ -100,6 +100,7 @@ public sealed partial class MainForm
         try
         {
             activePage = index; compatibilityPage.Visible = index == 0; libraryPage.Visible = index == 1; if (aboutPanel != null) aboutPanel.Visible = index == 2;
+            UpdateAccountHeartbeatSchedule();
             downloadsPage.Visible = index == 3; helpPage.Visible = index == 4; settingsPage.Visible = index == 5;
             accountPage.Visible = index == 6; magpiePage.Visible = index == 7;
             SetHeaderMode(index);
