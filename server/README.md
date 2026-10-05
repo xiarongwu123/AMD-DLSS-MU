@@ -72,6 +72,14 @@ For recovery, stop only the account container, preserve the current database plu
 
 ## Email-provider error references
 
+The account service also supports a self-hosted SMTP provider selected with
+`Email__Provider=smtp`. Deployment, DNS, queue behavior and rollback instructions
+are in [deploy/SMTP.md](deploy/SMTP.md). Switching providers requires a tested
+SMTP endpoint and real inbox receipt; the Cloudflare Temp Email inbox application
+alone does not provide an outbound SMTP transport. The default remains Resend
+for compatibility with existing deployments until the server configuration is
+explicitly switched.
+
 Resend documents `daily_quota_exceeded`, `monthly_quota_exceeded`, and `rate_limit_exceeded` as HTTP 429 errors in its [error reference](https://resend.com/docs/api-reference/errors). The [usage limits](https://resend.com/docs/api-reference/rate-limit) specify midnight UTC for the daily quota reset and seconds for `Retry-After` and `ratelimit-reset`. MU reports quota failures separately, never returns the provider's raw message, and does not invent a monthly reset time when no retry hint is supplied. Rate-limit retry hints have a 60-second minimum to respect the local verification-code cooldown. These paths are covered by isolated provider-response tests; no real email is sent by those tests.
 
 ## Acceptance boundaries

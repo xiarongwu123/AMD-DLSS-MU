@@ -40,7 +40,17 @@ builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<AccountManagementService>();
 builder.Services.AddScoped<CompatibilityService>();
 builder.Services.AddSingleton<IPaymentProvider, DisabledPaymentProvider>();
-builder.Services.AddHttpClient<IVerificationEmailSender, ResendEmailSender>(client => client.Timeout = TimeSpan.FromSeconds(10));
+switch (builder.Configuration["Email:Provider"]?.ToLowerInvariant() ?? "resend")
+{
+    case "smtp":
+        builder.Services.AddTransient<IVerificationEmailSender, SmtpVerificationEmailSender>();
+        break;
+    case "resend":
+        builder.Services.AddHttpClient<IVerificationEmailSender, ResendEmailSender>(client => client.Timeout = TimeSpan.FromSeconds(10));
+        break;
+    default:
+        throw new InvalidOperationException("Unsupported Email:Provider.");
+}
 builder.Services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ClientBearerHandler>(ClientBearerHandler.SchemeName, _ => { });
 builder.Services.AddAuthorization(options => options.AddPolicy("Client", policy => policy.AddAuthenticationSchemes(ClientBearerHandler.SchemeName).RequireAuthenticatedUser()));
 builder.Services.AddRazorPages();

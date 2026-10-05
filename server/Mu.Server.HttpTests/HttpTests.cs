@@ -21,6 +21,11 @@ internal static class HttpTests
 
     public static async Task Main(string[] args)
     {
+        if (args.SequenceEqual(new[] { "--smtp" }))
+        {
+            await SmtpEmailTests.RunAsync();
+            return;
+        }
         if (args.SequenceEqual(new[] { "--pagination" }))
         {
             await CompatibilityPaginationHttpTests.RunAsync();
@@ -79,6 +84,7 @@ internal static class HttpTests
         Check((await client.GetAsync("/legal/terms")).IsSuccessStatusCode && (await client.GetAsync("/legal/privacy")).IsSuccessStatusCode,
             "Public agreements available before login");
         assertions += await EmailProviderTests.RunAsync();
+        assertions += await SmtpEmailTests.RunAsync();
         assertions += await PublicCompatibilityHttpTests.RunAsync();
         assertions += await MaintenanceHttpTests.RunAsync();
         assertions += await CompatibilityPaginationHttpTests.RunAsync();

@@ -1,0 +1,43 @@
+name: mu-smtp
+services:
+  smtp:
+    image: ${SMTP_IMAGE:?Set a pinned boky/postfix image digest}
+    container_name: amd-dlss-mu-smtp
+    hostname: smtp.claude-api.cn
+    restart: unless-stopped
+    environment:
+      ALLOWED_SENDER_DOMAINS: smtp.claude-api.cn
+      POSTFIX_myhostname: smtp.claude-api.cn
+      POSTFIX_mynetworks: ${SMTP_TRUSTED_NETWORKS:?Set the account Docker network subnet}
+      POSTFIX_inet_protocols: ipv4
+      POSTFIX_smtp_tls_security_level: encrypt
+      POSTFIX_message_size_limit: 262144
+      POSTFIX_maximal_queue_lifetime: 10m
+      POSTFIX_bounce_queue_lifetime: 10m
+      POSTFIX_smtp_destination_concurrency_limit: 2
+      POSTFIX_smtp_destination_rate_delay: 1s
+      DKIM_AUTOGENERATE: "1"
+      DKIM_SELECTOR: mu202610
+      DKIM_BACKEND: opendkim
+      ANONYMIZE_EMAILS: paranoid
+      PYTHONWARNINGS: ignore::SyntaxWarning
+    volumes:
+      - smtp-queue:/var/spool/postfix
+      - smtp-keys:/etc/opendkim/keys
+      - ./smtp-init.sh:/docker-init.d/90-mu.sh:ro
+    networks:
+      account:
+        aliases: [mu-smtp]
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+networks:
+  account:
+    external: true
+    name: mu-account_default
+volumes:
+  smtp-queue:
+  smtp-keys:
