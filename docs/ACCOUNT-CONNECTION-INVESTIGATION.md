@@ -159,6 +159,35 @@ shows the error, a feedback refresh while typing preserves focus/selection,
 switching login/register clears the previous form, and successful login
 transitions to the signed-in view.
 
+## Heartbeat scope and transient connection behavior
+
+The user requested that the account screen not run global periodic checks.
+The timer is now started only on business pages with an existing session;
+entering account page 6 stops the timer and cancels an in-flight heartbeat.
+The heartbeat handler also checks the page before sending and suppresses
+feedback from canceled/late results. Startup restoration and explicit login,
+account refresh or reconnection remain available; these are not timer checks.
+
+A separately verified account view now has a two-minute grace window starting
+at the first transport failure, timeout or temporary 5xx/408/429 response.
+Repeated failures do not extend this window. The underlying `IsOnline` remains
+false; every actual operation still requires a successful server authorization.
+One heartbeat failure therefore does not clear displayed results, cancel the
+active operation, or force the account page. Grace expiry restricts the view
+while retaining the refresh token for explicit recovery. Because the account
+page has no automatic heartbeat, recovery there uses its reconnect button.
+Revocation, account disablement and malformed account responses end grace
+immediately. Saved credentials without a prior verified account grant no grace.
+
+Verification: 64 portable account assertions passed, including the exact grace
+boundary, non-extension on repeated errors, operation authorization during
+grace, recovery, revocation, disabled accounts, malformed responses and caller
+cancellation. Windows UI compilation passed. Windows execution of timer/page
+switch behavior and release delivery remain unverified. On Windows, wait more
+than 60 seconds on login/register/reset forms and verify no periodic
+`account/me` request; switch to a business page and verify checks resume, then
+switch back during a slow request and verify input and feedback are undisturbed.
+
 ## Live recheck: 2026-10-05 15:23-15:26
 
 - The active release is now `20261005-mail-monitor`; the account container
