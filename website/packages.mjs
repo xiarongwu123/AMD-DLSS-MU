@@ -119,5 +119,6 @@ export function createPackageStore(dataRoot, { fetchImpl = fetch } = {}) {
     if (start === 0) started();
     stream.pipe(res);
   }
-  return { path, ensure, serve };
+  async function check(release) { const { handle } = await checkedHandle(release); await handle.close(); }
+  return { path, ensure, serve, check };
 }

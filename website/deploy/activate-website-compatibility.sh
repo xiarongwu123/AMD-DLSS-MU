@@ -15,7 +15,7 @@ stamp=$(date -u +%Y%m%dT%H%M%SZ)-$$
 backup=
 changed=0
 manifest="$bundle/manifest.tsv"
-files=(server.mjs compatibility.mjs seo.mjs Dockerfile compose.yml
+files=(server.mjs compatibility.mjs seo.mjs updates.mjs Dockerfile compose.yml
   public/index.html public/download.html public/guide.html public/feedback.html public/survey.html public/compatibility.html
   public/assets/compatibility.css public/assets/compatibility.js
   public/assets/hardware-check.js public/assets/hardware-reference.json
@@ -170,7 +170,7 @@ while IFS=$'\t' read -r path before after; do
   fi
 done < "$manifest"
 for path in analytics.mjs survey.mjs packages.mjs mirrors.mjs; do cp -p -- "$app_root/$path" "$backup/build/$path"; done
-for path in server.mjs compatibility.mjs seo.mjs Dockerfile; do cp -- "$bundle/payload/$path" "$backup/build/$path"; done
+for path in server.mjs compatibility.mjs seo.mjs updates.mjs Dockerfile; do cp -- "$bundle/payload/$path" "$backup/build/$path"; done
 candidate_image="mu-website-compatibility:$stamp"
 docker build --pull=false --tag "$candidate_image" "$backup/build"
 docker image inspect --format '{{.Id}}' "$candidate_image" > "$backup/new-image-id"

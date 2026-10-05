@@ -6,13 +6,17 @@ using System.Text.RegularExpressions;
 
 namespace AmdNrAssistant;
 
-public record AppRelease(string Tag, string Url, string Sha256, long Size, string Notes, string? ApiUrl = null);
+public record AppRelease(string Tag, string Url, string Sha256, long Size, string Notes, string? ApiUrl = null, string? MirrorUrl = null);
 public record UpdatePlan(string Target, int ProcessId, string OriginalHash, string NewHash, long Size, string Version);
 
 public static class AutoUpdate
 {
     public const string Repository = "https://github.com/xiarongwu123/AMD-DLSS-MU";
     public const string AssetName = "AMD-DLSS-MU.exe";
+    public const string Website = "https://amd-dlss-mu.claude-api.cn";
+    public const string WebsiteManifest = Website + "/api/updates/latest";
+    public const string GithubManifest = "https://api.github.com/repos/xiarongwu123/AMD-DLSS-MU/releases/latest";
+    public static string MirrorUrl(string tag, string hash) => Website + "/updates/" + tag + "/" + hash + "/" + AssetName;
     public static Version CurrentVersion => typeof(AutoUpdate).Assembly.GetName().Version ?? new Version(0, 0, 0);
     public static string DisplayVersion => CurrentVersion.ToString(3);
     public static AppRelease? Parse(string json, Version current)
@@ -32,13 +36,40 @@ public static class AutoUpdate
         var size = asset.GetProperty("size").GetInt64();
         if (size < 1024 || size > 1024L * 1024 * 1024) throw new IOException("新版文件大小异常。");
         var notes = root.TryGetProperty("body", out var body) ? body.GetString() ?? "" : "";
-        return new(tag, url, digest[7..].ToLowerInvariant(), size, notes[..Math.Min(notes.Length, 4000)], DownloadSources.AssetApi("xiarongwu123/AMD-DLSS-MU", asset));
+        var hash = digest[7..].ToLowerInvariant();
+        return new(tag, url, hash, size, notes[..Math.Min(notes.Length, 4000)], DownloadSources.AssetApi("xiarongwu123/AMD-DLSS-MU", asset), MirrorUrl(tag, hash));
+    }
+    public static AppRelease? ParseWebsite(string json, Version current)
+    {
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+        var tag = root.GetProperty("tag").GetString() ?? "";
+        var hash = root.GetProperty("sha256").GetString() ?? "";
+        var size = root.GetProperty("size").GetInt64();
+        if (root.GetProperty("channel").GetString() != "stable" || root.GetProperty("file").GetString() != AssetName ||
+            !Regex.IsMatch(tag, @"^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$") || !Version.TryParse(tag[1..], out var version) ||
+            root.GetProperty("version").GetString() != tag[1..] || !Regex.IsMatch(hash, "^[a-f0-9]{64}$") || size < 1024 || size > 1024L * 1024 * 1024)
+            throw new IOException("官网更新信息无效。");
+        var mirror = MirrorUrl(tag, hash);
+        if (root.GetProperty("downloadUrl").GetString() != mirror) throw new IOException("更新包不来自指定官网地址。");
+        if (version <= new Version(current.Major, current.Minor, Math.Max(0, current.Build))) return null;
+        var notes = root.TryGetProperty("notes", out var body) ? body.GetString() ?? "" : "";
+        return new(tag, Repository + "/releases/download/" + tag + "/" + AssetName, hash, size,
+            notes[..Math.Min(notes.Length, 4000)], MirrorUrl: mirror);
     }
     public static async Task<AppRelease?> CheckAsync(CancellationToken token)
     {
         using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
         client.DefaultRequestHeaders.UserAgent.ParseAdd("AMD-DLSS-MU/" + DisplayVersion);
-        return Parse(await client.GetStringAsync("https://api.github.com/repos/xiarongwu123/AMD-DLSS-MU/releases/latest", token), CurrentVersion);
+        return await CheckAsync(client, CurrentVersion, token);
+    }
+    public static async Task<AppRelease?> CheckAsync(HttpClient client, Version current, CancellationToken token)
+    {
+        try { return ParseWebsite(await client.GetStringAsync(WebsiteManifest, token), current); }
+        catch (Exception e) when (!token.IsCancellationRequested && e is HttpRequestException or OperationCanceledException or IOException or JsonException or InvalidOperationException or KeyNotFoundException or FormatException or OverflowException)
+        {
+            return Parse(await client.GetStringAsync(GithubManifest, token), current);
+        }
     }
     public static async Task<string> DownloadAsync(AppRelease release, IProgress<int> progress, CancellationToken token, Action<string>? status = null)
     {
@@ -49,7 +80,7 @@ public static class AutoUpdate
         {
             using var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
             await DownloadSources.DownloadAsync(client, release.Url, release.ApiUrl, release.Sha256,
-                release.Size, partial, progress, token, status);
+                release.Size, partial, progress, token, status, mirror: release.MirrorUrl);
             DownloadSources.CurrentSession.Value?.Report("正在校验", 100, release.Size, "核对 EXE 架构与内部版本");
             await Task.Run(() => Verify(partial, release.Sha256, release.Size, release.Tag[1..]), token);
             token.ThrowIfCancellationRequested(); File.Move(partial, result);

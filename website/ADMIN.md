@@ -10,6 +10,12 @@
 ssh -p 1013 xrw@72.11.138.132 'cat /home/xrw/amd-dlss-mu-site/data/admin-initial-password.txt'
 ```
 
-更新安装包时，先在 `xiarongwu123/AMD-DLSS-MU` 的 GitHub Release 发布正式版本，附件必须命名为 `AMD-DLSS-MU.exe`，并提供 SHA-256 digest。随后在后台输入版本标签（例如 `v1.3.0`），点击“预览并校验”，核对大小及哈希，再确认发布。官网会立即更新下载目标、版本、大小、日期及哈希；下载请求跳转到 GitHub 附件，不经本机服务器传输大文件。
+在“软件发行”选择本地 `AMD-DLSS-MU.exe`、填写更新说明，点击“上传并校验”。后台以 4 MiB 分片上传，网络暂时中断会查询已接收进度并重试。页面内重试可继续上传，关闭或刷新页面后需重新选择文件上传。
 
-后台只允许从上述官方仓库的正式 Release 选择附件，不接受任意 URL 或网页上传。发行配置保存在 `data/release.json`，与反馈数据一起由 Docker 卷持久化。`PUBLIC_ORIGIN` 与 `ADMIN_PASSWORD_HASH` 存在服务器 `.env`，不应进入公开目录或源码包。服务端口只绑定 `127.0.0.1:8088`，由现有 Cloudflare Tunnel 对外提供 HTTPS。
+服务器自动读取 Windows x64 EXE 的内部版本、检查客户端名称并计算 SHA-256。确认预览中的版本、大小和哈希后，勾选确认并点击“确认发布更新”。仅在文件校验完成后原子切换版本；失败时线上包保持不变。文件最大 1 GiB，新版本必须高于线上版本，不能用同版本的不同文件覆盖更新。
+
+也可展开“从 GitHub 导入”，沿用正式 Release 同步流程。发布后官网直接传输文件，客户端通过 `/api/updates/latest` 获取更新，并使用含版本与哈希的固定 `/updates/.../AMD-DLSS-MU.exe` 地址下载。历史包保留，发布新版本不会改变正在下载的旧地址。
+
+从 2.0.6 开始，客户端检查更新与下载都优先使用官网，官网失败后回退 GitHub。备用下载需要在 `xiarongwu123/AMD-DLSS-MU` 发布相同版本、相同字节的 EXE；仅上传官网也能供新版客户端下载，不依赖 GitHub 发布。2.0.5 及更早客户端仍从 GitHub 获取首次升级。
+
+上传、分片、校验和发布接口均要求现有管理员登录，并校验同源请求；上传记录绑定当前登录会话。未完成的临时分片两小时后清理。服务器不会执行上传的程序。发行配置保存在 `data/release.json`，历史描述在 `data/releases/`，安装包在 `data/packages/`，由 Docker 卷持久化。`PUBLIC_ORIGIN` 与 `ADMIN_PASSWORD_HASH` 保留在服务器 `.env`。服务只绑定 `127.0.0.1:8088`，由现有 Cloudflare Tunnel 提供 HTTPS。

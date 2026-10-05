@@ -9,6 +9,7 @@ import { createSurveyStore, surveyDefinition, validateSurvey } from './survey.mj
 import { createPackageStore, sourceUrl } from './packages.mjs';
 import { createCompatibilityProxy } from './compatibility.mjs';
 import { publicPages, canonicalRedirect, sitemapXml, renderSeoPage } from './seo.mjs';
+import { createUpdateStore } from './updates.mjs';
 
 const port = Number(process.env.PORT || 8080);
 const host = process.env.HOST || '0.0.0.0';
@@ -32,6 +33,7 @@ const handleCompatibility = createCompatibilityProxy();
 process.umask(0o077);
 mkdirSync(dataRoot, { recursive: true });
 const packages = createPackageStore(dataRoot);
+const updates = createUpdateStore(dataRoot, packages, { origin: publicOrigin, current: readRelease });
 const handleMirror = createMirrorHandler(dataRoot);
 let releaseJob = null;
 let analytics;
@@ -102,10 +104,12 @@ function startRelease(release) {
   (async () => {
     let temp;
     try {
+      updates.assertNew(release);
       await packages.ensure(release, progress => Object.assign(job, progress));
       job.phase = 'publishing';
       const previous = readRelease();
       const active = localRelease(release);
+      await updates.remember(active);
       temp = `${releaseFile}.tmp-${randomBytes(8).toString('hex')}`;
       await writeFile(temp, `${JSON.stringify(active, null, 2)}\n`, { mode: 0o600, flag: 'wx' });
       await rename(temp, releaseFile);
@@ -186,6 +190,7 @@ async function githubRelease(tag) {
     version: tag.slice(1), tag, channel: 'stable', platform: 'Windows x64',
     file: 'AMD-DLSS-MU.exe', size: asset.size, sizeDisplay,
     sha256: asset.digest.slice(7).toLowerCase(),
+    notes: typeof release.body === 'string' ? release.body.slice(0, 4000) : '',
     publishedAt: release.published_at.slice(0, 10), downloadUrl,
     releaseUrl: `https://github.com/xiarongwu123/AMD-DLSS-MU/releases/tag/${tag}`
   };
@@ -193,7 +198,7 @@ async function githubRelease(tag) {
 
 async function handleAdmin(req, res, pathname) {
   if (!adminPasswordHash) return send(res, 503, { message: '管理员后台尚未配置。' });
-  if (req.method === 'POST' && !sameOrigin(req)) return send(res, 403, { message: '请求来源无效。' });
+  if (['POST', 'PUT', 'DELETE'].includes(req.method) && !sameOrigin(req)) return send(res, 403, { message: '请求来源无效。' });
   if (pathname === '/api/admin/login' && req.method === 'POST') {
     const ip = clientIp(req);
     const now = Date.now();
@@ -215,6 +220,32 @@ async function handleAdmin(req, res, pathname) {
   }
   if (pathname === '/api/admin/session' && req.method === 'GET' && !authenticated(req)) return send(res, 200, { ok: false });
   if (!authenticated(req)) return send(res, 401, { message: '请先登录管理员后台。' });
+  if (pathname === '/api/admin/uploads' && req.method === 'POST') {
+    try { return send(res, 201, await updates.create(await collectSmallJson(req), sessionToken(req))); }
+    catch (error) { return send(res, 400, { message: error.message }); }
+  }
+  const uploadRoute = /^\/api\/admin\/uploads\/([a-f0-9]{32})(?:\/(complete|publish))?$/.exec(pathname);
+  if (uploadRoute) {
+    const [, id, action] = uploadRoute, owner = sessionToken(req);
+    try {
+      if (!action && req.method === 'GET') return send(res, 200, updates.status(id, owner));
+      if (!action && req.method === 'DELETE') { await updates.discard(id, owner); return send(res, 200, { ok: true }); }
+      if (!action && req.method === 'PUT') {
+        const offset = new URL(req.url, publicOrigin).searchParams.get('offset');
+        if (!/^\d+$/.test(offset || '')) throw new Error('分片进度无效。');
+        return send(res, 200, await updates.append(id, owner, Number(offset), req));
+      }
+      if (action === 'complete' && req.method === 'POST') return send(res, 200, { release: localRelease(await updates.complete(id, owner)) });
+      if (action === 'publish' && req.method === 'POST') {
+        if (releaseJob?.state === 'running') return send(res, 409, { message: '已有版本正在发布，请等待完成。' });
+        const release = updates.status(id, owner).release;
+        if (!release) throw new Error('请先完成上传和校验。');
+        updates.assertNew(release);
+        return send(res, 202, { job: startRelease(release) });
+      }
+      return send(res, 405, { message: 'Method not allowed' });
+    } catch (error) { return send(res, 400, { message: error.message || '上传处理失败，线上版本未变更。' }); }
+  }
   if (pathname === '/api/admin/session' && req.method === 'GET') return send(res, 200, { ok: true, release: readRelease() });
   if (pathname === '/api/admin/release-status' && req.method === 'GET') return send(res, 200, { job: releaseJob });
   if (pathname === '/api/admin/survey' && req.method === 'GET') {
@@ -448,7 +479,7 @@ createServer(async (req, res) => {
   try {
     const url = new URL(req.url || '/', 'http://localhost');
     if (url.pathname === '/admin' || url.pathname === '/admin.html' || url.pathname.startsWith('/api/') ||
-        url.pathname.startsWith('/download/') || url.pathname.startsWith('/files/') || url.pathname.startsWith('/mirrors/')) {
+        url.pathname.startsWith('/download/') || url.pathname.startsWith('/files/') || url.pathname.startsWith('/mirrors/') || url.pathname.startsWith('/updates/')) {
       res.setHeader('X-Robots-Tag', 'noindex, nofollow');
     }
     if (req.method === 'GET' || req.method === 'HEAD') {
@@ -476,6 +507,19 @@ createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/feedback') return await handleFeedback(req, res);
     if (url.pathname === '/api/survey') return await handleSurvey(req, res);
     if (url.pathname.startsWith('/api/admin/')) return await handleAdmin(req, res, url.pathname);
+    if (url.pathname === '/api/updates/latest' && req.method === 'GET') {
+      try {
+        const release = readRelease();
+        await packages.check(release);
+        await updates.remember(release);
+        return send(res, 200, updates.describe(release));
+      } catch { return send(res, 503, { message: '官网更新暂不可用，请稍后重试。' }); }
+    }
+    const updateRoute = /^\/updates\/(v\d+\.\d+\.\d+)\/([a-f0-9]{64})\/AMD-DLSS-MU\.exe$/.exec(url.pathname);
+    if (updateRoute && ['GET', 'HEAD'].includes(req.method)) {
+      try { return await packages.serve(req, res, await updates.find(updateRoute[1], updateRoute[2])); }
+      catch { return send(res, 404, { message: '该更新包不存在。' }); }
+    }
     if (req.method === 'GET' && url.pathname === '/release.json') return send(res, 200, readRelease());
     if ((req.method === 'GET' || req.method === 'HEAD') &&
         url.pathname === '/download/AMD-DLSS-MU-v2.0.0-preview.1-e3b9b13.exe') {

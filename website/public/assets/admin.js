@@ -10,6 +10,13 @@
   let publishing = false;
   let pollTimer;
   let watching = false;
+  let upload = null;
+  let previewUploadId = null;
+  let uploadController = null;
+  const uploadForm = document.querySelector('[data-upload-form]');
+  const cancelUpload = document.querySelector('[data-upload-cancel]');
+  const uploadProgress = document.querySelector('[data-upload-progress]');
+  const uploadStatus = document.querySelector('[data-upload-status]');
 
   function lockPublishing(value) {
     publishing = value;
@@ -17,6 +24,7 @@
     document.querySelector('[name="tag"]').disabled = value;
     confirm.disabled = value;
     publish.disabled = value || !preview || !confirm.checked;
+    for (const control of uploadForm.elements) control.disabled = value;
   }
 
   function renderJob(job) {
@@ -31,7 +39,13 @@
       lockPublishing(false);
       if (job.state === 'complete') {
         showRelease(job.release); preview = null; previewPanel.hidden = true; confirm.checked = false; publish.disabled = true;
-        message(`${job.tag} 已同步到服务器并通过 SHA-256 校验，官网直下载已生效。`, 'success');
+        if (previewUploadId) {
+          fetch(`/api/admin/uploads/${previewUploadId}`, { method: 'DELETE' }).catch(() => {});
+          upload = null; uploadForm.reset(); uploadProgress.hidden = true;
+          uploadStatus.textContent = '发布完成。下次更新可直接在这里上传更高版本的安装包。';
+        }
+        previewUploadId = null;
+        message(`${job.tag} 已发布，官网下载和客户端更新已生效。`, 'success');
         window.dispatchEvent(new Event('mu:release-updated'));
       } else message(job.message || '同步失败，旧版本保持不变。', 'error');
     }
@@ -118,8 +132,9 @@
     if (publishing) return;
     const form = event.currentTarget;
     const button = form.querySelector('button');
-    button.disabled = true;
+    lockPublishing(true);
     preview = null;
+    previewUploadId = null;
     previewPanel.hidden = true;
     confirm.checked = false;
     publish.disabled = true;
@@ -134,7 +149,7 @@
       previewPanel.hidden = false;
       message('Release 信息已核对；确认发布后，服务器将下载并校验完整安装包。', 'success');
     } catch (error) { message(error.message, 'error'); }
-    finally { button.disabled = false; }
+    finally { lockPublishing(false); }
   });
 
   document.querySelector('[name="tag"]').addEventListener('input', () => {
@@ -150,7 +165,7 @@
     lockPublishing(true);
     message('正在创建服务器同步任务…');
     try {
-      const result = await api('/api/admin/release', { tag: preview.tag });
+      const result = await api(previewUploadId ? `/api/admin/uploads/${previewUploadId}/publish` : '/api/admin/release', { tag: preview.tag });
       watching = true; clearTimeout(pollTimer); renderJob(result.job);
     } catch (error) {
       if (error.status && error.status !== 409 && error.status < 500) { lockPublishing(false); message(error.message, 'error'); return; }
@@ -160,10 +175,74 @@
   });
 
   logout.addEventListener('click', async () => {
+    uploadController?.abort();
     watching = false; clearTimeout(pollTimer);
     try { await api('/api/admin/logout', {}); }
     finally { preview = null; previewPanel.hidden = true; message('已退出登录。'); await refresh(); }
   });
+  uploadForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (publishing) return;
+    const file = uploadForm.elements.file.files[0];
+    if (!file || file.name !== 'AMD-DLSS-MU.exe' || file.size < 1048576 || file.size > 1073741824) {
+      message('请选择 AMD-DLSS-MU.exe（1 MiB 至 1 GiB）。', 'error'); return;
+    }
+    const controller = new AbortController(); uploadController = controller;
+    lockPublishing(true); watching = false; clearTimeout(pollTimer);
+    preview = null; previewUploadId = null; previewPanel.hidden = true; confirm.checked = false;
+    uploadProgress.hidden = false; cancelUpload.hidden = false;
+    try {
+      if (upload && (upload.file !== file || upload.notes !== uploadForm.elements.notes.value)) {
+        await fetch(`/api/admin/uploads/${upload.id}`, { method: 'DELETE' }); upload = null;
+      }
+      if (!upload) upload = { ...await api('/api/admin/uploads', { fileName: file.name, size: file.size, notes: uploadForm.elements.notes.value }), file, notes: uploadForm.elements.notes.value };
+      const path = `/api/admin/uploads/${upload.id}`;
+      let offset = (await api(path)).offset;
+      while (offset < file.size) {
+        controller.signal.throwIfAborted();
+        const end = Math.min(offset + upload.chunkSize, file.size);
+        let completed = false;
+        for (let attempt = 0; attempt < 3 && !completed; attempt++) {
+          try {
+            const response = await fetch(`${path}?offset=${offset}`, { method: 'PUT', headers: { 'Content-Type': 'application/octet-stream' },
+              body: file.slice(offset, end), signal: AbortSignal.any([controller.signal, AbortSignal.timeout(60000)]) });
+            const result = await response.json();
+            if (!response.ok) throw Object.assign(new Error(result.message || '上传失败。'), { status: response.status });
+            offset = result.offset; completed = true;
+          } catch (error) {
+            if (controller.signal.aborted || error.status === 401 || error.status === 403) throw error;
+            const saved = await api(path);
+            if (saved.offset === end) { offset = end; completed = true; }
+            else if (saved.offset !== offset || attempt === 2) throw error;
+            else await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+        uploadProgress.value = offset * 100 / file.size;
+        uploadStatus.textContent = `已上传 ${(offset / 1048576).toFixed(1)} / ${(file.size / 1048576).toFixed(1)} MiB`;
+      }
+      controller.signal.throwIfAborted();
+      cancelUpload.hidden = true;
+      uploadStatus.textContent = '上传完成，正在校验 EXE 内部版本与 SHA-256…';
+      const result = await api(`${path}/complete`, {});
+      controller.signal.throwIfAborted();
+      preview = result.release; previewUploadId = upload.id;
+      document.querySelector('[data-preview-version]').textContent = preview.tag;
+      document.querySelector('[data-preview-size]').textContent = `${preview.sizeDisplay} · Windows x64 · 校验通过`;
+      document.querySelector('[data-preview-hash]').textContent = preview.sha256;
+      document.querySelector('[data-preview-url]').href = preview.releaseUrl;
+      previewPanel.hidden = false;
+      uploadStatus.textContent = '校验通过。请确认下方版本和校验值，再发布更新。';
+      message('安装包已就绪，线上版本尚未变更。', 'success');
+    } catch (error) {
+      uploadStatus.textContent = controller.signal.aborted ? '已取消上传，线上版本未变更。' : `${error.message} 可点击“上传并校验”重试；进度会保留。`;
+      message(uploadStatus.textContent, 'error');
+      if (controller.signal.aborted && upload) {
+        await fetch(`/api/admin/uploads/${upload.id}`, { method: 'DELETE' }).catch(() => {}); upload = null;
+      }
+    } finally { uploadController = null; cancelUpload.hidden = true; lockPublishing(false); }
+  });
+  cancelUpload.addEventListener('click', () => uploadController?.abort());
+  window.addEventListener('beforeunload', event => { if (uploadController) { event.preventDefault(); event.returnValue = ''; } });
   window.muAdmin = { api, refresh };
   refresh();
 })();

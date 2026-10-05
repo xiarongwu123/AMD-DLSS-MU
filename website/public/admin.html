@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#070b12">
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/assets/app.css?v=20260922-survey1"><link rel="stylesheet" href="/assets/admin.css?v=20260922-analytics"><link rel="stylesheet" href="/assets/dashboard.css?v=20260922-analytics">
+  <link rel="stylesheet" href="/assets/app.css?v=20260922-survey1"><link rel="stylesheet" href="/assets/admin.css?v=20261005-upload1"><link rel="stylesheet" href="/assets/dashboard.css?v=20260922-analytics">
   <title>运营控制台 · AMD DLSS MU</title>
 </head>
 <body data-page="admin">
@@ -79,18 +79,32 @@
         </dl>
       </section>
       <section class="admin-panel update-panel">
-        <p class="eyebrow">MANUAL UPDATE</p><h2>切换软件包</h2>
-        <p>填写本仓库正式 Release 的版本标签，例如 <code>v1.3.0</code>。服务器会下载 <code>AMD-DLSS-MU.exe</code> 并校验大小与 SHA-256，全部成功后再切换官网直下载。同步失败时旧版本保持不变，用户无需访问 GitHub。</p>
+        <p class="eyebrow">PUBLISH UPDATE</p><h2>上传并发布客户端</h2>
+        <p>选择打包好的 <code>AMD-DLSS-MU.exe</code>，填写更新说明。上传后自动识别版本并校验，确认发布后官网下载与客户端更新同时生效。新包版本号须高于线上版本。</p>
+        <form data-upload-form class="upload-form">
+          <label for="release-file">Windows x64 安装包（最多 1 GiB）</label>
+          <input id="release-file" name="file" type="file" accept=".exe" required>
+          <label for="release-notes">更新说明</label>
+          <textarea id="release-notes" name="notes" rows="4" maxlength="4000" placeholder="说明这次修复或新增的功能" required></textarea>
+          <progress data-upload-progress max="100" value="0" aria-label="安装包上传进度" hidden></progress>
+          <p data-upload-status role="status" aria-live="polite">自动分片上传；上传完成前请保持页面打开。</p>
+          <button type="submit">上传并校验 →</button>
+        </form>
+        <button type="button" data-upload-cancel hidden>取消本次上传</button>
+        <p class="panel-note">2.0.6 及以上客户端优先从官网更新。GitHub 备用下载需要在本仓库发布同版本、相同文件。</p>
+        <details class="github-import"><summary>也可以从 GitHub 导入</summary>
+        <p>填写本仓库正式 Release 标签，服务器下载并校验后发布；失败时线上版本不变。</p>
         <form data-preview-form>
           <label for="release-tag">GitHub Release 标签</label>
-          <div class="tag-row"><input id="release-tag" name="tag" type="text" value="v1.3.0" required><button type="submit">校验附件 →</button></div>
+          <div class="tag-row"><input id="release-tag" name="tag" type="text" placeholder="v2.0.6" required><button type="submit">校验附件 →</button></div>
         </form>
+        </details>
         <div class="preview-panel" data-preview-panel hidden>
           <span>待发布附件</span><strong data-preview-version>—</strong>
           <p data-preview-size>—</p><code data-preview-hash>—</code>
-          <a data-preview-url href="#" target="_blank" rel="noopener noreferrer">查看 GitHub Release ↗</a>
-          <label class="publish-check"><input type="checkbox" data-confirm> 我确认切换官网的下载版本与链接</label>
-          <button class="admin-primary" type="button" data-publish disabled>同步到服务器并发布 →</button>
+          <a data-preview-url href="#" target="_blank" rel="noopener noreferrer">查看版本页面 ↗</a>
+          <label class="publish-check"><input type="checkbox" data-confirm> 我确认发布此版本，更新官网下载与客户端更新</label>
+          <button class="admin-primary" type="button" data-publish disabled>确认发布更新 →</button>
         </div>
       </section>
       </div>
@@ -129,7 +143,7 @@
     </div>
   </main>
   <dialog class="feedback-dialog" data-feedback-dialog aria-labelledby="feedback-dialog-title"><button type="button" data-dialog-close aria-label="关闭反馈详情">×</button><p class="eyebrow">FEEDBACK DETAIL</p><h2 id="feedback-dialog-title">反馈详情</h2><div data-feedback-detail></div><form data-feedback-status-form><label for="feedback-status">处理状态</label><select id="feedback-status" name="status"><option value="new">待处理</option><option value="in_progress">处理中</option><option value="resolved">已解决</option><option value="ignored">暂不处理</option></select><button type="submit">保存状态</button><p data-dialog-message role="status"></p></form></dialog>
-  <script src="/assets/admin.js?v=20260922-server-download2" defer></script>
+  <script src="/assets/admin.js?v=20261005-upload1" defer></script>
   <dialog class="feedback-dialog" data-survey-dialog aria-labelledby="survey-dialog-title"><button type="button" class="survey-dialog-close" data-survey-close aria-label="关闭答卷详情">×</button><p class="eyebrow">SURVEY DETAIL</p><h2 id="survey-dialog-title">匿名答卷详情</h2><div data-survey-detail></div></dialog>
   <link rel="stylesheet" href="/assets/admin-survey.css?v=20260922-survey1">
   <script src="/assets/dashboard.js?v=20260922-server-download2" defer></script>

@@ -27,5 +27,12 @@
 .preview-panel { display: grid; gap: 12px; margin-top: 30px; padding: 22px; border: 1px solid #50613d; background: #0c180f; }.preview-panel > span { color: var(--acid); font: .76rem monospace; letter-spacing: .1em; }.preview-panel strong { font-size: 2rem; }.preview-panel p { margin: 0; }.preview-panel code { overflow-wrap: anywhere; }.preview-panel a { color: var(--acid); text-decoration: underline; }
 .publish-check { display: flex !important; align-items: start; gap: 10px; margin-top: 12px; }.publish-check input { margin-top: 5px; accent-color: var(--acid); }
 [hidden] { display: none !important; }
+.upload-form { display: grid; gap: 12px; }
+.upload-form input[type="file"] { width: 100%; color: var(--muted); }
+.upload-form textarea { width: 100%; padding: 12px; border: 1px solid #3c4d5e; background: #070c12; color: white; resize: vertical; font: inherit; }
+.upload-form progress { width: 100%; accent-color: var(--acid); }
+.upload-form p { margin: 0; font-size: .85rem; }
+.github-import { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 20px; }
+.github-import summary { cursor: pointer; color: var(--acid); }
 @media (max-width: 900px) { .admin-workspace { grid-template-columns: 1fr; } }
 @media (max-width: 580px) { .admin-header-actions > span { display: none; }.admin-header { align-items: start; flex-direction: column; padding-block: 14px; }.admin-heading h1 { font-size: 3rem; }.tag-row { grid-template-columns: 1fr; }.release-facts div { grid-template-columns: 1fr; gap: 2px; } }
