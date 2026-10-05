@@ -1,15 +1,15 @@
 {
-  "version": "2.0.6",
-  "tag": "v2.0.6",
+  "version": "2.0.7",
+  "tag": "v2.0.7",
   "channel": "stable",
   "platform": "Windows x64",
   "file": "AMD-DLSS-MU.exe",
-  "size": 201144451,
+  "size": 201145147,
   "sizeDisplay": "191.8 MiB",
-  "sha256": "f5fdb60460a6075668eba14dab03f617b56ab875beffd147eed19de4ad340b2a",
+  "sha256": "cb7b4cc9826fa0fa6d546f97dec4ec8a3f8386d7a1a7b8c046050da29481e998",
   "publishedAt": "2026-10-05",
   "downloadUrl": "https://amd-dlss-mu.claude-api.cn/download/file",
-  "releaseUrl": "https://github.com/xiarongwu123/AMD-DLSS-MU/releases/tag/v2.0.6",
-  "sourceUrl": "https://github.com/xiarongwu123/AMD-DLSS-MU/releases/download/v2.0.6/AMD-DLSS-MU.exe",
+  "releaseUrl": "https://github.com/xiarongwu123/AMD-DLSS-MU/releases/tag/v2.0.7",
+  "sourceUrl": "https://github.com/xiarongwu123/AMD-DLSS-MU/releases/download/v2.0.7/AMD-DLSS-MU.exe",
   "delivery": "server"
 }
