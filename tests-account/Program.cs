@@ -259,6 +259,41 @@ using (var client = new AccountApiClient(new HttpClient(new Handler(request =>
     Check(client.IsOnline && !client.IsReconnecting, "caller cancellation does not mark the connection offline");
 }
 
+foreach (var restoring in new[] { false, true })
+{
+    var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var releaseResponse = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var rotationCount = 0;
+    var businessCount = 0;
+    store = new MemoryStore { Value = restoring ? "refresh-before" : null };
+    using var cancel = new CancellationTokenSource();
+    using var client = new AccountApiClient(new HttpClient(new CancellableHandler(async (request, requestToken) =>
+    {
+        var path = request.RequestUri!.AbsolutePath;
+        if (path.EndsWith("login")) return Ok(Session("before", true));
+        if (path.EndsWith("refresh"))
+        {
+            rotationCount++;
+            Check((await request.Content!.ReadAsStringAsync()).Contains("refresh-before"), "rotation sends the current refresh token");
+            started.TrySetResult();
+            await releaseResponse.Task.WaitAsync(requestToken);
+            return Ok(Session("after"));
+        }
+        businessCount++;
+        Check(request.Headers.Authorization?.Parameter == "access-after", "recovery uses the newly persisted access token");
+        return Ok(account);
+    })), store);
+    if (!restoring) await client.LoginAsync(account.Email, "password123", true, default);
+    Task work = restoring ? client.RestoreAsync(cancel.Token) : client.HeartbeatAsync(cancel.Token);
+    await started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+    cancel.Cancel(); releaseResponse.TrySetResult();
+    await Throws(() => work, e => e is OperationCanceledException, "UI cancellation surfaces after started rotation completes");
+    Check(store.Value == "refresh-after" && client.IsOnline && client.HasSession, "UI cancellation persists the rotated session instead of retaining the consumed token");
+    Check(rotationCount == 1 && businessCount == 0, "canceled caller sends no business request after rotation");
+    await client.HeartbeatAsync(default);
+    Check(rotationCount == 1 && businessCount == 1, "next heartbeat recovers without replaying the old refresh token");
+}
+
 Console.WriteLine($"Account tests passed: {passed}");
 
 sealed class MemoryStore : IAccountTokenStore
@@ -271,6 +306,10 @@ sealed class MemoryStore : IAccountTokenStore
 sealed class Handler(Func<HttpRequestMessage, Task<HttpResponseMessage>> send) : HttpMessageHandler
 {
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => send(request);
+}
+sealed class CancellableHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => send(request, cancellationToken);
 }
 sealed class ManualClock : TimeProvider
 {

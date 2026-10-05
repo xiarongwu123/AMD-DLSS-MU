@@ -1,6 +1,12 @@
 using AmdNrAssistant;
 using System.Text.Json;
 
+if (args is ["--download-components", var output])
+{
+    await DownloadTests.RunLive(output);
+    return;
+}
+
 var root = Path.Combine(Path.GetTempPath(), "amd-management-tests-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
 GameManagement.StorageOverride = Path.Combine(root, "records");

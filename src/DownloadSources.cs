@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Net;
 using System.Text.Json;
 
 namespace AmdNrAssistant;
@@ -6,6 +7,8 @@ namespace AmdNrAssistant;
 public static class DownloadSources
 {
     public static readonly AsyncLocal<DownloadSession?> CurrentSession = new();
+    public static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(45);
+    public static readonly TimeSpan ReadIdleTimeout = TimeSpan.FromSeconds(90);
     public static string? AssetApi(string repository, JsonElement asset) =>
         asset.TryGetProperty("id", out var id) && id.TryGetInt64(out var number) && number > 0
             ? "https://api.github.com/repos/" + repository + "/releases/assets/" + number : null;
@@ -30,66 +33,86 @@ public static class DownloadSources
         session?.Report("连接中", 0, size, "正在连接下载源");
         try
         {
-        Core.RejectLinks(destination);
-        if (size <= 0) throw new IOException("下载大小无效。");
-        var sources = Build(primary, api, hash, mirror);
-        var failures = new List<Exception>();
-        for (int index = 0; index < sources.Length; index++)
-        {
-            token.ThrowIfCancellationRequested();
-            var url = new Uri(sources[index]);
-            if (url.Scheme != "https") throw new IOException("下载地址必须是 HTTPS。");
-            var partial = destination + "." + Guid.NewGuid().ToString("N") + ".partial";
-            try
+            Core.RejectLinks(destination);
+            if (size <= 0) throw new IOException("下载大小无效。");
+            var sources = Build(primary, api, hash, mirror);
+            var failures = new List<Exception>();
+            for (int index = 0; index < sources.Length; index++)
             {
-                status?.Invoke($"下载源 {index + 1}/{sources.Length}：{url.Host}");
-                session?.Report("连接中", 0, size, $"下载源 {index + 1}/{sources.Length}：{url.Host}");
-                progress.Report(0);
-                using var overall = CancellationTokenSource.CreateLinkedTokenSource(token);
-                overall.CancelAfter(TimeSpan.FromMinutes(30));
-                using var headers = CancellationTokenSource.CreateLinkedTokenSource(overall.Token);
-                headers.CancelAfter(TimeSpan.FromSeconds(15));
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.UserAgent.ParseAdd("AMD-DLSS-MU");
-                request.Headers.Accept.ParseAdd("application/octet-stream");
-                using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, headers.Token);
-                response.EnsureSuccessStatusCode();
-                if (response.RequestMessage?.RequestUri?.Scheme != "https") throw new IOException("下载被重定向到非 HTTPS 地址。");
-                await using (var input = await response.Content.ReadAsStreamAsync(overall.Token))
-                await using (var output = new FileStream(partial, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true))
+                for (int attempt = 0; attempt < 2; attempt++)
                 {
-                    var buffer = new byte[81920]; long total = 0;
-                    while (true)
+                    token.ThrowIfCancellationRequested();
+                    var url = new Uri(sources[index]);
+                    if (url.Scheme != "https") throw new IOException("下载地址必须是 HTTPS。");
+                    var partial = destination + "." + Guid.NewGuid().ToString("N") + ".partial";
+                    var phase = "连接";
+                    var retry = false;
+                    try
                     {
-                        if (session != null) await session.WaitAsync(overall.Token);
-                        using var idle = CancellationTokenSource.CreateLinkedTokenSource(overall.Token);
-                        idle.CancelAfter(TimeSpan.FromSeconds(45));
-                        var count = await input.ReadAsync(buffer, idle.Token);
-                        if (count == 0) break;
-                        total += count;
-                        if (total > size) throw new IOException("下载超过预期大小。");
-                        await output.WriteAsync(buffer.AsMemory(0, count), overall.Token);
-                        progress.Report((int)(total * 100 / size));
-                        session?.Report("下载中", (int)(total * 100 / size), size, url.Host);
+                        status?.Invoke($"下载源 {index + 1}/{sources.Length}：{url.Host}");
+                        session?.Report("连接中", 0, size, $"下载源 {index + 1}/{sources.Length}：{url.Host}");
+                        progress.Report(0);
+                        using var overall = CancellationTokenSource.CreateLinkedTokenSource(token);
+                        overall.CancelAfter(TimeSpan.FromMinutes(30));
+                        using var headers = CancellationTokenSource.CreateLinkedTokenSource(overall.Token);
+                        headers.CancelAfter(ConnectionTimeout);
+                        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+                        request.Headers.UserAgent.ParseAdd("AMD-DLSS-MU");
+                        request.Headers.Accept.ParseAdd("application/octet-stream");
+                        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, headers.Token);
+                        response.EnsureSuccessStatusCode();
+                        if (response.RequestMessage?.RequestUri?.Scheme != "https") throw new IOException("下载被重定向到非 HTTPS 地址。");
+                        phase = "读取";
+                        await using (var input = await response.Content.ReadAsStreamAsync(overall.Token))
+                        {
+                            phase = "创建临时文件";
+                            await using var output = new FileStream(partial, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true);
+                            var buffer = new byte[81920]; long total = 0;
+                            while (true)
+                            {
+                                if (session != null) await session.WaitAsync(overall.Token);
+                                using var idle = CancellationTokenSource.CreateLinkedTokenSource(overall.Token);
+                                idle.CancelAfter(ReadIdleTimeout);
+                                phase = "读取";
+                                var count = await input.ReadAsync(buffer, idle.Token);
+                                if (count == 0) break;
+                                total += count;
+                                if (total > size) { phase = "校验"; throw new IOException("下载超过预期大小。"); }
+                                phase = "写入";
+                                await output.WriteAsync(buffer.AsMemory(0, count), overall.Token);
+                                progress.Report((int)(total * 100 / size));
+                                session?.Report("下载中", (int)(total * 100 / size), size, url.Host);
+                            }
+                            if (total != size) throw new IOException("下载不完整。");
+                        }
+                        phase = "校验";
+                        session?.Report("正在校验", 100, size, "验证 SHA-256");
+                        if (!string.Equals(Core.Hash(partial), hash, StringComparison.OrdinalIgnoreCase))
+                            throw new IOException("SHA-256 不匹配。");
+                        token.ThrowIfCancellationRequested();
+                        File.Move(partial, destination, true);
+                        session?.Report("已完成 · 校验通过", 100, size, "SHA-256 校验通过");
+                        return;
                     }
-                    if (total != size) throw new IOException("下载不完整。");
+                    catch (Exception e) when (!token.IsCancellationRequested && e is HttpRequestException or IOException or OperationCanceledException)
+                    {
+                        var message = e is OperationCanceledException
+                            ? $"{url.Host} {phase}超时（连接最多 {ConnectionTimeout.TotalSeconds} 秒，读取无进展最多 {ReadIdleTimeout.TotalSeconds} 秒）。"
+                            : $"{url.Host} {phase}失败：{e.Message}";
+                        failures.Add(new IOException(message, e));
+                        retry = attempt == 0 && (e is OperationCanceledException
+                            || e is HttpRequestException httpError && (httpError.StatusCode == null
+                                || httpError.StatusCode is HttpStatusCode.RequestTimeout
+                                || (int?)httpError.StatusCode >= 500)
+                            || e is IOException && phase == "读取");
+                        status?.Invoke(message + (retry ? "正在重试当前入口…" : index + 1 < sources.Length ? "正在切换备用入口…" : ""));
+                    }
+                    finally { if (File.Exists(partial)) File.Delete(partial); }
+                    if (!retry) break;
+                    await Task.Delay(TimeSpan.FromSeconds(1), token);
                 }
-                session?.Report("正在校验", 100, size, "验证 SHA-256");
-                if (!string.Equals(Core.Hash(partial), hash, StringComparison.OrdinalIgnoreCase))
-                    throw new IOException("SHA-256 不匹配。");
-                token.ThrowIfCancellationRequested();
-                File.Move(partial, destination, true);
-                session?.Report("已完成 · 校验通过", 100, size, "SHA-256 校验通过");
-                return;
             }
-            catch (Exception e) when (!token.IsCancellationRequested && e is HttpRequestException or IOException or OperationCanceledException)
-            {
-                failures.Add(e);
-                status?.Invoke($"下载源 {url.Host} 失败：{e.Message}" + (index + 1 < sources.Length ? "；正在切换…" : ""));
-            }
-            finally { if (File.Exists(partial)) File.Delete(partial); }
-        }
-        throw new IOException("下载暂时失败，已自动尝试备用入口。请稍后重试。", new AggregateException(failures));
+            throw new IOException("下载暂时失败，已自动尝试备用入口。请稍后重试。", new AggregateException(failures));
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {

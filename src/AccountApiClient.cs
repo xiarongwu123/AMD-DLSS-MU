@@ -66,6 +66,7 @@ public sealed partial class AccountApiClient : IDisposable
             await RefreshCoreAsync(token);
             return true;
         }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
         catch { connectionGraceEligible = false; IsOnline = false; Changed?.Invoke(); throw; }
         finally { gate.Release(); }
     }
@@ -168,7 +169,11 @@ public sealed partial class AccountApiClient : IDisposable
         try
         {
             if (refreshToken == null) throw new AccountApiException(HttpStatusCode.Unauthorized, "login_required", "请重新登录账户。");
-            ApplySession(await SendAsync<SessionResponse>(HttpMethod.Post, "auth/refresh", new { refreshToken }, null, token));
+            token.ThrowIfCancellationRequested();
+            // Rotation consumes the old token. Finish and persist its response even if the UI stops waiting.
+            using var rotationTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            ApplySession(await SendAsync<SessionResponse>(HttpMethod.Post, "auth/refresh", new { refreshToken }, null, rotationTimeout.Token));
+            token.ThrowIfCancellationRequested();
         }
         catch (AccountApiException e) when (e.Status == HttpStatusCode.Unauthorized || e.Code is "disabled" or "account_disabled" or "user_disabled")
         { ClearLocal(); throw; }

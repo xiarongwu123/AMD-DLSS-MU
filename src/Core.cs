@@ -28,6 +28,8 @@ public static class Core
     // Pin both the online release and cached installer to the reviewed bytes.
     public const string ReviewedInstallerSha256 = "20636c9587e858e2b35b29702ef36bcb0018a985592e24d6ca95b3e1b41d2e71";
     public const long ReviewedInstallerSize = 59841536;
+    public const string InstallerApi = "https://api.github.com/repos/danielblnc/DLSS-NR-on-AMD/releases/assets/607036746";
+    public const string InstallerMirror = "https://amd-dlss-mu.claude-api.cn/mirrors/dlss-installer/" + ReviewedTag + "/" + ReviewedInstallerSha256 + "/" + InstallerName;
     // Names accepted by the upstream installer as the game's proxy DLL.
     // The installer chooses one of these; the presence of nvngx_dlssnr.dll alone
     // does not mean that the proxy was installed or that the game will load it.
@@ -238,32 +240,19 @@ public static class Core
         return new ReleaseInfo(tag, url, digest[7..].ToLowerInvariant(), size, DownloadSources.AssetApi("danielblnc/DLSS-NR-on-AMD", a));
     }
 
-    public static async Task<ReleaseInfo> GetReleaseAsync(HttpClient client, CancellationToken token)
+    public static Task<ReleaseInfo> GetReleaseAsync(HttpClient client, CancellationToken token)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get,
-            "https://api.github.com/repos/danielblnc/DLSS-NR-on-AMD/releases/tags/" + ReviewedTag);
-        request.Headers.UserAgent.ParseAdd("AMD-NR-Assistant/0.1");
-        request.Headers.Accept.ParseAdd("application/vnd.github+json");
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
-        timeout.CancelAfter(TimeSpan.FromSeconds(15));
-        try
-        {
-            using var response = await client.SendAsync(request, timeout.Token);
-            response.EnsureSuccessStatusCode();
-            return ParseRelease(await response.Content.ReadAsStringAsync(timeout.Token));
-        }
-        catch (Exception e) when (!token.IsCancellationRequested && e is HttpRequestException or OperationCanceledException)
-        {
-            // Metadata unavailable: use the fixed reviewed release and digest.
-            return new(ReviewedTag, Repository + "/releases/download/" + ReviewedTag + "/" + InstallerName,
-                ReviewedInstallerSha256, ReviewedInstallerSize);
-        }
+        token.ThrowIfCancellationRequested();
+        // The reviewed bytes are pinned; mirror use must not depend on GitHub metadata.
+        return Task.FromResult(new ReleaseInfo(ReviewedTag,
+            Repository + "/releases/download/" + ReviewedTag + "/" + InstallerName,
+            ReviewedInstallerSha256, ReviewedInstallerSize, InstallerApi));
     }
 
     public static Task DownloadAsync(HttpClient client, ReleaseInfo release, string output,
         IProgress<int> progress, CancellationToken token, Action<string>? status = null) =>
         DownloadSources.DownloadAsync(client, release.Url, release.ApiUrl, release.Sha256, release.Size,
-            output, progress, token, status);
+            output, progress, token, status, mirror: InstallerMirror);
 
     static void Save(string path, Journal journal)
     {

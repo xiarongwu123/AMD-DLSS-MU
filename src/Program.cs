@@ -1796,8 +1796,8 @@ public sealed partial class MainForm : Form
                     };
 
                     status.Text =
-                        "正在连接官方 GitHub 并核对安装器…";
-                    Diagnostics.Record(targetExe, "github-release-query", "start");
+                        "正在准备已核验安装器，优先从官网下载…";
+                    Diagnostics.Record(targetExe, "installer-release", "pinned", Core.ReviewedTag);
 
                     release = await Core.GetReleaseAsync(
                         client,

@@ -9,10 +9,38 @@ export const magpie = Object.freeze({
   size: 489787536,
   name: 'Magpie-Experimental-x64.zip'
 });
-export const mirrorPath = asset => `/mirrors/magpie/${asset.tag}/${asset.sha256}/${asset.name}`;
+export const dlssInstaller = Object.freeze({
+  kind: 'dlss-installer', tag: 'v0.6.0',
+  sha256: '20636c9587e858e2b35b29702ef36bcb0018a985592e24d6ca95b3e1b41d2e71',
+  size: 59841536, name: 'dlssnr_on_amd_setup.exe',
+  source: 'https://github.com/danielblnc/DLSS-NR-on-AMD/releases/download/v0.6.0/dlssnr_on_amd_setup.exe',
+  api: 'https://api.github.com/repos/danielblnc/DLSS-NR-on-AMD/releases/assets/607036746'
+});
+export const optiscaler = Object.freeze({
+  kind: 'optiscaler', tag: 'v0.9.4',
+  sha256: '575cb4df866116093df75af607e37fd70e10f5163e0f23fd5c804142e80ef0ad',
+  size: 55016448, name: 'Optiscaler_0.9.4-final.20260718._MM.7z',
+  source: 'https://github.com/optiscaler/OptiScaler/releases/download/v0.9.4/Optiscaler_0.9.4-final.20260718._MM.7z',
+  api: 'https://api.github.com/repos/optiscaler/OptiScaler/releases/assets/481819753'
+});
+export const mirrorAssets = Object.freeze([magpie, dlssInstaller, optiscaler]);
+export const mirrorPath = asset => `/mirrors/${asset.kind || 'magpie'}/${asset.tag}/${asset.sha256}/${asset.name}`;
 
-export function createMirrorHandler(dataRoot, asset = magpie) {
-  const file = join(dataRoot, 'mirrors', 'magpie', asset.tag, asset.name);
+export function createMirrorHandler(dataRoot, assets = mirrorAssets) {
+  const handlers = new Map((Array.isArray(assets) ? assets : [assets]).map(asset =>
+    [mirrorPath(asset), createAssetHandler(dataRoot, asset)]));
+  return async (req, res) => {
+    const path = new URL(req.url, 'http://localhost').pathname;
+    if (!path.startsWith('/mirrors/')) return false;
+    const handle = handlers.get(path);
+    if (handle) return handle(req, res);
+    res.writeHead(404, { 'Cache-Control': 'no-store', 'Content-Length': 0 });
+    res.end(); return true;
+  };
+}
+
+function createAssetHandler(dataRoot, asset) {
+  const file = join(dataRoot, 'mirrors', asset.kind || 'magpie', asset.tag, asset.name);
   let verifiedStamp;
   let verifying;
   async function checkedHandle() {
@@ -49,7 +77,7 @@ export function createMirrorHandler(dataRoot, asset = magpie) {
     const { handle, stat } = opened;
     const etag = `"${asset.sha256}"`;
     const headers = {
-      'Content-Type': 'application/zip',
+      'Content-Type': asset.name.endsWith('.zip') ? 'application/zip' : 'application/octet-stream',
       'Content-Disposition': `attachment; filename="${asset.name}"`,
       'Content-Length': asset.size,
       'Accept-Ranges': 'bytes', ETag: etag,

@@ -10,6 +10,7 @@ public static class OptiInstaller
     public const string Url = "https://github.com/optiscaler/OptiScaler/releases/download/v0.9.4/Optiscaler_0.9.4-final.20260718._MM.7z";
     public const string Digest = "575cb4df866116093df75af607e37fd70e10f5163e0f23fd5c804142e80ef0ad";
     public const long Size = 55016448;
+    public const string MirrorUrl = "https://amd-dlss-mu.claude-api.cn/mirrors/optiscaler/v" + Version + "/" + Digest + "/Optiscaler_0.9.4-final.20260718._MM.7z";
     public static readonly string[] Payload = ["OptiScaler.dll", "OptiScaler.ini", "libxess.dll", "libxess_dx11.dll", "libxess_fg.dll", "libxell.dll",
         "amd_fidelityfx_vk.dll", "amd_fidelityfx_dx12.dll", "amd_fidelityfx_upscaler_dx12.dll", "amd_fidelityfx_framegeneration_dx12.dll",
         "D3D12_Optiscaler/D3D12Core.dll", "Licenses/XeSS_LICENSE.txt", "Licenses/FidelityFX_v1_LICENSE.md", "Licenses/FidelityFX_v2_LICENSE.md", "Licenses/DirectX_LICENSE.txt"];
@@ -66,7 +67,7 @@ public static class OptiInstaller
             await DownloadSources.DownloadAsync(client, Url,
                 "https://api.github.com/repos/optiscaler/OptiScaler/releases/assets/481819753",
                 Digest, Size, package, new Progress<int>(n => progress.Report($"OptiScaler 下载 {n}%")),
-                token, message => { progress.Report(message); Diagnostics.Record(exe, "optiscaler-download", "source", message); });
+                token, message => { progress.Report(message); Diagnostics.Record(exe, "optiscaler-download", "source", message); }, mirror: MirrorUrl);
         }
         token.ThrowIfCancellationRequested(); progress.Report("正在校验并解压 OptiScaler…");
         var folder = Path.Combine(cache, "extract-" + Guid.NewGuid().ToString("N"));

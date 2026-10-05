@@ -4,6 +4,29 @@ using AmdNrAssistant;
 
 public static class DownloadTests
 {
+    public static async Task RunLive(string output)
+    {
+        Directory.CreateDirectory(output);
+        using var client = new HttpClient(new WebsiteOnlyHandler()) { Timeout = Timeout.InfiniteTimeSpan };
+        var release = await Core.GetReleaseAsync(client, default);
+        var installer = Path.Combine(output, Core.InstallerName);
+        await Core.DownloadAsync(client, release, installer, new ProgressSink(), default, Console.WriteLine);
+        Console.WriteLine($"LIVE PASS mode1 {new FileInfo(installer).Length} bytes SHA-256 {Core.Hash(installer)}");
+        var optiscaler = Path.Combine(output, "Optiscaler.7z");
+        await DownloadSources.DownloadAsync(client, OptiInstaller.Url, null, OptiInstaller.Digest, OptiInstaller.Size,
+            optiscaler, new ProgressSink(), default, Console.WriteLine, mirror: OptiInstaller.MirrorUrl);
+        Console.WriteLine($"LIVE PASS mode2 {new FileInfo(optiscaler).Length} bytes SHA-256 {Core.Hash(optiscaler)}");
+    }
+    sealed class WebsiteOnlyHandler : DelegatingHandler
+    {
+        public WebsiteOnlyHandler() : base(new HttpClientHandler { AllowAutoRedirect = false }) { }
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
+        {
+            if (request.RequestUri!.Host != "amd-dlss-mu.claude-api.cn")
+                throw new HttpRequestException("GitHub disabled for independent mirror verification");
+            return base.SendAsync(request, token);
+        }
+    }
     sealed class Handler(Func<HttpRequestMessage, HttpResponseMessage> response) : HttpMessageHandler
     {
         public int Calls;
@@ -27,7 +50,7 @@ public static class DownloadTests
             : new(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) });
         using var client = new HttpClient(handler);
         await DownloadSources.DownloadAsync(client, direct, api, hash, bytes.Length, target, new ProgressSink(), default);
-        assert(handler.Calls == 2 && File.ReadAllBytes(target).SequenceEqual(bytes), "HTTP failure switches to API and verifies bytes");
+        assert(handler.Calls == 3 && File.ReadAllBytes(target).SequenceEqual(bytes), "transient HTTP failure retries once then switches to API and verifies bytes");
         using var badPrimary = new Handler(r => new(HttpStatusCode.OK) {
             Content = new ByteArrayContent(r.RequestUri!.Host == "github.com" ? new byte[bytes.Length] : bytes) });
         using var fallbackClient = new HttpClient(badPrimary);
@@ -69,7 +92,8 @@ public static class DownloadTests
             });
             using var mirrorFallback = new HttpClient(mirrorFailure);
             await DownloadSources.DownloadAsync(mirrorFallback, direct, api, hash, bytes.Length, target, new ProgressSink(), default, mirror: mirror);
-            assert(requested.SequenceEqual(new[] { mirror, direct, api }) && File.ReadAllBytes(target).SequenceEqual(bytes),
+            var expected = badHash ? new[] { mirror, direct, api } : new[] { mirror, mirror, direct, direct, api };
+            assert(requested.SequenceEqual(expected) && File.ReadAllBytes(target).SequenceEqual(bytes),
                 "mirror HTTP/hash failures retain both upstream fallbacks and verify final bytes");
         }
         bool badMirror = false;
@@ -78,7 +102,41 @@ public static class DownloadTests
         using var metadataDown = new Handler(_ => new(HttpStatusCode.ServiceUnavailable));
         using var metadataClient = new HttpClient(metadataDown);
         var release = await Core.GetReleaseAsync(metadataClient, default);
-        assert(release.Tag == Core.ReviewedTag && release.Sha256 == Core.ReviewedInstallerSha256, "metadata outage falls back to pinned mode1 release");
+        assert(release.Tag == Core.ReviewedTag && release.Sha256 == Core.ReviewedInstallerSha256
+            && release.ApiUrl == Core.InstallerApi && metadataDown.Calls == 0, "pinned mode1 retains both GitHub entries without a metadata dependency");
+        using var installerMirror = new Handler(r => r.RequestUri!.AbsoluteUri == Core.InstallerMirror
+            ? new(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) } : throw new HttpRequestException("GitHub unavailable"));
+        using var installerClient = new HttpClient(installerMirror);
+        await Core.DownloadAsync(installerClient, release with { Size = bytes.Length, Sha256 = hash }, target, new ProgressSink(), default);
+        assert(installerMirror.Calls == 1 && File.ReadAllBytes(target).SequenceEqual(bytes), "mode1 download succeeds from website with GitHub unavailable");
+        var timeoutCalls = 0;
+        using var timeoutOnce = new Handler(_ => timeoutCalls++ == 0
+            ? throw new TaskCanceledException("simulated connection timeout")
+            : new(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) });
+        using var timeoutClient = new HttpClient(timeoutOnce);
+        await DownloadSources.DownloadAsync(timeoutClient, direct, api, hash, bytes.Length, target, new ProgressSink(), default);
+        assert(timeoutOnce.Calls == 2 && File.ReadAllBytes(target).SequenceEqual(bytes), "connection timeout retries the same entry before fallback");
+        using var missing = new Handler(r => r.RequestUri!.Host == "github.com"
+            ? new(HttpStatusCode.NotFound) : new(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) });
+        using var missingClient = new HttpClient(missing);
+        await DownloadSources.DownloadAsync(missingClient, direct, api, hash, bytes.Length, target, new ProgressSink(), default);
+        assert(missing.Calls == 2, "permanent HTTP failure switches immediately without retry");
+        using var cancelledRetry = new CancellationTokenSource();
+        using var repeatedTimeout = new Handler(_ => throw new TaskCanceledException("simulated timeout"));
+        using var repeatedClient = new HttpClient(repeatedTimeout);
+        bool stopped = false;
+        try { await DownloadSources.DownloadAsync(repeatedClient, direct, api, hash, bytes.Length, target,
+            new ProgressSink(), cancelledRetry.Token, _ => cancelledRetry.Cancel()); }
+        catch (OperationCanceledException) { stopped = true; }
+        assert(stopped && repeatedTimeout.Calls == 1, "cancellation during retry prevents every remaining source");
+        using var allTimeout = new Handler(_ => throw new TaskCanceledException("simulated timeout"));
+        using var allTimeoutClient = new HttpClient(allTimeout);
+        bool detailed = false;
+        try { await DownloadSources.DownloadAsync(allTimeoutClient, direct, api, hash, bytes.Length, target, new ProgressSink(), default); }
+        catch (IOException e) { detailed = e.InnerException is AggregateException errors && errors.InnerExceptions.Count == 4
+            && errors.InnerExceptions.All(error => error.Message.Contains("连接超时") && error.Message.Contains("45")); }
+        assert(detailed && File.ReadAllBytes(target).SequenceEqual(bytes), "exhausted timeout diagnostics identify host and phase while preserving destination");
+        assert(!Directory.EnumerateFiles(root, "*.partial").Any(), "retries and cancellation clean all partial files");
         using var session = new DownloadSession();
         var snapshots = new List<DownloadSnapshot>();
         session.Changed = snapshots.Add;
