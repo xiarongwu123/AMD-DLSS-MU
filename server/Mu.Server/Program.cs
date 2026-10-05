@@ -40,7 +40,28 @@ builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<AccountManagementService>();
 builder.Services.AddScoped<CompatibilityService>();
 builder.Services.AddSingleton<IPaymentProvider, DisabledPaymentProvider>();
-builder.Services.AddHttpClient<IVerificationEmailSender, ResendEmailSender>(client => client.Timeout = TimeSpan.FromSeconds(10));
+builder.Services.AddDbContextFactory<MailLogDbContext>(options => options.UseSqlite(new SqliteConnectionStringBuilder
+{
+    DataSource = Path.Combine(Path.GetDirectoryName(databasePath)!, "mail-logs.sqlite"), DefaultTimeout = 5
+}.ToString()));
+builder.Services.AddSingleton<MailDeliveryMonitor>();
+builder.Services.AddHostedService(provider => provider.GetRequiredService<MailDeliveryMonitor>());
+switch (builder.Configuration["Email:Provider"]?.ToLowerInvariant() ?? "resend")
+{
+    case "smtp":
+        builder.Services.AddTransient<SmtpVerificationEmailSender>();
+        break;
+    case "resend":
+        builder.Services.AddHttpClient<ResendEmailSender>(client => client.Timeout = TimeSpan.FromSeconds(10));
+        break;
+    default:
+        throw new InvalidOperationException("Unsupported Email:Provider.");
+}
+builder.Services.AddTransient<IVerificationEmailSender>(provider => new MonitoredEmailSender(
+    string.Equals(builder.Configuration["Email:Provider"], "smtp", StringComparison.OrdinalIgnoreCase)
+        ? provider.GetRequiredService<SmtpVerificationEmailSender>() : provider.GetRequiredService<ResendEmailSender>(),
+    provider.GetRequiredService<IDbContextFactory<MailLogDbContext>>(), builder.Configuration,
+    provider.GetRequiredService<TimeProvider>(), provider.GetRequiredService<ILogger<MonitoredEmailSender>>()));
 builder.Services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ClientBearerHandler>(ClientBearerHandler.SchemeName, _ => { });
 builder.Services.AddAuthorization(options => options.AddPolicy("Client", policy => policy.AddAuthenticationSchemes(ClientBearerHandler.SchemeName).RequireAuthenticatedUser()));
 builder.Services.AddRazorPages();
@@ -78,11 +99,15 @@ await using (var scope = app.Services.CreateAsyncScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await DatabaseSetup.InitializeAsync(db);
+    await using var mailDb = await scope.ServiceProvider.GetRequiredService<IDbContextFactory<MailLogDbContext>>().CreateDbContextAsync();
+    await mailDb.Database.EnsureCreatedAsync();
+    await mailDb.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
     var backup = Array.IndexOf(args, "--backup");
     if (backup >= 0)
     {
         if (backup + 1 >= args.Length) throw new ArgumentException("Usage: --backup /absolute/path/accounts.sqlite");
         await DatabaseSetup.BackupAsync(db, args[backup + 1]);
+        await DatabaseSetup.BackupAsync(mailDb, Path.ChangeExtension(args[backup + 1], ".mail.sqlite"));
         Console.WriteLine("Account database backup completed and integrity checked.");
         return;
     }

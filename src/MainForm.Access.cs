@@ -8,7 +8,7 @@ public sealed partial class MainForm
     readonly AccountApiClient accountClient = new(new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(12) }, new AccountTokenStore());
     readonly System.Windows.Forms.Timer accountHeartbeat = new() { Interval = 30000 };
     RoundedButton? accountHeader;
-    bool heartbeatRunning, accountRequestBusy, lastAccountOnline;
+    bool heartbeatRunning, accountRequestBusy, lastAccountViewAvailable;
     int accountTransactionDepth;
     DownloadSession? activeAccountDownload;
     string accountFeedback = "登录后使用客户端功能。账户服务需要保持联网。";
@@ -46,8 +46,21 @@ public sealed partial class MainForm
     {
         if (heartbeatRunning || accountRequestBusy || !accountClient.HasSession || IsDisposed) return;
         heartbeatRunning = true;
-        try { await accountClient.HeartbeatAsync(lifetime.Token); }
-        catch (Exception e) { accountFeedback = AccountError(e); }
+        var wasOffline = !accountClient.IsOnline;
+        try
+        {
+            await accountClient.HeartbeatAsync(lifetime.Token);
+            if (wasOffline)
+            {
+                accountFeedback = accountClient.StorageWarning ?? "账户连接已恢复。";
+                if (!busy && !accountRequestBusy) status.Text = accountFeedback;
+            }
+        }
+        catch (Exception e)
+        {
+            accountFeedback = accountClient.IsReconnecting ? "账户连接暂时波动，正在重试…" : AccountError(e);
+            if (!busy && !accountRequestBusy) status.Text = accountFeedback;
+        }
         finally { heartbeatRunning = false; if (!IsDisposed) { ApplyAccountGate(); if (activePage == 6 && !accountRequestBusy && accountMode == "login") RenderAccount(); } }
     }
 
@@ -55,8 +68,8 @@ public sealed partial class MainForm
     {
         if (IsDisposed || Disposing) return;
         if (InvokeRequired) { BeginInvoke((Action)AccountStateChanged); return; }
-        var lost = lastAccountOnline && !accountClient.IsOnline;
-        lastAccountOnline = accountClient.IsOnline;
+        var lost = lastAccountViewAvailable && !accountClient.CanKeepVerifiedView;
+        lastAccountViewAvailable = accountClient.CanKeepVerifiedView;
         if (lost)
         {
             accountMode = "login";
@@ -71,22 +84,24 @@ public sealed partial class MainForm
     void ApplyAccountGate()
     {
         if (IsDisposed || Disposing) return;
+        var viewAvailable = accountClient.CanKeepVerifiedView;
         if (accountHeader != null)
             accountHeader.Text = accountClient.Account == null ? "登录 / 注册" : accountClient.IsOnline
-                ? accountClient.Account.Membership.Tier == "pro" ? "PRO · 账户" : "我的账户" : "重新连接";
-        librarySearch.Enabled = accountClient.IsOnline;
-        if (headerNavigation != null) headerNavigation.Enabled = accountClient.IsOnline;
-        if (headerUpdate != null) headerUpdate.Enabled = accountClient.IsOnline;
-        libraryPage.Enabled = accountClient.IsOnline && !busy;
-        var compatibilityAllowed = accountClient.IsOnline && accountClient.Account?.Features.Any(f => f.Key == "compatibility.read" && f.Allowed) == true;
+                ? accountClient.Account.Membership.Tier == "pro" ? "PRO · 账户" : "我的账户"
+                : accountClient.IsReconnecting ? "连接重试中" : "重新连接";
+        librarySearch.Enabled = viewAvailable;
+        if (headerNavigation != null) headerNavigation.Enabled = viewAvailable;
+        if (headerUpdate != null) headerUpdate.Enabled = viewAvailable;
+        libraryPage.Enabled = viewAvailable && !busy;
+        var compatibilityAllowed = viewAvailable && accountClient.Account?.Features.Any(f => f.Key == "compatibility.read" && f.Allowed) == true;
         compatibilityPage.Enabled = compatibilityAllowed && !busy;
         if (!compatibilityAllowed)
         {
             ClearCompatibilityAccess();
             if (activePage == 0) SwitchPage(6);
         }
-        magpiePage.Enabled = accountClient.IsOnline && !busy;
-        if (!accountClient.IsOnline && !busy && accountTransactionDepth == 0 && activePage != 6) SwitchPage(6);
+        magpiePage.Enabled = viewAvailable && !busy;
+        if (!viewAvailable && !busy && accountTransactionDepth == 0 && activePage != 6) SwitchPage(6);
     }
 
     async Task<bool> RequireFeatureAsync(string featureKey)
@@ -105,7 +120,8 @@ public sealed partial class MainForm
             accountFeedback = AccountError(e); status.Text = accountFeedback;
             if (accountClient.IsOnline && e is AccountApiException { Status: HttpStatusCode.Forbidden })
                 MessageBox.Show(this, accountFeedback, "功能权限");
-            else if (!busy && accountTransactionDepth == 0) SwitchPage(6);
+            else if (!accountClient.CanKeepVerifiedView && !busy && accountTransactionDepth == 0) SwitchPage(6);
+            else ShowProductToast(accountFeedback, false);
             if (activePage == 6 && !accountRequestBusy) RenderAccount();
             return false;
         }
@@ -118,7 +134,7 @@ public sealed partial class MainForm
         // Keep the existing ability to view/cancel an in-flight download when
         // connectivity is lost; this never authorizes starting new work.
         if (page == 3 && busy) return true;
-        if (!accountClient.HasSession || !accountClient.IsOnline)
+        if (!accountClient.HasSession || !accountClient.CanKeepVerifiedView)
         {
             accountFeedback = "请先联网登录，再使用客户端功能。";
             SwitchPage(6); return false;

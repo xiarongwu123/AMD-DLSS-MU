@@ -29,19 +29,28 @@ public sealed partial class AccountApiClient : IDisposable
     static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     readonly HttpClient http;
     readonly IAccountTokenStore store;
+    readonly TimeProvider clock;
     readonly SemaphoreSlim gate = new(1, 1);
+    long? connectionFailureStarted;
+    bool connectionGraceEligible;
+    public static readonly TimeSpan ConnectionGracePeriod = TimeSpan.FromMinutes(2);
     string? accessToken, refreshToken;
     DateTimeOffset accessExpiresAt;
     bool remember;
     public AccountSnapshot? Account { get; private set; }
     public bool IsOnline { get; private set; }
     public bool HasSession => refreshToken != null;
+    // This permits retaining the view only; operations still require a server response.
+    public bool CanKeepVerifiedView => IsOnline || (connectionGraceEligible && Account != null && HasSession
+        && connectionFailureStarted is { } started && clock.GetElapsedTime(started) < ConnectionGracePeriod);
+    public bool IsReconnecting => !IsOnline && CanKeepVerifiedView;
     public string? StorageWarning { get; private set; }
     public event Action? Changed;
 
-    public AccountApiClient(HttpClient http, IAccountTokenStore store)
+    public AccountApiClient(HttpClient http, IAccountTokenStore store, TimeProvider? clock = null)
     {
         this.http = http; this.store = store;
+        this.clock = clock ?? TimeProvider.System;
         http.BaseAddress ??= new Uri(DefaultBaseUrl);
     }
 
@@ -57,7 +66,7 @@ public sealed partial class AccountApiClient : IDisposable
             await RefreshCoreAsync(token);
             return true;
         }
-        catch { IsOnline = false; Changed?.Invoke(); throw; }
+        catch { connectionGraceEligible = false; IsOnline = false; Changed?.Invoke(); throw; }
         finally { gate.Release(); }
     }
 
@@ -135,17 +144,22 @@ public sealed partial class AccountApiClient : IDisposable
             }
             if (result is AccountSnapshot snapshot) { ValidateAccount(snapshot); Account = snapshot; }
             else if (result is AuthorizationResponse authorization) { ValidateAccount(authorization.Account); Account = authorization.Account; }
-            IsOnline = true; Changed?.Invoke();
+            ConnectionVerified();
             return result;
         }
         catch (AccountApiException e)
         {
             if (e.Account != null) Account = e.Account;
             if (e.Status == HttpStatusCode.Unauthorized || e.Code is "disabled" or "account_disabled" or "user_disabled") ClearLocal();
-            else { IsOnline = (int)e.Status < 500; Changed?.Invoke(); }
+            else if ((int)e.Status >= 500 || e.Status is HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests)
+                ConnectionFailed();
+            else ConnectionVerified();
             throw;
         }
-        catch { IsOnline = false; Changed?.Invoke(); throw; }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+        catch (Exception e) when (e is HttpRequestException or OperationCanceledException)
+        { ConnectionFailed(); throw; }
+        catch { connectionGraceEligible = false; IsOnline = false; Changed?.Invoke(); throw; }
         finally { gate.Release(); }
     }
 
@@ -175,11 +189,26 @@ public sealed partial class AccountApiClient : IDisposable
             try { store.Clear(); } catch { }
             StorageWarning = "登录成功，但无法保存保持登录状态；退出程序后需要重新登录。";
         }
+        ConnectionVerified();
+    }
+
+    void ConnectionVerified()
+    {
+        connectionFailureStarted = null;
+        connectionGraceEligible = true;
         IsOnline = true; Changed?.Invoke();
+    }
+
+    void ConnectionFailed()
+    {
+        if (connectionGraceEligible) connectionFailureStarted ??= clock.GetTimestamp();
+        IsOnline = false; Changed?.Invoke();
     }
 
     void ClearLocal()
     {
+        connectionFailureStarted = null;
+        connectionGraceEligible = false;
         accessToken = refreshToken = null; Account = null; IsOnline = false; remember = false;
         try { store.Clear(); } catch { StorageWarning = "未能删除本机登录缓存，请检查账户数据目录的写入权限。"; }
         Changed?.Invoke();

@@ -82,7 +82,7 @@ public static class DatabaseSetup
         CREATE INDEX "IX_CompatibilityTests_GameId_GpuKey_CreatedAt" ON "CompatibilityTests" ("GameId", "GpuKey", "CreatedAt");
         """;
 
-    public static async Task BackupAsync(AppDbContext db, string destination)
+    public static async Task BackupAsync(DbContext db, string destination)
     {
         var path = Path.GetFullPath(destination);
         if (File.Exists(path)) throw new InvalidOperationException("Backup destination already exists; choose a new file.");

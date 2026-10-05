@@ -10,6 +10,9 @@ public sealed partial class MainForm
     readonly Dictionary<string, DateTimeOffset> codeCooldowns = new(StringComparer.OrdinalIgnoreCase);
     string accountMode = "login";
     bool keepAccountLogin = true;
+    string? renderedAccountMode;
+    bool renderedAccountSignedIn;
+    Label? accountFeedbackLabel;
 
     void BuildAccountPage() { pageHost.Controls.Add(accountPage); InitializeAccountAccess(); RenderAccount(); }
 
@@ -29,9 +32,16 @@ public sealed partial class MainForm
     void RenderAccount()
     {
         if (IsDisposed) return;
+        bool signedIn = accountClient.Account != null && accountClient.HasSession;
+        // Feedback-only refreshes must not destroy a form the user is editing.
+        if ((!signedIn || accountMode == "password") && renderedAccountMode == accountMode
+            && renderedAccountSignedIn == signedIn && accountFeedbackLabel is { IsDisposed: false })
+        {
+            accountFeedbackLabel.Text = accountFeedback;
+            return;
+        }
         while (accountPage.Controls.Count > 0) { var c = accountPage.Controls[0]; accountPage.Controls.Remove(c); c.Dispose(); }
         translations.RemoveAll(item => item.control.IsDisposed);
-        bool signedIn = accountClient.Account != null && accountClient.HasSession;
         bool register = accountMode == "register" && !signedIn;
         bool reset = accountMode == "reset" && !signedIn;
         bool change = accountMode == "password" && signedIn;
@@ -86,7 +96,7 @@ public sealed partial class MainForm
             link.LinkClicked += (_, e) => action(link, e); Row(link, 38);
         }
         void Mode(string mode) { accountMode = mode; accountFeedback = ""; RenderAccount(); }
-        var feedback = new Label { Text = accountFeedback, ForeColor = Acid, AutoEllipsis = false };
+        var feedback = accountFeedbackLabel = new Label { Text = accountFeedback, ForeColor = Acid, AutoEllipsis = false };
         bool ValidateEmail(TextBox email)
         {
             var value = email.Text.Trim();
@@ -120,7 +130,7 @@ public sealed partial class MainForm
             Row(new Label { Text = account.Email, Font = new Font(Font.FontFamily, 13), AutoEllipsis = true }, 48);
             Row(new Label { Text = account.Membership.Tier == "pro" ? "Pro 用户" : "普通用户", ForeColor = Acid, Font = new Font(Font.FontFamily, 21, FontStyle.Bold) }, 55);
             Row(new Label { Text = account.Membership.ExpiresAt is { } expiry ? "Pro 有效期至 " + expiry.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : account.Membership.Tier == "pro" ? "Pro 长期有效" : "当前账户使用普通用户权限。", ForeColor = Muted }, 44);
-            Row(new Label { Text = accountClient.IsOnline ? "已联网验证" : "连接中断：重新联网验证后可使用功能。", ForeColor = accountClient.IsOnline ? Acid : Muted }, 44);
+            Row(new Label { Text = accountClient.IsOnline ? "已联网验证" : accountClient.IsReconnecting ? "账户连接暂时波动，正在重试…" : "连接中断：重新联网验证后可使用功能。", ForeColor = accountClient.IsOnline ? Acid : Muted }, 44);
             ButtonRow(accountClient.IsOnline ? "查看游戏兼容性 →" : "重新连接账户服务", async (_, _) => await RunAccountActionAsync(async () =>
             {
                 await accountClient.HeartbeatAsync(lifetime.Token); accountFeedback = "账户状态已更新。";
@@ -217,6 +227,8 @@ public sealed partial class MainForm
         }
         Row(legal, 32); Row(feedback, 48);
         panel.Controls.Add(form); background.Controls.Add(panel); accountPage.Controls.Add(background);
+        renderedAccountMode = accountMode;
+        renderedAccountSignedIn = signedIn;
         void LayoutPage()
         {
             formHeight = 0;

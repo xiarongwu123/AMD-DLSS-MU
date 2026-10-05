@@ -22,5 +22,5 @@ docker compose exec -T account dotnet Mu.Server.dll --backup "/backups/accounts-
 # Restrict rotation to snapshots produced by this script, after a successful backup.
 mapfile -t snapshots < <(find backups -maxdepth 1 -type f -name 'accounts-????????T??????Z.sqlite' | sort -r)
 if (( ${#snapshots[@]} > 7 )); then
-  for snapshot in "${snapshots[@]:7}"; do rm -- "$snapshot"; done
+  for snapshot in "${snapshots[@]:7}"; do rm -f -- "$snapshot" "${snapshot%.sqlite}.mail.sqlite"; done
 fi

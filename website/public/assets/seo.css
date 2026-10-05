@@ -1,0 +1,23 @@
+.seo-main { max-width: 1040px; padding-block: 28px 70px; }
+.seo-breadcrumb, .seo-byline { color: var(--muted); font-size: .88rem; }
+.seo-hero { padding-block: 44px 30px; }
+.seo-hero h1 { margin: 0 0 24px; font-size: clamp(2.1rem, 5.3vw, 4rem); line-height: 1.2; letter-spacing: -.03em; }
+.seo-hero h1 span { color: var(--acid); }
+.seo-lead { font-size: 1.14rem; color: #dbe4eb; }
+.seo-hero > p, .seo-section p, .seo-section li { max-width: 900px; }
+.seo-byline { margin-top: 28px; }
+.seo-toc { display: flex; flex-wrap: wrap; gap: 14px 26px; padding-block: 22px; border-block: 1px solid var(--line); }
+.seo-section { padding-block: 32px; border-bottom: 1px solid var(--line); scroll-margin-top: 100px; }
+.seo-section h2 { margin: 0 0 20px; font-size: clamp(1.45rem, 3vw, 2rem); line-height: 1.4; }
+.seo-section h3 { font-size: 1.13rem; margin-bottom: 10px; }
+.seo-section p, .seo-section li { color: #b6c3ce; line-height: 1.9; }
+.seo-section li { margin-block: 12px; }
+.seo-section a, .seo-toc a, .seo-breadcrumb a { color: var(--acid); text-decoration: underline; text-underline-offset: 4px; }
+.seo-table-wrap { overflow-x: auto; margin-top: 24px; }
+.seo-table-wrap table { width: 100%; border-collapse: collapse; text-align: left; }
+.seo-table-wrap caption { text-align: left; font-weight: 700; padding-bottom: 12px; }
+.seo-table-wrap th, .seo-table-wrap td { padding: 16px; border: 1px solid var(--line); vertical-align: top; min-width: 120px; }
+.seo-table-wrap thead { background: var(--surface-2); }
+.seo-faq { padding-block: 12px; scroll-margin-top: 100px; }
+.seo-faq + .seo-faq { border-top: 1px solid var(--line); }
+@media (max-width: 600px) { .seo-main { width: calc(100% - 32px); } .seo-hero { padding-top: 30px; } .seo-section ul, .seo-section ol { padding-left: 24px; } }

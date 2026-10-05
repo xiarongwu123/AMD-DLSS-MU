@@ -1,0 +1,34 @@
+# AMD DLSS MU
+
+> AMD DLSS MU (AMD-DLSS-MU) is an independent third-party Windows x64 game graphics configuration assistant. 本站提供 DLSS5 / DLSS 5 / 大力水手5 相关方案的说明、MU 正式版下载、安装教程与游戏配置查询。非 AMD 或 NVIDIA 官方产品。
+
+## Primary pages
+
+- [官网](https://amd-dlss-mu.claude-api.cn/): 游戏库、DLSS-NR、OptiScaler、大力喜鹊、配置恢复与诊断导出。
+- [DLSS5 / 大力水手5 指南](https://amd-dlss-mu.claude-api.cn/dlss5): 技术与项目关系、使用条件、常见问题和原始来源。
+- [正式版下载](https://amd-dlss-mu.claude-api.cn/download): 当前版本、文件大小、SHA-256、更新公告和服务器下载入口。
+- [使用教程](https://amd-dlss-mu.claude-api.cn/guide): 配置步骤、视频、FSR 设置、End 面板与恢复方法。
+- [游戏配置与兼容查询](https://amd-dlss-mu.claude-api.cn/compatibility): Steam 官方硬件要求、保守硬件估算与 OptiScaler 上游适配资料。
+- [问题反馈](https://amd-dlss-mu.claude-api.cn/feedback): 下载、配置、运行和恢复问题反馈。
+- [Pro 功能调研](https://amd-dlss-mu.claude-api.cn/survey): 规划功能的匿名问卷，不代表这些功能已上线。
+
+## Product facts and evidence boundaries
+
+- DLSS5、DLSS 5、大力水手5、大力水手 5 是本指南覆盖的搜索写法；产品名称为 AMD DLSS MU，开发者署名 codeXia。
+- MU 提供第三方 DLSS-NR-on-AMD 方案的配置入口。MU 客户端运行条件与某个图形方案的条件不同；DLSS-NR 的系统、显卡、驱动和游戏要求以教程及上游说明为准。
+- DLSS-NR、OptiScaler 超分与帧生成、大力喜鹊窗口缩放是不同路径，不能互相当作生效证明。
+- 安装成功、达到推荐硬件要求、上游适配记录都不等于 MU / DLSS5 已实测可用，也不保证帧率提升。
+- 官网兼容查询无需登录；客户端业务功能需要登录。Pro 问卷内容处于规划阶段。
+- 当前版本和校验值以下载页及 release.json 为准，避免从旧公告推断最新版本。
+
+## Machine-readable references
+
+- [当前正式版元数据](https://amd-dlss-mu.claude-api.cn/release.json): version, tag, channel, size, sha256, downloadUrl, releaseUrl.
+- [站点地图](https://amd-dlss-mu.claude-api.cn/sitemap.xml): 公开内容的规范链接。
+
+## Original sources
+
+- [MU source and releases](https://github.com/xiarongwu123/AMD-DLSS-MU)
+- [NVIDIA DLSS](https://www.nvidia.com/en-us/geforce/technologies/dlss/)
+- [DLSS-NR-on-AMD](https://github.com/danielblnc/DLSS-NR-on-AMD)
+- [OptiScaler](https://github.com/optiscaler/OptiScaler)

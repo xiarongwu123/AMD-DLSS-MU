@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#070b12">
+  <title>DLSS5（大力水手5）配置指南 · AMD DLSS MU</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/app.css?v=20260928-seo1">
+  <link rel="stylesheet" href="/assets/seo.css?v=20260928-1">
+</head>
+<body data-page="dlss5">
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="AMD DLSS MU 首页"><img src="/assets/logo.png" alt="" width="50" height="50"><span><b>AMD DLSS</b><em>MU</em></span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="main-nav"><span></span><span></span><span class="sr-only">展开导航</span></button>
+    <nav id="main-nav" class="main-nav" aria-label="主导航"><a href="/">官网介绍</a><a data-nav="dlss5" href="/dlss5">DLSS5 专题</a><a href="/download">下载</a><a href="/guide">使用说明</a><a href="/compatibility">兼容查询</a><a href="/feedback">用户反馈</a></nav>
+    <a class="header-cta" href="/download">下载 MU <span>↘</span></a>
+  </header>
+  <main class="section-shell seo-main">
+    <nav class="seo-breadcrumb" aria-label="面包屑"><a href="/">AMD DLSS MU 官网</a><span aria-hidden="true"> / </span><span>DLSS5 / 大力水手5</span></nav>
+    <header class="seo-hero">
+      <p class="eyebrow">DLSS 5 / AMD GPU GUIDE</p>
+      <h1>DLSS5（大力水手5）<br><span>AMD 显卡配置指南</span></h1>
+      <p class="seo-lead">寻找 DLSS5 或大力水手5 的下载、安装与兼容信息？AMD DLSS MU 把 DLSS-NR、OptiScaler 和大力喜鹊的配置入口整合进一个 Windows 桌面工具，支持游戏管理、配置恢复和诊断导出。</p>
+      <p>MU 是独立第三方项目，非 AMD / NVIDIA 官方产品。具体游戏能否运行、画面效果与性能如何，需要结合硬件、驱动和游戏版本验证。</p>
+      <div class="hero-actions"><a class="button button-primary" href="/download">下载 MU 正式版 →</a><a class="button button-ghost" href="/guide">查看安装教程 →</a></div>
+      <p class="seo-byline">整理：codeXia · <time datetime="2026-09-28">2026 年 9 月 28 日更新</time></p>
+    </header>
+    <nav class="seo-toc" aria-label="本页目录"><a href="#what-is-dlss5">技术与项目关系</a><a href="#requirements">使用条件</a><a href="#start">配置与恢复</a><a href="#faq">常见问题</a><a href="#sources">资料来源</a></nav>
+    <section id="what-is-dlss5" class="seo-section">
+      <h2>DLSS5、大力水手5 与 MU 的关系</h2>
+      <p>这里的「DLSS5」「DLSS 5」「大力水手5」指向同一技术话题。NVIDIA 将 DLSS 5 描述为引入实时神经渲染的技术。MU 提供的 AMD 路径依赖第三方 DLSS-NR-on-AMD 项目，不能把第三方配置工具称为 NVIDIA 官方驱动或官方通用安装器。</p>
+      <p>技术定义见 <a href="https://www.nvidia.com/en-us/geforce/technologies/dlss/" rel="noreferrer">NVIDIA DLSS 官方介绍</a>；AMD 方案要求见 <a href="https://github.com/danielblnc/DLSS-NR-on-AMD" rel="noreferrer">DLSS-NR-on-AMD 上游说明</a>。</p>
+      <div class="seo-table-wrap"><table><caption>MU 中的三种配置路径</caption><thead><tr><th scope="col">方案</th><th scope="col">主要用途</th><th scope="col">如何判断效果</th></tr></thead><tbody>
+        <tr><th scope="row">DLSS-NR</th><td>DLSS5 相关神经渲染方案的配置入口</td><td>按上游条件安装，在实际游戏场景中检查面板与画面</td></tr>
+        <tr><th scope="row">OptiScaler</th><td>兼容游戏的超分与帧生成配置</td><td>核对游戏与上游适配限制，不将其等同于神经渲染</td></tr>
+        <tr><th scope="row">大力喜鹊</th><td>独立窗口缩放，无需向游戏目录安装代理 DLL</td><td>通过 Alt + Shift + A 开启或停止，独立检查缩放效果</td></tr>
+      </tbody></table></div>
+    </section>
+    <section id="requirements" class="seo-section">
+      <h2>AMD 显卡使用前，要确认哪些条件？</h2>
+      <ul>
+        <li>MU 客户端为 Windows x64 应用；DLSS-NR 模式的系统要求应单独遵循教程与上游说明。</li>
+        <li>当前教程针对 Windows 11、DirectX 12，以及支持 FSR 3 / FSR 4 的游戏。RX 7000 系列兼容性和性能仍需具体实测。</li>
+        <li>记录显卡完整型号、驱动版本和游戏版本。不要仅凭同系列显卡或其他玩家的结果推断兼容性。</li>
+        <li>配置、切换或恢复前关闭目标游戏，保留备份；带反作弊的联网游戏请遵守游戏规则。</li>
+      </ul>
+      <p><a href="/compatibility">查询游戏官方配置与 OptiScaler 适配资料 →</a> 该查询用于硬件与资料参考，不构成 MU / DLSS5 实测兼容结论。</p>
+    </section>
+    <section id="start" class="seo-section">
+      <h2>如何下载、配置和恢复？</h2>
+      <ol>
+        <li><a href="/download">下载 AMD DLSS MU 正式版</a>，按下载页说明核对 SHA-256。</li>
+        <li>打开客户端并登录后，在游戏库选择目标游戏；扫描不到时手动添加游戏 EXE。</li>
+        <li>关闭游戏，选择所需模式。DLSS-NR 模式按安装窗口提示确认目录与 EXE，遇到文件冲突先检查已有配置。</li>
+        <li>按 <a href="/guide#configure">模式一教程</a>启动游戏、开启 FSR 超分辨率，并在实际场景中按 <kbd>End</kbd> 查看上游面板。</li>
+        <li>需要切换方案或出现异常时，退出游戏，使用 MU「恢复配置」。仍有问题时通过 <a href="/feedback">用户反馈</a>提交诊断信息。</li>
+      </ol>
+      <p><a href="/guide#video">观看操作视频 →</a> MU 的 F8 控制入口与上游 End 面板用途不同，具体按界面和教程提示操作。</p>
+    </section>
+    <section id="faq" class="seo-section"><h2>DLSS5 / 大力水手5 常见问题</h2><!-- DLSS5_FAQ --></section>
+    <section id="sources" class="seo-section">
+      <h2>项目与资料来源</h2>
+      <ul>
+        <li><a href="https://github.com/xiarongwu123/AMD-DLSS-MU" rel="noreferrer">AMD-DLSS-MU 项目源码与发布记录</a>：工具功能与版本信息。</li>
+        <li><a href="https://www.nvidia.com/en-us/geforce/technologies/dlss/" rel="noreferrer">NVIDIA DLSS 官方介绍</a>：官方技术定义和支持信息。</li>
+        <li><a href="https://github.com/danielblnc/DLSS-NR-on-AMD" rel="noreferrer">DLSS-NR-on-AMD</a>：AMD 神经渲染方案、要求和问题记录。</li>
+        <li><a href="https://github.com/optiscaler/OptiScaler" rel="noreferrer">OptiScaler</a>：超分、帧生成与游戏适配说明。</li>
+      </ul>
+      <p>第三方项目会持续更新；上游声称的支持、MU 的配置能力、用户的实际游戏结果分别对待。未验证的组合不标为已支持。</p>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="footer-mark"><img src="/assets/logo.png" alt="" width="56" height="56"><div><b>AMD DLSS MU</b><span>独立第三方项目，非 AMD / NVIDIA 官方产品</span></div></div><div class="footer-links"><a href="/download">下载</a><a href="/guide">使用说明</a><a href="/compatibility">兼容查询</a><a href="/feedback">反馈</a></div><p>© 2026 codeXia</p></footer>
+  <script src="/assets/app.js?v=20260928-seo1" defer></script>
+</body>
+</html>
