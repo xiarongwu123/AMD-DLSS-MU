@@ -124,7 +124,7 @@ public sealed partial class MainForm
             ButtonRow(accountClient.IsOnline ? "查看游戏兼容性 →" : "重新连接账户服务", async (_, _) => await RunAccountActionAsync(async () =>
             {
                 await accountClient.HeartbeatAsync(lifetime.Token); accountFeedback = "账户状态已更新。";
-                if (await RequireFeatureAsync("compatibility.read")) { SwitchPage(0); if (libraryGames.Count == 0) await ScanGamesAsync(); }
+                if (await RequireFeatureAsync("compatibility.read")) { SwitchPage(8); if (libraryGames.Count == 0) await ScanGamesAsync(); }
             }, "正在验证账户…"), true);
             ButtonRow("刷新会员状态", async (_, _) => await RunAccountActionAsync(async () => { await accountClient.HeartbeatAsync(lifetime.Token); accountFeedback = "会员状态已更新。"; }, "正在刷新会员状态…"));
             Row(new Label { Text = "Pro 购买暂未开放。开通方式与可用权益将以正式上线内容为准。", ForeColor = Muted }, 64);

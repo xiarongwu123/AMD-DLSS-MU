@@ -350,7 +350,7 @@ public sealed partial class MainForm
         dialog.ShowDialog(this);
         if (saved != null && !IsDisposed)
         {
-            if (activePage != 0) SwitchPage(0);
+            if (activePage != 8) SwitchPage(8);
             await SearchCompatibilityAsync();
             await LoadCompatibilityGameAsync(saved.GameId);
             ShowProductToast("测试结果已提交，感谢提供真实实测。", true);

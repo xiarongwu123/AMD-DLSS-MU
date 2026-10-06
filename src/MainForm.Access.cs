@@ -5,7 +5,7 @@ namespace AmdNrAssistant;
 
 public sealed partial class MainForm
 {
-    readonly AccountApiClient accountClient = new(new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(12) }, new AccountTokenStore());
+    readonly AccountApiClient accountClient = new(new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(30) }, new AccountTokenStore());
     readonly System.Windows.Forms.Timer accountHeartbeat = new() { Interval = 30000 };
     RoundedButton? accountHeader;
     bool heartbeatRunning, accountRequestBusy, lastAccountOnline;
@@ -83,7 +83,7 @@ public sealed partial class MainForm
         if (!compatibilityAllowed)
         {
             ClearCompatibilityAccess();
-            if (activePage == 0) SwitchPage(6);
+            if (activePage == 8) SwitchPage(6);
         }
         magpiePage.Enabled = accountClient.IsOnline && !busy;
         if (!accountClient.IsOnline && !busy && accountTransactionDepth == 0 && activePage != 6) SwitchPage(6);
@@ -123,7 +123,7 @@ public sealed partial class MainForm
             accountFeedback = "请先联网登录，再使用客户端功能。";
             SwitchPage(6); return false;
         }
-        var feature = page switch { 0 => "compatibility.read", 7 => "magpie.launch", 4 => "diagnostics.use", 5 => "configuration.edit", _ => "library.manage" };
+        var feature = page switch { 8 => "compatibility.read", 7 => "magpie.launch", 4 => "diagnostics.use", 5 => "configuration.edit", _ => "library.manage" };
         if (accountClient.Account?.Features.Any(f => f.Key == feature && f.Allowed) != true)
         {
             ShowProductToast("当前账户暂无此页面的功能权限。", false); return false;
@@ -159,7 +159,7 @@ public sealed partial class MainForm
     static string AccountError(Exception error) => error switch
     {
         AccountApiException e => e.RetryAfterSeconds is > 0 ? $"{e.Message}（{e.RetryAfterSeconds} 秒后重试）" : e.Message,
-        OperationCanceledException => "账户服务连接超时，请检查网络后重试。",
+        OperationCanceledException => "账户请求超时，请稍后重试；持续出现时请检查到服务端的网络连接。",
         HttpRequestException => "无法连接账户服务，请检查网络后重试。",
         _ => error.Message
     };
