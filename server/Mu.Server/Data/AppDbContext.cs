@@ -16,7 +16,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<CompatibilityGameEntry> CompatibilityGames => Set<CompatibilityGameEntry>();
     public DbSet<CompatibilityTestEntry> CompatibilityTests => Set<CompatibilityTestEntry>();
-    public DbSet<GameTelemetryEntry> GameTelemetry => Set<GameTelemetryEntry>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -44,8 +43,5 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
         builder.Entity<CompatibilityTestEntry>().HasIndex(x => new { x.GameId, x.GpuKey, x.CreatedAt });
         builder.Entity<CompatibilityTestEntry>().HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
         builder.Entity<CompatibilityTestEntry>().HasOne<CompatibilityGameEntry>().WithMany().HasForeignKey(x => x.GameId).OnDelete(DeleteBehavior.Restrict);
-        builder.Entity<GameTelemetryEntry>().HasKey(x => new { x.UserId, x.Id });
-        builder.Entity<GameTelemetryEntry>().HasIndex(x => new { x.GameName, x.GpuName, x.MuMode, x.StartedAt });
-        builder.Entity<GameTelemetryEntry>().HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
     }
 }

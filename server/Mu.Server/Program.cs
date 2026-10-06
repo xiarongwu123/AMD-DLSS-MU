@@ -65,8 +65,6 @@ builder.Services.AddRateLimiter(options =>
         _ => new() { PermitLimit = 10, Window = TimeSpan.FromMinutes(15), QueueLimit = 0 }));
     options.AddPolicy("compatibility-public", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new() { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
-    options.AddPolicy("telemetry", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-        _ => new() { PermitLimit = 120, Window = TimeSpan.FromHours(1), QueueLimit = 0 }));
     options.OnRejected = async (context, ct) =>
     {
         var seconds = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retry) ? Math.Max(1, (int)Math.Ceiling(retry.TotalSeconds)) : 60;
@@ -151,7 +149,6 @@ app.MapGet("/api/health", async (AppDbContext db) => await db.Database.CanConnec
     ? Results.Ok(new { status = "ok", service = "mu-accounts" }) : Results.StatusCode(503));
 app.MapAccountApi();
 app.MapCompatibilityApi();
-app.MapTelemetryApi();
 app.MapRazorPages();
 await app.RunAsync();
 

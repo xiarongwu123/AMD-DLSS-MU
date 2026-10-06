@@ -235,7 +235,7 @@ sealed class Suite : IAsyncDisposable
             Assert(audit.Id == "legacy-audit" && audit.BeforeJson == "{\"legacy\":true}" && audit.AfterJson == "{\"enabled\":false}", "upgrade preserves historical audit payloads verbatim");
             Assert(await db.AuthSessions.CountAsync() == 1 && await db.MembershipChanges.CountAsync() == 1, "upgrade preserves sessions and membership history");
             Assert(await db.FeatureDefinitions.CountAsync() == AccountService.InitialFeatures.Length && await db.FeatureDefinitions.AllAsync(x => x.Version == 1), "newly seeded and migrated features both start at version one");
-            Assert(await Scalar(db, "SELECT Version FROM DatabaseSchemas WHERE Id=1;") == 4, "successful migration advances schema marker to four");
+            Assert(await Scalar(db, "SELECT Version FROM DatabaseSchemas WHERE Id=1;") == 3, "successful migration advances schema marker to three");
             Assert(await db.CompatibilityGames.CountAsync() >= 4 && !await db.CompatibilityTests.AnyAsync(), "upgrade seeds catalog without fabricated tests");
         }
         await using (var reopened = new AppDbContext(options))
@@ -266,7 +266,7 @@ sealed class Suite : IAsyncDisposable
                 "failed migration preserves historical data and rules");
             await check.Database.ExecuteSqlRawAsync("DROP TRIGGER fail_schema_update;");
             await DatabaseSetup.InitializeAsync(check);
-            Assert(await Scalar(check, "SELECT Version FROM DatabaseSchemas WHERE Id=1;") == 4, "migration can retry cleanly after failure is removed");
+            Assert(await Scalar(check, "SELECT Version FROM DatabaseSchemas WHERE Id=1;") == 3, "migration can retry cleanly after failure is removed");
         }
 
         var versionTwo = new DbContextOptionsBuilder<AppDbContext>().UseSqlite($"Data Source={Path.Combine(directory, "legacy-v2.sqlite")}").Options;
@@ -284,7 +284,7 @@ sealed class Suite : IAsyncDisposable
             Assert(await Scalar(db, "SELECT COUNT(*) FROM sqlite_master WHERE name='CompatibilityGames';") == 0, "failed v2 upgrade rolls back catalog table");
             await db.Database.ExecuteSqlRawAsync("DROP TRIGGER fail_schema_update;");
             await DatabaseSetup.InitializeAsync(db);
-            Assert((await db.DatabaseSchemas.SingleAsync()).Version == 4 && await db.CompatibilityGames.CountAsync() >= 4 && !await db.CompatibilityTests.AnyAsync() && !await db.GameTelemetry.AnyAsync(), "v2 retry creates v4 catalog with no reports");
+            Assert((await db.DatabaseSchemas.SingleAsync()).Version == 3 && await db.CompatibilityGames.CountAsync() >= 4 && !await db.CompatibilityTests.AnyAsync(), "v2 retry creates v3 catalog with no reports");
             var user = await db.Users.SingleAsync();
             Assert(user.Id == "legacy-user" && user.PasswordHash == "fixture-password-hash" && await db.AuthSessions.CountAsync() == 1 && await db.AuditEntries.CountAsync() == 1, "v2 upgrade preserves user credentials, sessions and audit");
             Assert((await db.FeatureDefinitions.SingleAsync(x => x.Key == "library.manage")).Version == 7, "v2 upgrade preserves feature configuration version");

@@ -1381,7 +1381,6 @@ public sealed partial class MainForm : Form
             }
             catch (IOException e) { manualWarning = "；" + e.Message; }
             libraryGames = list;
-            telemetryMonitor?.SetGames(libraryGames);
             libraryStateCache.Clear();
             selectedCard = null;
             while (games.Controls.Count > 0) { var card = games.Controls[0]; games.Controls.Remove(card); card.Dispose(); }

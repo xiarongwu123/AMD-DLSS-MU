@@ -14,8 +14,6 @@ public sealed partial class MainForm
     readonly List<Button> navigation = new();
     readonly List<int> navigationPages = new();
     List<GameCandidate> libraryGames = new();
-    GameTelemetryMonitor? telemetryMonitor;
-    string? presentMonPath;
     readonly TextBox librarySearch = new() { BorderStyle = BorderStyle.None, Dock = DockStyle.Fill, PlaceholderText = "搜索游戏 / Search games" };
     readonly Button launch = new RoundedButton { Text = "启动游戏", Visible = false };
     readonly RoundedButton themeToggle = new();
@@ -35,7 +33,6 @@ public sealed partial class MainForm
     public MainForm()
     {
         LoadPreferences();
-        telemetryMonitor = new GameTelemetryMonitor(accountClient) { Enabled = true, PresentMonPath = presentMonPath };
         using (var iconStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("AmdNrAssistant.AppIcon"))
             if (iconStream != null) { using var embeddedIcon = new Icon(iconStream); Icon = (Icon)embeddedIcon.Clone(); }
         ShowIcon = true;
@@ -53,9 +50,8 @@ public sealed partial class MainForm
         Controls.Add(root);
         BuildLibrary(); BuildV2Home(); BuildAbout(); BuildProductPages(); BuildAccountPage(); BuildMagpiePage(); BuildCompatibilityPage(); SwitchPage(6); ApplyTheme(darkMode, false); ApplyAccountGate();
         Shown += async (_, _) => await RestoreAccountAsync();
-        Shown += (_, _) => telemetryMonitor?.Start();
         FormClosing += (_, e) => { if (busy && !lifetime.IsCancellationRequested) { e.Cancel = true; MessageBox.Show(this, "请等待当前操作完成，或先在下载任务中取消下载。", Text); } };
-        FormClosed += (_, _) => { telemetryMonitor?.Dispose(); accountHeartbeat.Stop(); accountHeartbeat.Dispose(); accountClient.Changed -= AccountStateChanged; productToastTimer?.Stop(); productToastTimer?.Dispose(); controlPanel?.Close(); lifetime.Cancel(); accountClient.Dispose(); };
+        FormClosed += (_, _) => { accountHeartbeat.Stop(); accountHeartbeat.Dispose(); accountClient.Changed -= AccountStateChanged; productToastTimer?.Stop(); productToastTimer?.Dispose(); controlPanel?.Close(); lifetime.Cancel(); accountClient.Dispose(); };
     }
 
     void BuildLibrary()
@@ -166,7 +162,6 @@ public sealed partial class MainForm
             {
                 game = new GameCandidate { Title = Path.GetFileNameWithoutExtension(path), ExePath = path, InstallDirectory = Path.GetDirectoryName(path)! };
                 libraryGames.Add(game);
-                telemetryMonitor?.SetGames(libraryGames);
                 games.Controls.Add(CreateGameCard(game));
             }
             selectedGame = path;

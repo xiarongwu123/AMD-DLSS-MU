@@ -6,7 +6,7 @@ namespace Mu.Server.Data;
 
 public static class DatabaseSetup
 {
-    public const int CurrentVersion = 4;
+    public const int CurrentVersion = 3;
     public static async Task InitializeAsync(AppDbContext db)
     {
         await db.Database.OpenConnectionAsync();
@@ -29,7 +29,7 @@ public static class DatabaseSetup
             if (Convert.ToInt64(await tables.ExecuteScalarAsync()) != 1)
                 throw new InvalidOperationException("Unrecognized database. Use a separate empty account database; never point this service at the website database.");
             var schema = await db.DatabaseSchemas.AsNoTracking().SingleOrDefaultAsync(x => x.Id == 1);
-            if (schema?.Version is 1 or 2 or 3) await UpgradeAsync(db);
+            if (schema?.Version is 1 or 2) await UpgradeAsync(db);
             else if (schema?.Version != CurrentVersion)
                 throw new InvalidOperationException($"Unsupported account database schema {schema?.Version}; this server requires {CurrentVersion}. Back up and run the versioned upgrade before starting.");
         }
@@ -54,11 +54,6 @@ public static class DatabaseSetup
         {
             await db.Database.ExecuteSqlRawAsync(CompatibilitySchemaSql);
             schema.Version = 3;
-        }
-        if (schema.Version == 3)
-        {
-            await db.Database.ExecuteSqlRawAsync(TelemetrySchemaSql);
-            schema.Version = 4;
         }
         if (schema.Version != CurrentVersion)
             throw new InvalidOperationException($"Unsupported account database schema {schema.Version}; this server requires {CurrentVersion}.");
@@ -85,25 +80,6 @@ public static class DatabaseSetup
         CREATE UNIQUE INDEX "IX_CompatibilityTests_UserId_GameId_EnvironmentHash_TestDay" ON "CompatibilityTests" ("UserId", "GameId", "EnvironmentHash", "TestDay");
         CREATE INDEX "IX_CompatibilityTests_UserId_CreatedAt" ON "CompatibilityTests" ("UserId", "CreatedAt");
         CREATE INDEX "IX_CompatibilityTests_GameId_GpuKey_CreatedAt" ON "CompatibilityTests" ("GameId", "GpuKey", "CreatedAt");
-        """;
-
-    private const string TelemetrySchemaSql = """
-        CREATE TABLE "GameTelemetry" (
-            "Id" TEXT NOT NULL,
-            "UserId" TEXT NOT NULL,
-            "GameName" TEXT NOT NULL,
-            "GpuName" TEXT NOT NULL,
-            "MuMode" TEXT NOT NULL,
-            "StartedAt" INTEGER NOT NULL,
-            "EndedAt" INTEGER NOT NULL,
-            "FrameCount" INTEGER NOT NULL,
-            "AverageFps" REAL NULL,
-            "OnePercentLowFps" REAL NULL,
-            "PayloadJson" TEXT NOT NULL,
-            "PayloadHash" TEXT NOT NULL,
-            CONSTRAINT "PK_GameTelemetry" PRIMARY KEY ("UserId", "Id"),
-            CONSTRAINT "FK_GameTelemetry_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE RESTRICT);
-        CREATE INDEX "IX_GameTelemetry_GameName_GpuName_MuMode_StartedAt" ON "GameTelemetry" ("GameName", "GpuName", "MuMode", "StartedAt");
         """;
 
     public static async Task BackupAsync(AppDbContext db, string destination)

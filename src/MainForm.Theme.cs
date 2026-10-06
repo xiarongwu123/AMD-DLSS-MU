@@ -10,7 +10,6 @@ public sealed partial class MainForm
     {
         public bool AutoCheckUpdates { get; set; } = true;
         public string Theme { get; set; } = "dark";
-        public string? PresentMonPath { get; set; }
     }
 
     static bool globalDark = true;
@@ -54,7 +53,6 @@ public sealed partial class MainForm
                 {
                     autoCheckUpdates = saved.AutoCheckUpdates;
                     darkMode = !saved.Theme.Equals("light", StringComparison.OrdinalIgnoreCase);
-                    presentMonPath = saved.PresentMonPath;
                 }
             }
         }
@@ -68,8 +66,7 @@ public sealed partial class MainForm
         var json = JsonSerializer.Serialize(new UiPreferences
         {
             AutoCheckUpdates = autoCheckUpdates,
-            Theme = darkMode ? "dark" : "light",
-            PresentMonPath = presentMonPath
+            Theme = darkMode ? "dark" : "light"
         }, new JsonSerializerOptions { WriteIndented = true });
         var temporary = PreferencesFile + ".tmp";
         File.WriteAllText(temporary, json);

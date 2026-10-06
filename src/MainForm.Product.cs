@@ -104,31 +104,6 @@ public sealed partial class MainForm
             finally { changingAuto = false; auto.Enabled = true; }
         };
         stack.Controls.Add(auto);
-        stack.Controls.Add(Heading("游戏运行监测", "Gameplay monitoring"));
-        Paragraph(stack, "游戏配置完成后，MU 运行期间会自动采集该游戏的运行摘要，并在游戏退出后上传。不会上传画面或完整游戏路径。帧率采集需指定官方 PresentMon 程序。");
-        var monitorStatus = new Label { AutoSize = true, Text = presentMonPath is null ? "PresentMon 未设置：会话仍可记录，FPS 将标为未知。" : "PresentMon：" + Path.GetFileName(presentMonPath), ForeColor = muted };
-        stack.Controls.Add(monitorStatus);
-        stack.Controls.Add(Action("选择 PresentMon", "Choose PresentMon", (_, _) =>
-        {
-            using var picker = new OpenFileDialog { Filter = "PresentMon (*.exe)|*.exe", CheckFileExists = true, Title = "选择官方 PresentMon 控制台程序" };
-            if (picker.ShowDialog(this) != DialogResult.OK) return;
-            presentMonPath = picker.FileName;
-            if (telemetryMonitor != null) telemetryMonitor.PresentMonPath = presentMonPath;
-            monitorStatus.Text = "PresentMon：" + Path.GetFileName(presentMonPath);
-            SavePreferences();
-        }));
-        stack.Controls.Add(Action("清除我的监测数据", "Erase my monitoring data", async (_, _) =>
-        {
-            if (telemetryMonitor == null) return;
-            if (MessageBox.Show(this, "将删除此账户在本机待上传及服务器已保存的监测数据。已配置游戏下次运行时会重新采集。继续吗？",
-                "清除监测数据", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
-            try
-            {
-                await telemetryMonitor.DeleteMyDataAsync(CancellationToken.None);
-                MessageBox.Show(this, "监测数据已清除。", "清除监测数据");
-            }
-            catch (Exception e) { MessageBox.Show(this, e.Message, "清除未完成"); }
-        }));
         stack.Controls.Add(Heading("下载源", "Download sources"));
         Paragraph(stack, "自动选择与切换，无需手动填写镜像。");
         stack.Controls.Add(Heading("版本", "Version")); Paragraph(stack, "AMD DLSS MU v" + AutoUpdate.DisplayVersion);

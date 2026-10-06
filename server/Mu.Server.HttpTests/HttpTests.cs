@@ -48,7 +48,6 @@ internal static class HttpTests
         Check((await client.PostAsJsonAsync("/api/v1/account/authorize", new { featureKey = "game.launch" })).IsSuccessStatusCode,
             "Initial feature available");
         assertions += await CompatibilityHttpTests.RunAsync(factory, client);
-        assertions += await TelemetryHttpTests.RunAsync(factory, client);
         using (var scope = factory.Services.CreateScope())
             await scope.ServiceProvider.GetRequiredService<AccountManagementService>()
                 .SetFeatureAsync("game.launch", true, "pro", "HTTP test", "test-admin");
