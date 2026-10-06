@@ -78,13 +78,6 @@ public sealed partial class MainForm
         if (headerNavigation != null) headerNavigation.Enabled = accountClient.IsOnline;
         if (headerUpdate != null) headerUpdate.Enabled = accountClient.IsOnline;
         libraryPage.Enabled = accountClient.IsOnline && !busy;
-        var compatibilityAllowed = accountClient.IsOnline && accountClient.Account?.Features.Any(f => f.Key == "compatibility.read" && f.Allowed) == true;
-        compatibilityPage.Enabled = compatibilityAllowed && !busy;
-        if (!compatibilityAllowed)
-        {
-            ClearCompatibilityAccess();
-            if (activePage == 8) SwitchPage(6);
-        }
         magpiePage.Enabled = accountClient.IsOnline && !busy;
         if (!accountClient.IsOnline && !busy && accountTransactionDepth == 0 && activePage != 6) SwitchPage(6);
     }
@@ -123,7 +116,7 @@ public sealed partial class MainForm
             accountFeedback = "请先联网登录，再使用客户端功能。";
             SwitchPage(6); return false;
         }
-        var feature = page switch { 8 => "compatibility.read", 7 => "magpie.launch", 4 => "diagnostics.use", 5 => "configuration.edit", _ => "library.manage" };
+        var feature = page switch { 7 => "magpie.launch", 4 => "diagnostics.use", 5 => "configuration.edit", _ => "library.manage" };
         if (accountClient.Account?.Features.Any(f => f.Key == feature && f.Allowed) != true)
         {
             ShowProductToast("当前账户暂无此页面的功能权限。", false); return false;

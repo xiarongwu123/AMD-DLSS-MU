@@ -3,15 +3,16 @@
 The account service owns a separate SQLite database. Never use the website's
 `analytics.sqlite` or mount the website's data directory into this service.
 
-Schema version 3 is recorded in `DatabaseSchemas` (row ID 1). On an empty database,
+Schema version 4 is recorded in `DatabaseSchemas` (row ID 1). On an empty database,
 the generated EF schema and this marker are committed in one transaction. On an
-existing database, startup upgrades recognized versions 1 and 2 in a single explicit
+existing database, startup upgrades recognized versions 1, 2, and 3 in a single explicit
 transaction. Version 1 first adds `FeatureDefinitions.Version INTEGER NOT NULL DEFAULT 1`;
 version 2 adds `CompatibilityGames`, `CompatibilityTests`, their indexes and account/game
-foreign keys. The schema marker advances to 3 only after those changes succeed.
+foreign keys. Version 3 adds `GameTelemetry`, its account foreign key and reporting index.
+The schema marker advances to 4 only after those changes succeed.
 Historical users, rules, timestamps, sessions and audit records are preserved. Failure
 rolls back all schema changes and the marker, including the intermediate version 1
-column change. Repeating startup at version 3 does not rerun the migration. Unknown
+column change. Repeating startup at version 4 does not rerun the migration. Unknown
 databases or unsupported versions stop startup before serving traffic. Feature seeds
 only insert missing known keys; existing operator settings remain unchanged.
 
@@ -23,6 +24,11 @@ App IDs are unique, while games without a Steam identity use normalized names fo
 directory lookup. Counts are computed from persisted reports rather than cached or
 seeded compatibility claims. See [COMPATIBILITY.md](COMPATIBILITY.md) for contracts
 and the limits of community reports.
+
+Game telemetry stores one account-scoped session summary per ID. The authenticated
+client upload is idempotent, and the account owner can delete all their sessions.
+The Windows client no longer presents the compatibility reporting page; existing
+website compatibility reports and API consumers remain intact.
 
 Each feature has a persistent integer configuration version starting at 1. Every
 successful administrator configuration save increments it in the same transaction
