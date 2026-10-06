@@ -60,6 +60,8 @@ docker compose exec account dotnet Mu.Server.dll --create-admin admin@example.co
 
 Visit `https://mu-api.claude-api.cn/admin`, sign in, and complete authenticator setup. The management console requires a separate administrator session and TOTP. Securely retain the authenticator setup key; automated MFA recovery is not implemented. Pro membership does not grant administrator access.
 
+After deploying the telemetry server code, `/admin/telemetry` displays aggregated session totals, FPS coverage, game/GPU/MU-mode distributions and recent sessions. It is available only to an administrator who completed TOTP verification. Its filters use game end time and game name. Missing FPS stays unknown; the report does not calculate optimization uplift, compatibility success or confidence without paired baseline data. The page is read-only and does not show account identifiers or raw JSON.
+
 ## Backups and recovery
 
 `backup.sh` invokes the application's SQLite online-backup command. Do not copy only the main database while WAL writes are active. The script rotates only its own snapshots and retains the latest seven successful backups. Run `schedule-backup.sh` to install the following daily cron entry under the deployment user, preserving existing entries. The schedule uses the server timezone:
