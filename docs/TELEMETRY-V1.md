@@ -24,7 +24,8 @@
 
 - 本机队列位于 `%LOCALAPPDATA%\AMD-NR-Assistant\telemetry-queue\<账户 ID 哈希>\`。上传失败会重试；服务端尚未提供接口时每小时重试一次，限流时遵守重试等待。服务器拒绝或损坏的记录改名为 `.rejected`，供排查，清除数据会一并删除。
 - 服务端接口为 `POST /api/v1/telemetry/sessions` 和 `DELETE /api/v1/telemetry/sessions`，均需客户端账户认证。上传以会话 ID 幂等，重复 ID 对应不同内容会返回 409。
-- SQLite 账户库版本从 3 升到 4，启动时迁移创建 `GameTelemetry` 表。部署前按原有服务端流程备份账户数据库。尚未部署到线上。
+- SQLite 账户库版本从 3 升到 4，启动时迁移创建 `GameTelemetry` 表。部署前按原有服务端流程备份账户数据库。已于 2026-10-07 部署到线上，见 [部署记录](TELEMETRY-DELIVERY.md)。
+- 管理员完成登录和动态码验证后，在后台导航选择“游戏监控”，或访问 `/admin/telemetry`。页面支持时间范围和游戏名称筛选，展示会话数、参与账户、有无 FPS 的会话数、游戏 FPS/1% Low 汇总、显卡分布、MU 安装模式和最近 50 条会话。
 - Windows 真实游戏与 PresentMon 联调仍需在 Windows 机器执行。Mac 上只完成跨平台编译、CSV 解析及服务端 HTTP/迁移测试。
 
 ## 验证命令

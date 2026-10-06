@@ -58,7 +58,7 @@ Create the first administrator through the container's `--create-admin` command;
 docker compose exec account dotnet Mu.Server.dll --create-admin admin@example.com
 ```
 
-Visit `https://mu-api.claude-api.cn/admin`, sign in, and complete authenticator setup. The management console requires a separate administrator session and TOTP. Securely retain the authenticator setup key; automated MFA recovery is not implemented. Pro membership does not grant administrator access.
+Visit `https://mu-api.claude-api.cn/admin`, sign in, and complete authenticator setup. The management console requires a separate administrator session and TOTP. Securely retain the authenticator setup key; automated MFA recovery is not implemented. Pro membership does not grant administrator access. Game telemetry reports are available through the game-monitoring navigation entry at `/admin/telemetry`; records appear after authenticated clients finish and upload configured game sessions. See [the deployment record](../docs/TELEMETRY-DELIVERY.md).
 
 After deploying the telemetry server code, `/admin/telemetry` displays aggregated session totals, FPS coverage, game/GPU/MU-mode distributions and recent sessions. It is available only to an administrator who completed TOTP verification. Its filters use game end time and game name. Missing FPS stays unknown; the report does not calculate optimization uplift, compatibility success or confidence without paired baseline data. The page is read-only and does not show account identifiers or raw JSON.
 

@@ -5,7 +5,7 @@ release=${1:?Usage: activate-telemetry.sh RELEASE_ID REHEARSAL_DIRECTORY}
 rehearsal=${2:?Usage: activate-telemetry.sh RELEASE_ID REHEARSAL_DIRECTORY}
 [[ "$release" =~ ^[A-Za-z0-9][A-Za-z0-9._-]+$ ]]
 test -s "releases/$release/Mu.Server.dll"
-test -s "$rehearsal/verified"
+test -f "$rehearsal/verified"
 umask 077
 exec 9>>backups/.backup.lock
 flock -x 9
