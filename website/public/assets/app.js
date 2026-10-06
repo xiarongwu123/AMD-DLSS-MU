@@ -12,7 +12,7 @@
 
   const current = body.dataset.page;
   document.querySelector(`[data-nav="${current}"]`)?.setAttribute('aria-current', 'page');
-  let currentReleaseVersion = '2.0.1';
+  let currentReleaseVersion = '2.0.2';
   const form = document.querySelector('[data-feedback-form]');
   const initialAppVersion = form?.elements.appVersion?.value;
 

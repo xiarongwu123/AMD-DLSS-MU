@@ -19,15 +19,15 @@ public static class Core
     public const string Repository = "https://github.com/danielblnc/DLSS-NR-on-AMD";
     public const string InstallerName = "dlssnr_on_amd_setup.exe";
     public const string DllName = "nvngx_dlssnr.dll";
-    public const string ReviewedTag = "v0.3.1";
+    public const string ReviewedTag = "v0.4.0";
     public const string RequiredDll = "310.8.0.0";
     public const string BundledDllResource = "nvngx_dlssnr.dll";
     // Fixed asset shipped in the Windows EXE. This lets us distinguish a
     // missing/quarantined asset from an upstream installer failure.
     public const string BundledDllSha256 = "8270b350cd82de5ce89806872cdd6b6a9249b80836b91bbeb3573470744cc206";
     // Pin both the online release and cached installer to the reviewed bytes.
-    public const string ReviewedInstallerSha256 = "cf7ada1486b499700a84846b342ca2b1defdb4db622843f812151f255f2ad63c";
-    public const long ReviewedInstallerSize = 7598347;
+    public const string ReviewedInstallerSha256 = "2d37453e918a1c5487314b3ae7c088b624ac0be1b82469427ec04b481a845ded";
+    public const long ReviewedInstallerSize = 13183488;
     // Names accepted by the upstream installer as the game's proxy DLL.
     // The installer chooses one of these; the presence of nvngx_dlssnr.dll alone
     // does not mean that the proxy was installed or that the game will load it.

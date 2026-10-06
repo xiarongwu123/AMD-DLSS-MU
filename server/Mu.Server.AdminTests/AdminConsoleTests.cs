@@ -37,8 +37,26 @@ internal static class AdminConsoleTests
             userId = user.Id;
         }
 
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            db.GameTelemetry.AddRange(
+                new GameTelemetryEntry { Id = Guid.NewGuid().ToString(), UserId = userId, GameName = "Cyberpunk <test>",
+                    GpuName = "RX 7900", MuMode = "DLSS", StartedAt = now - 1800, EndedAt = now - 1200,
+                    FrameCount = 600, AverageFps = 90, OnePercentLowFps = 60, PayloadJson = "{}", PayloadHash = "first" },
+                new GameTelemetryEntry { Id = Guid.NewGuid().ToString(), UserId = userId, GameName = "RE9",
+                    GpuName = "RX 6600", MuMode = "none", StartedAt = now - 1000, EndedAt = now - 600,
+                    FrameCount = 0, PayloadJson = "{}", PayloadHash = "second" },
+                new GameTelemetryEntry { Id = Guid.NewGuid().ToString(), UserId = userId, GameName = "Old game",
+                    GpuName = "RX 580", MuMode = "none", StartedAt = now - 61 * 86400, EndedAt = now - 60 * 86400,
+                    FrameCount = 400, AverageFps = 30, OnePercentLowFps = 20, PayloadJson = "{}", PayloadHash = "third" });
+            await db.SaveChangesAsync();
+        }
+
         Check((await client.GetAsync("/admin/users")).StatusCode == HttpStatusCode.Redirect, "Anonymous administrator access blocked");
         Check((await client.GetAsync("/admin/mail")).StatusCode == HttpStatusCode.Redirect, "Anonymous mail logs blocked");
+        Check((await client.GetAsync("/admin/telemetry")).StatusCode == HttpStatusCode.Redirect, "Anonymous telemetry report blocked");
         Check((await Post(client, "/admin/login", new() { ["Email"] = AdminEmail, ["Password"] = Password })).StatusCode == HttpStatusCode.BadRequest,
             "Admin login requires CSRF");
         var loginToken = await Token(client, "/admin/login");
@@ -50,6 +68,7 @@ internal static class AdminConsoleTests
         Check(passwordStep.StatusCode == HttpStatusCode.Redirect && passwordStep.Headers.Location?.OriginalString == "/admin/setup", "First admin login requires TOTP setup");
         Check((await client.GetAsync("/admin/users")).StatusCode == HttpStatusCode.Redirect, "Password-only pending cookie cannot manage");
         Check((await client.GetAsync("/admin/mail")).StatusCode == HttpStatusCode.Redirect, "Mail logs require completed MFA");
+        Check((await client.GetAsync("/admin/telemetry")).StatusCode == HttpStatusCode.Redirect, "Password-only cookie cannot read telemetry");
         var setup = await client.GetAsync("/admin/setup");
         var setupHtml = await setup.Content.ReadAsStringAsync();
         var key = Regex.Match(setupHtml, "<code class=\"secret\">([^<]+)</code>").Groups[1].Value;
@@ -61,7 +80,7 @@ internal static class AdminConsoleTests
         var adminCookie = setupPost.Headers.GetValues("Set-Cookie").Single(value => value.StartsWith("__Host-MuAdmin=", StringComparison.Ordinal)).Split(';')[0];
         Check(setupPost.Headers.GetValues("Set-Cookie").Any(value => value.Contains("secure", StringComparison.OrdinalIgnoreCase)
             && value.Contains("httponly", StringComparison.OrdinalIgnoreCase) && value.Contains("samesite=strict", StringComparison.OrdinalIgnoreCase)), "Admin cookie protected");
-        foreach (var path in new[] { "/admin", "/admin/users", "/admin/features", "/admin/plans", "/admin/orders", "/admin/audit", "/admin/mail" })
+        foreach (var path in new[] { "/admin", "/admin/users", "/admin/telemetry", "/admin/features", "/admin/plans", "/admin/orders", "/admin/audit", "/admin/mail" })
             Check((await client.GetAsync(path)).IsSuccessStatusCode, "Authorized page renders: " + path);
 
         using (var scope = factory.Services.CreateScope())
@@ -79,6 +98,18 @@ internal static class AdminConsoleTests
         Check(!mailHtml.Contains("<script>alert"), "SMTP results are HTML encoded");
         var filtered = await (await client.GetAsync("/admin/mail?Search=monitor&Status=bounced")).Content.ReadAsStringAsync();
         Check(!filtered.Contains("monitor0@example.test"), "Mail status filtering applied");
+        var telemetryHtml = await (await client.GetAsync("/admin/telemetry")).Content.ReadAsStringAsync();
+        Check(telemetryHtml.Contains("Cyberpunk &lt;test&gt;", StringComparison.Ordinal)
+            && !telemetryHtml.Contains("Cyberpunk <test>", StringComparison.Ordinal), "Telemetry game names are HTML escaped");
+        Check(telemetryHtml.Contains("RX 7900", StringComparison.Ordinal)
+            && !telemetryHtml.Contains("Old game", StringComparison.Ordinal), "Default report includes recent records only");
+        Check(telemetryHtml.Contains("有 FPS 的会话", StringComparison.Ordinal)
+            && telemetryHtml.Contains("缺少 FPS 的会话", StringComparison.Ordinal), "Report distinguishes measured and unmeasured sessions");
+        var allTelemetryHtml = await (await client.GetAsync("/admin/telemetry?Days=0")).Content.ReadAsStringAsync();
+        Check(allTelemetryHtml.Contains("Old game", StringComparison.Ordinal), "All-time report includes older records");
+        var filteredTelemetryHtml = await (await client.GetAsync("/admin/telemetry?Days=30&Game=Cyberpunk")).Content.ReadAsStringAsync();
+        Check(filteredTelemetryHtml.Contains("Cyberpunk &lt;test&gt;", StringComparison.Ordinal)
+            && !filteredTelemetryHtml.Contains("RE9", StringComparison.Ordinal), "Game filter applies to every report table");
 
         Check((await Post(client, "/admin/users?handler=Grant", new() { ["UserId"] = userId, ["Days"] = "30", ["Reason"] = "test grant" })).StatusCode == HttpStatusCode.BadRequest,
             "Management mutations require CSRF");
@@ -130,6 +161,7 @@ internal static class AdminConsoleTests
         var session = (await login.Content.ReadFromJsonAsync<SessionResponse>())!;
         normal.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
         Check((await normal.GetAsync("/admin/users")).StatusCode == HttpStatusCode.Redirect, "Client bearer cannot authenticate administrator page");
+        Check((await normal.GetAsync("/admin/telemetry")).StatusCode == HttpStatusCode.Redirect, "Client bearer cannot read telemetry report");
         Check((await Form(client, "/admin/users", "RevokeSessions", new() { ["UserId"] = userId, ["Reason"] = "test revoke sessions" })).StatusCode == HttpStatusCode.Redirect,
             "Session revocation form");
         Check((await normal.GetAsync("/api/v1/account/me")).StatusCode == HttpStatusCode.Unauthorized, "Admin revocation invalidates client immediately");

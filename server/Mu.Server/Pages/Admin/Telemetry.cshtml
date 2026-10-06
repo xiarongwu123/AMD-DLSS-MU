@@ -1,0 +1,37 @@
+@page "/admin/telemetry"
+@model Mu.Server.Pages.Admin.TelemetryModel
+@{ ViewData["Title"] = "游戏监控报表"; }
+<h1>游戏监控报表</h1>
+<p class="muted">数据来自已登录用户配置游戏后的运行会话。时间范围按游戏结束时间计算；退出游戏并完成上传后才会出现记录。</p>
+<form method="get" class="row">
+    <div><label asp-for="Days">时间范围</label><select asp-for="Days"><option value="7">最近 7 天</option><option value="30">最近 30 天</option><option value="90">最近 90 天</option><option value="0">全部</option></select></div>
+    <div><label asp-for="Game">游戏名称包含</label><input asp-for="Game" maxlength="160" placeholder="留空查看全部游戏" /></div>
+    <button type="submit">筛选</button>
+</form>
+<div class="grid">
+    <section class="card"><h2>运行会话</h2><p class="stat">@Model.SessionCount</p></section>
+    <section class="card"><h2>参与账户</h2><p class="stat">@Model.AccountCount</p></section>
+    <section class="card"><h2>有 FPS 的会话</h2><p class="stat">@Model.FpsSessionCount</p></section>
+    <section class="card"><h2>缺少 FPS 的会话</h2><p class="stat">@Model.InsufficientSessionCount</p></section>
+</div>
+<p class="muted">最近一次游戏结束：@Mu.Server.Pages.Admin.AdminPageModel.FormatTime(Model.LatestEndedAt)。缺少 FPS 的会话可能未配置 PresentMon、帧数不足或采集失败。</p>
+<section class="card"><h2>游戏汇总</h2><p class="muted">按会话数排序，最多显示 30 个游戏。平均值只使用有相应 FPS 数值的会话；不同画质和硬件配置不能直接比较。</p>
+<div class="table-scroll"><table><thead><tr><th>游戏</th><th>会话</th><th>有 FPS</th><th>平均 FPS</th><th>平均 1% Low</th></tr></thead><tbody>
+@foreach (var game in Model.Games)
+{ <tr><td>@game.Name</td><td>@game.Sessions</td><td>@game.FpsSessions</td><td>@(game.AverageFps?.ToString("F1") ?? "—")</td><td>@(game.OnePercentLowFps?.ToString("F1") ?? "—")</td></tr> }
+</tbody></table></div>
+@if (Model.Games.Count == 0) { <p class="muted">当前筛选条件下没有记录。</p> }
+</section>
+<div class="grid">
+    <section class="card"><h2>显卡分布</h2><p class="muted">最多显示 20 种显卡。</p><div class="table-scroll"><table><thead><tr><th>显卡</th><th>会话</th><th>有 FPS</th></tr></thead><tbody>
+    @foreach (var gpu in Model.Gpus) { <tr><td>@gpu.Name</td><td>@gpu.Sessions</td><td>@gpu.FpsSessions</td></tr> }
+    </tbody></table></div></section>
+    <section class="card"><h2>MU 安装模式</h2><div class="table-scroll"><table><thead><tr><th>模式</th><th>会话</th></tr></thead><tbody>
+    @foreach (var mode in Model.Modes) { <tr><td>@mode.Name</td><td>@mode.Sessions</td></tr> }
+    </tbody></table></div></section>
+</div>
+<section class="card"><h2>最近 50 条会话</h2><div class="table-scroll"><table><thead><tr><th>游戏结束时间</th><th>游戏</th><th>显卡</th><th>MU 模式</th><th>有效帧</th><th>平均 FPS</th><th>1% Low</th></tr></thead><tbody>
+@foreach (var session in Model.Recent)
+{ <tr><td>@Mu.Server.Pages.Admin.AdminPageModel.FormatTime(session.EndedAt)</td><td>@session.GameName</td><td>@session.GpuName</td><td>@session.MuMode</td><td>@session.FrameCount</td><td>@(session.AverageFps?.ToString("F1") ?? "—")</td><td>@(session.OnePercentLowFps?.ToString("F1") ?? "—")</td></tr> }
+</tbody></table></div></section>
+<p class="muted">目前没有可靠的优化前后配对、画质设置和兼容性结果，因此不展示 FPS 提升率、方案成功率或可信度评分。</p>

@@ -13,18 +13,20 @@ Assert(AutoUpdate.Parse(Fixture(draft:true),current) == null);
 Assert(AutoUpdate.Parse(Fixture(prerelease:true),current) == null);
 Assert(AutoUpdate.Parse(Fixture("v1.4.0"), new Version(2, 0, 0, 0)) == null);
 Assert(AutoUpdate.Parse(Fixture("v2.0.1"), new Version(2, 0, 0, 0))?.Tag == "v2.0.1");
+Assert(AutoUpdate.Parse(Fixture("v2.0.2"), new Version(2, 0, 1, 0))?.Tag == "v2.0.2");
 Reject(Fixture(url:"https://example.org/AMD-DLSS-MU.exe"));
 Reject(Fixture(digest:"")); Reject(Fixture(digest:"sha256:bad"));
 Reject(Fixture(copies:0)); Reject(Fixture(copies:2));
 Reject(Fixture(size:0)); Reject(Fixture(size:2L*1024*1024*1024));
 Reject(Fixture(tag:"v1.3.0-evil"));
-if (args.Length == 1)
+if (args.Length is 1 or 2)
 {
     Core.CheckPe(args[0], false);
     // FileVersionInfo on macOS returns empty for native bundled Windows hosts.
     // Read the actual RT_VERSION resource instead of treating that as version zero.
     var version = ReadPeVersion(args[0]);
-    Assert(version == new Version(2, 0, 0, 0));
+    var expectedVersion = args.Length == 2 ? Version.Parse(args[1]) : new Version(2, 0, 2, 0);
+    Assert(version == expectedVersion);
     Assert(new FileInfo(args[0]).Length > 100_000_000);
     Console.WriteLine("Verified Windows x64 release v" + version + " SHA-256 " + Core.Hash(args[0]));
 }

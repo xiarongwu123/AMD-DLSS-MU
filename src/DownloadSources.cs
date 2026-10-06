@@ -10,10 +10,11 @@ public static class DownloadSources
         asset.TryGetProperty("id", out var id) && id.TryGetInt64(out var number) && number > 0
             ? "https://api.github.com/repos/" + repository + "/releases/assets/" + number : null;
 
-    public static string[] Build(string primary, string? api, string hash)
+    public static string[] Build(string primary, string? api, string hash, string? mirror = null)
     {
         if (!System.Text.RegularExpressions.Regex.IsMatch(hash, "^[a-fA-F0-9]{64}$")) throw new IOException("下载校验值无效。");
-        var sources = new[] { primary }.Concat(api == null ? Array.Empty<string>() : new[] { api }).Distinct().ToArray();
+        var sources = (mirror == null ? Array.Empty<string>() : new[] { mirror }).Concat(new[] { primary })
+            .Concat(api == null ? Array.Empty<string>() : new[] { api }).Distinct().ToArray();
         foreach (var source in sources)
             if (!Uri.TryCreate(source, UriKind.Absolute, out var uri) || uri.Scheme != "https")
                 throw new IOException("下载地址必须是 HTTPS。");
@@ -21,7 +22,7 @@ public static class DownloadSources
     }
 
     public static async Task DownloadAsync(HttpClient client, string primary, string? api, string hash, long size,
-        string destination, IProgress<int> progress, CancellationToken token, Action<string>? status = null)
+        string destination, IProgress<int> progress, CancellationToken token, Action<string>? status = null, string? mirror = null)
     {
         var session = CurrentSession.Value;
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, session?.Token ?? CancellationToken.None);
@@ -31,7 +32,7 @@ public static class DownloadSources
         {
         Core.RejectLinks(destination);
         if (size <= 0) throw new IOException("下载大小无效。");
-        var sources = Build(primary, api, hash);
+        var sources = Build(primary, api, hash, mirror);
         var failures = new List<Exception>();
         for (int index = 0; index < sources.Length; index++)
         {
