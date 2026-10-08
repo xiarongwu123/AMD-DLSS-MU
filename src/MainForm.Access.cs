@@ -116,6 +116,8 @@ public sealed partial class MainForm
         if (headerNavigation != null) headerNavigation.Enabled = viewAvailable;
         if (headerUpdate != null) headerUpdate.Enabled = viewAvailable;
         libraryPage.Enabled = viewAvailable && !busy;
+        wishesPage.Enabled = viewAvailable;
+        if (!viewAvailable && wishHero != null) ClearWishesAccess();
         magpiePage.Enabled = viewAvailable && !busy;
         if (!viewAvailable && !busy && accountTransactionDepth == 0 && activePage != 6) SwitchPage(6);
         UpdateAccountHeartbeatSchedule();
@@ -156,6 +158,7 @@ public sealed partial class MainForm
             accountFeedback = "请先联网登录，再使用客户端功能。";
             SwitchPage(6); return false;
         }
+        if (page == 8) return true;
         var feature = page switch { 7 => "magpie.launch", 4 => "diagnostics.use", 5 => "configuration.edit", _ => "library.manage" };
         if (accountClient.Account?.Features.Any(f => f.Key == feature && f.Allowed) != true)
         {

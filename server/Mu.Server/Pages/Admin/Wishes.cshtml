@@ -1,0 +1,54 @@
+@page "/admin/wishes"
+@model Mu.Server.Pages.Admin.WishesModel
+@{ ViewData["Title"] = "许愿池"; }
+<h1>许愿池</h1>
+<p class="muted">查看玩家建议与讨论，更新功能进度。示例内容均单独标记；每次状态变更写入审计记录。</p>
+<div asp-validation-summary="All" role="alert"></div>
+<form method="get" class="card row">
+    <div><label for="wish-search">搜索愿望</label><input id="wish-search" name="Search" value="@Model.Search" maxlength="100" /></div>
+    <div><label for="wish-filter">状态</label><select id="wish-filter" name="Filter">
+        <option value="all" selected="@(Model.Filter == "all")">全部</option>
+        <option value="hot" selected="@(Model.Filter == "hot")">热门</option>
+        <option value="planned" selected="@(Model.Filter == "planned")">已计划</option>
+        <option value="developing" selected="@(Model.Filter == "developing")">开发中</option>
+        <option value="completed" selected="@(Model.Filter == "completed")">已完成</option>
+    </select></div>
+    <button type="submit">查询</button>
+</form>
+@if (Model.Detail is { } detail)
+{
+    <section class="card">
+        <h2>@detail.Wish.Title</h2><p>@detail.Wish.Content</p>
+        @if (detail.Wish.HasImage) { <p><img src="@Url.Page("/Admin/Wishes", "Image", new { id = detail.Wish.Id })" alt="玩家提交的愿望附图" style="max-width:100%;max-height:480px" /></p> }
+        <h3>讨论（@detail.Wish.Comments）</h3>
+        @foreach (var comment in detail.Comments)
+        { <p><strong>@comment.Author</strong> <span class="muted">@AdminPageModel.FormatTime(comment.CreatedAt)</span><br />@comment.Content</p> }
+    </section>
+}
+<p class="muted">共 @Model.Listing.Total 条愿望</p>
+@foreach (var wish in Model.Listing.Items)
+{
+    <section class="card">
+        <h2><a asp-page="/Admin/Wishes" asp-route-id="@wish.Id" asp-route-Filter="@Model.Filter" asp-route-Search="@Model.Search" asp-route-PageNumber="@Model.PageNumber">@wish.Title</a> @(wish.IsDemo ? "（示例）" : "")</h2>
+        <p>@wish.Content</p>
+        <p class="muted">@wish.Author · @AdminPageModel.FormatTime(wish.CreatedAt) · 支持 @wish.Votes · 评论 @wish.Comments</p>
+        <form method="post" class="row">
+            <input type="hidden" name="Id" value="@wish.Id" />
+            <input type="hidden" name="ExpectedStatus" value="@wish.Status" />
+            <input type="hidden" name="Filter" value="@Model.Filter" />
+            <input type="hidden" name="Search" value="@Model.Search" />
+            <input type="hidden" name="PageNumber" value="@Model.PageNumber" />
+            <div><label for="status-@wish.Id">进度</label><select id="status-@wish.Id" name="Status">
+                @foreach (var status in new[] { "pending", "planned", "developing", "completed" })
+                { <option value="@status" selected="@(wish.Status == status)">@WishesModel.StatusName(status)</option> }
+            </select></div>
+            <div><label for="reason-@wish.Id">变更原因</label><input id="reason-@wish.Id" name="Reason" required minlength="3" maxlength="500" /></div>
+            <button type="submit">更新进度</button>
+        </form>
+    </section>
+}
+<nav aria-label="愿望分页">
+    @if (Model.PageNumber > 1) { <a asp-page="/Admin/Wishes" asp-route-PageNumber="@(Model.PageNumber - 1)" asp-route-Filter="@Model.Filter" asp-route-Search="@Model.Search">上一页</a> }
+    <span> 第 @Model.PageNumber 页 </span>
+    @if (Model.PageNumber * Model.Listing.PageSize < Model.Listing.Total) { <a asp-page="/Admin/Wishes" asp-route-PageNumber="@(Model.PageNumber + 1)" asp-route-Filter="@Model.Filter" asp-route-Search="@Model.Search">下一页</a> }
+</nav>

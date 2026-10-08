@@ -33,6 +33,7 @@ public static class DatabaseSetup
             else if (schema?.Version != CurrentVersion)
                 throw new InvalidOperationException($"Unsupported account database schema {schema?.Version}; this server requires {CurrentVersion}. Back up and run the versioned upgrade before starting.");
         }
+        await WishPoolSchema.InitializeAsync(db);
         var present = await db.FeatureDefinitions.Select(x => x.Key).ToListAsync();
         foreach (var key in AccountService.InitialFeatures.Except(present))
             db.FeatureDefinitions.Add(new() { Key = key, Enabled = true, MinimumTier = "standard", UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds() });

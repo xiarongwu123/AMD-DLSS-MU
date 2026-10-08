@@ -259,6 +259,34 @@ using (var client = new AccountApiClient(new HttpClient(new Handler(request =>
     Check(client.IsOnline && !client.IsReconnecting, "caller cancellation does not mark the connection offline");
 }
 
+foreach (bool restore in new[] { false, true })
+{
+    using var cancel = new CancellationTokenSource();
+    var rotatedStore = new MemoryStore { Value = restore ? "refresh-before" : null };
+    using var client = new AccountApiClient(new HttpClient(new TokenHandler(async (request, transportToken) =>
+    {
+        if (request.RequestUri!.AbsolutePath.EndsWith("login")) return Ok(Session("before", true));
+        Check(request.RequestUri.AbsolutePath.EndsWith("refresh"), "cancelled rotation does not reach business endpoint");
+        cancel.Cancel();
+        await Task.Delay(10, transportToken);
+        return Ok(Session("after"));
+    })), rotatedStore);
+    if (!restore) await client.LoginAsync(account.Email, "password123", true, default);
+    await Throws(() => restore ? client.RestoreAsync(cancel.Token) : client.HeartbeatAsync(cancel.Token),
+        e => e is OperationCanceledException, "page cancellation surfaces after rotation");
+    Check(rotatedStore.Value == "refresh-after" && client.IsOnline && client.HasSession,
+        "page cancellation preserves rotated credentials and verified state");
+}
+
+using (var client = new AccountApiClient(new HttpClient(new Handler(request => Task.FromResult(
+    request.RequestUri!.AbsolutePath.EndsWith("login") ? Ok(Session()) : new HttpResponseMessage(HttpStatusCode.NotFound)))), new MemoryStore()))
+{
+    await client.LoginAsync(account.Email, "password123", false, default);
+    await Throws(() => client.HeartbeatAsync(default), e => e is AccountApiException { Status: HttpStatusCode.NotFound }
+        && e.Message.Contains("HTTP 404"), "empty 404 response reports missing endpoint");
+    Check(client.IsOnline && client.HasSession, "missing endpoint does not invalidate login");
+}
+
 Console.WriteLine($"Account tests passed: {passed}");
 
 sealed class MemoryStore : IAccountTokenStore
@@ -271,6 +299,10 @@ sealed class MemoryStore : IAccountTokenStore
 sealed class Handler(Func<HttpRequestMessage, Task<HttpResponseMessage>> send) : HttpMessageHandler
 {
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => send(request);
+}
+sealed class TokenHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => send(request, cancellationToken);
 }
 sealed class ManualClock : TimeProvider
 {

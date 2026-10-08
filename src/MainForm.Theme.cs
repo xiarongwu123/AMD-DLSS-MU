@@ -109,6 +109,7 @@ public sealed partial class MainForm
             control.Invalidate(true);
         }
         BackColor = Line; ForeColor = Ink; Recolor(this);
+        RefreshWishTheme();
         foreach (var button in navigation)
         {
             bool current = navigationPages[navigation.IndexOf(button)] == activePage;

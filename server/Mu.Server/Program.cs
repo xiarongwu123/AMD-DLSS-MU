@@ -39,6 +39,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<AccountManagementService>();
 builder.Services.AddScoped<CompatibilityService>();
+builder.Services.AddScoped<WishService>();
 builder.Services.AddSingleton<IPaymentProvider, DisabledPaymentProvider>();
 builder.Services.AddDbContextFactory<MailLogDbContext>(options => options.UseSqlite(new SqliteConnectionStringBuilder
 {
@@ -101,6 +102,12 @@ await using (var scope = app.Services.CreateAsyncScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await DatabaseSetup.InitializeAsync(db);
+    if (args.Contains("--seed-wishes"))
+    {
+        await WishPoolSchema.SeedAsync(db);
+        Console.WriteLine("Wish pool demo data seeded (8 examples; safe to repeat).");
+        return;
+    }
     await using var mailDb = await scope.ServiceProvider.GetRequiredService<IDbContextFactory<MailLogDbContext>>().CreateDbContextAsync();
     await mailDb.Database.EnsureCreatedAsync();
     await mailDb.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
@@ -121,6 +128,11 @@ if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"
 app.UseForwardedHeaders();
 app.Use(async (context, next) =>
 {
+    if (context.Request.Path == "/api/v1/wishes" || context.Request.Path == "/api/v1/wishes/")
+    {
+        var limit = context.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpMaxRequestBodySizeFeature>();
+        if (limit is { IsReadOnly: false }) limit.MaxRequestBodySize = 384 * 1024;
+    }
     context.Response.Headers.XContentTypeOptions = "nosniff";
     context.Response.Headers.XFrameOptions = "DENY";
     context.Response.Headers["Referrer-Policy"] = "no-referrer";
@@ -177,6 +189,7 @@ app.MapGet("/api/health", async (AppDbContext db) => await db.Database.CanConnec
 app.MapAccountApi();
 app.MapCompatibilityApi();
 app.MapTelemetryApi();
+app.MapWishApi();
 app.MapRazorPages();
 await app.RunAsync();
 
