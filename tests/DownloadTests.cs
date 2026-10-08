@@ -27,7 +27,7 @@ public static class DownloadTests
             : new(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) });
         using var client = new HttpClient(handler);
         await DownloadSources.DownloadAsync(client, direct, api, hash, bytes.Length, target, new ProgressSink(), default);
-        assert(handler.Calls == 2 && File.ReadAllBytes(target).SequenceEqual(bytes), "HTTP failure switches to API and verifies bytes");
+        assert(handler.Calls == 4 && File.ReadAllBytes(target).SequenceEqual(bytes), "transient HTTP failure retries before API fallback and verifies bytes");
         using var badPrimary = new Handler(r => new(HttpStatusCode.OK) {
             Content = new ByteArrayContent(r.RequestUri!.Host == "github.com" ? new byte[bytes.Length] : bytes) });
         using var fallbackClient = new HttpClient(badPrimary);
@@ -69,7 +69,8 @@ public static class DownloadTests
             });
             using var mirrorFallback = new HttpClient(mirrorFailure);
             await DownloadSources.DownloadAsync(mirrorFallback, direct, api, hash, bytes.Length, target, new ProgressSink(), default, mirror: mirror);
-            assert(requested.SequenceEqual(new[] { mirror, direct, api }) && File.ReadAllBytes(target).SequenceEqual(bytes),
+            var expected = badHash ? new[] { mirror, direct, api } : new[] { mirror, mirror, mirror, direct, direct, direct, api };
+            assert(requested.SequenceEqual(expected) && File.ReadAllBytes(target).SequenceEqual(bytes),
                 "mirror HTTP/hash failures retain both upstream fallbacks and verify final bytes");
         }
         bool badMirror = false;
@@ -106,6 +107,7 @@ public static class DownloadTests
             assert(snapshots.Last().State == "下载失败", "bad digest produces failed task not completed");
         }
         finally { DownloadSources.CurrentSession.Value = null; }
+        await DownloadResumeTests.Run(root, assert);
         var disposable = new DownloadSession();
         DownloadSources.CurrentSession.Value = disposable;
         disposable.Dispose();

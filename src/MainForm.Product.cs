@@ -361,7 +361,7 @@ public sealed partial class MainForm
                 if (IsDisposed) return;
                 row ??= AddDownloadRow(session, title, retry, featureKey);
                 row.State = snapshot.State; row.Percent = snapshot.Percent; row.Size = snapshot.Size; row.Detail = snapshot.Detail;
-                row.Info.Text = $"{title}\n{snapshot.State} · {snapshot.Percent}% · {snapshot.Size / 1048576d:0.00} MB\n{snapshot.Detail}";
+                row.Info.Text = $"{title}\n{snapshot.State} · {snapshot.Percent}% · {snapshot.Size / 1048576d:0.00} MiB\n{snapshot.Detail.Split('\n')[0]}";
                 row.Bar.Value = Math.Clamp(snapshot.Percent, 0, 100);
                 var activeCover = selectedCard?.Controls.OfType<PictureBox>().FirstOrDefault()?
                     .Controls.OfType<DlssCoverAction>().FirstOrDefault();
@@ -386,9 +386,25 @@ public sealed partial class MainForm
         var cancel = Action("取消", "Cancel", (_, _) => session.Cancel()); cancel.Width = 76;
         var again = Action("重试", "Retry", async (_, _) => { if (busy) { MessageBox.Show(this, "请等待当前操作结束。", Text); return; } await retry(); }); again.Width = 76;
         var row = new DownloadRow { Session = session, Card = card, Info = info, Bar = bar, Pause = pause, Cancel = cancel, Retry = again, Title = title };
-        var detail = Action("详情", "Details", (_, _) => MessageBox.Show(this, row.Title + "\n" + row.State + "\n" + row.Detail, "下载任务")); detail.Width = 76;
+        var detail = Action("详情", "Details", (_, _) => ShowDownloadDetails(row)); detail.Width = 76;
         actions.Controls.AddRange(new Control[] { pause, cancel, again, detail });
         card.Controls.Add(bar); card.Controls.Add(info); card.Controls.Add(actions); downloadRows.Insert(0, row); downloadList.Controls.Add(card); downloadList.Controls.SetChildIndex(card, 0); return row;
+    }
+    void ShowDownloadDetails(DownloadRow row)
+    {
+        using var dialog = new Form { Text = "下载任务详情", StartPosition = FormStartPosition.CenterParent,
+            Size = new Size(760, 500), MinimumSize = new Size(540, 320), BackColor = Surface, ForeColor = Ink };
+        var text = new TextBox { Dock = DockStyle.Fill, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical,
+            BackColor = Surface, ForeColor = Ink, Font = Font, BorderStyle = BorderStyle.FixedSingle,
+            Text = (row.Title + "\n" + row.State + $" · {row.Percent}%\n\n" + row.Detail).Replace("\n", "\r\n") };
+        var copy = Action("复制详情", "Copy details", (_, _) =>
+        {
+            try { Clipboard.SetText(text.Text); }
+            catch (System.Runtime.InteropServices.ExternalException e) { MessageBox.Show(dialog, "复制失败，可选中文字手动复制。\n" + e.Message, "下载任务详情"); }
+        });
+        copy.Dock = DockStyle.Bottom; copy.Height = 44;
+        dialog.Controls.Add(text); dialog.Controls.Add(copy);
+        dialog.ShowDialog(this);
     }
     void RenderDownloads()
     {

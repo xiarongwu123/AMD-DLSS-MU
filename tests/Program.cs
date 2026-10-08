@@ -2,6 +2,12 @@ using AmdNrAssistant;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+if (args.Length == 2 && args[0] == "--live-magpie")
+{
+    await DownloadResumeTests.RunLive(args[1]);
+    return;
+}
+
 var root = Path.Combine(Path.GetTempPath(), "amd-management-tests-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
 GameManagement.StorageOverride = Path.Combine(root, "records");
