@@ -63,7 +63,7 @@ public sealed partial class MainForm
         var rows = libraryRows = new TableLayoutPanel { ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
         rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 142)); rows.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         var toolbar = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2, Padding = new Padding(28, 18, 28, 0), Margin = Padding.Empty };
-        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 244));
+        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 400));
         toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 62)); toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
         toolbar.Controls.Add(PageTitle("游戏库", "Game library"), 0, 0);
         libraryCount.ForeColor = muted;
@@ -72,6 +72,10 @@ public sealed partial class MainForm
         scan.AutoSize = false; scan.Size = new Size(112, 46); scan.Margin = Padding.Empty; scan.BackColor = SelectedSurface; scan.ForeColor = Acid; scan.AccessibleName = "重新扫描游戏";
         if (scan is RoundedButton scanButton) { scanButton.Glyph = ""; scanButton.Radius = 12; }
         scan.Text = english ? "Rescan" : "重新扫描"; scan.Click += async (_, _) => await ScanGamesAsync(); actions.Controls.Add(scan); toolbar.Controls.Add(actions, 1, 0);
+        var smartRender = Action("智能推荐", "Smart render", async (_, _) => await OpenSmartRenderForSelectedAsync());
+        smartRender.Size = new Size(146, 46); smartRender.Margin = new Padding(10, 0, 0, 0);
+        smartRender.Radius = 12; smartRender.BackColor = Acid; smartRender.ForeColor = OnAccent;
+        actions.Controls.Add(smartRender);
         var filters = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0, 5, 0, 0), Margin = Padding.Empty };
         var all = libraryAllTab = new UnderlineTabButton { Selected = true, Size = new Size(112, 45), Font = new Font(Font.FontFamily, 10f, FontStyle.Bold) };
         var configured = libraryConfiguredTab = new UnderlineTabButton { Size = new Size(112, 45), Font = new Font(Font.FontFamily, 10f, FontStyle.Bold) };
@@ -88,7 +92,7 @@ public sealed partial class MainForm
         games.DragEnter += (_, e) => e.Effect = accountClient.CanKeepVerifiedView && !busy && e.Data?.GetDataPresent(DataFormats.FileDrop) == true ? DragDropEffects.Copy : DragDropEffects.None;
         games.DragDrop += async (_, e) => { if (!busy && e.Data?.GetData(DataFormats.FileDrop) is string[] paths && paths.Length > 0) await AddPathAsync(paths[0]); };
         games.ClientSizeChanged += (_, _) => LayoutGameCards();
-        installMode.Items.AddRange(new[] { "模式一 · 神经渲染（推荐）", "模式二 · OptiScaler" }); installMode.SelectedIndex = 0;
+        installMode.Items.AddRange(new[] { "模式一 · DLSS 5 神经渲染", "模式二 · OptiScaler", "帧率优先 · DLSS 5 + XeFG 2X" }); installMode.SelectedIndex = 0;
         installMode.BackColor = Surface; installMode.ForeColor = ink;
         var gridHost = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
         emptyLibrary.Dock = DockStyle.Fill; gridHost.Controls.Add(games); gridHost.Controls.Add(emptyLibrary); emptyLibrary.BringToFront();
@@ -142,8 +146,9 @@ public sealed partial class MainForm
             if (cover != null)
             {
                 cover.English = english;
+                cover.Configured = IsConfigured(game.ExePath);
                 cover.PrimaryText = IsConfigured(game.ExePath)
-                    ? (english ? "Launch game" : "启动游戏") : (english ? "Enable DLSS5" : "开启 DLSS5");
+                    ? (english ? "Launch game" : "启动游戏") : (english ? "Smart render" : "智能推荐");
             }
         }
         FilterGames();
@@ -181,7 +186,7 @@ public sealed partial class MainForm
             }
             RevealGame(game);
             RenderHomeCards();
-            status.Text = english ? "Added and saved. Ready to configure." : "已添加到游戏库，悬停封面开启 DLSS5。";
+            status.Text = english ? "Added and saved. Ready to configure." : "已添加到游戏库，悬停封面选择安装方案。";
             LayoutGameCards();
             UpdateButtons();
         }
@@ -190,14 +195,15 @@ public sealed partial class MainForm
     void ApplyLanguage(bool en)
     {
         foreach (var (control, zh, englishText) in translations) control.Text = en ? englishText : zh;
-        install.Text = en ? "Enable DLSS5" : "开启 DLSS5"; restore.Text = en ? "Restore" : "恢复配置";
+        install.Text = en ? "Smart render" : "智能推荐"; restore.Text = en ? "Restore" : "恢复配置";
         scan.Text = en ? "Rescan" : "重新扫描";
         launch.Text = en ? "Launch game" : "启动游戏";
         UpdateThemeToggleText();
         var selectedIndex = installMode.SelectedIndex;
         installMode.Items.Clear();
-        installMode.Items.Add(en ? "Mode 1 (recommended) — official runtime" : "模式一（推荐）— 官方运行时");
+        installMode.Items.Add(en ? "Mode 1 — DLSS 5 neural" : "模式一 — DLSS 5 神经渲染");
         installMode.Items.Add(en ? "Mode 2 — OptiScaler (upscaling / FG)" : "模式二 — OptiScaler 标准版（超分/帧生成）");
+        installMode.Items.Add(en ? "Performance — DLSS 5 + XeFG 2X" : "帧率优先 — DLSS 5 + XeFG 2X");
         installMode.SelectedIndex = Math.Max(0, selectedIndex);
         RefreshHome();
     }

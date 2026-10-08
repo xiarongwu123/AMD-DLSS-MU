@@ -13,11 +13,12 @@ public sealed class DlssCoverAction : Control
     int progress;
     float reveal = 1f;
     readonly System.Windows.Forms.Timer revealTimer = new() { Interval = 16 };
-    string primaryText = "开启 DLSS5";
+    string primaryText = "智能推荐";
     public bool English { get; set; }
     public bool Loading { get => loading; set { loading = value; Invalidate(); } }
     public int Progress { get => progress; set { progress = Math.Clamp(value, 0, 95); Invalidate(); } }
     public string PrimaryText { get => primaryText; set { primaryText = value; Invalidate(); } }
+    public bool Configured { get; set; }
 
     public DlssCoverAction()
     {
@@ -107,7 +108,8 @@ public sealed class DlssCoverAction : Control
             return;
         }
         DrawButton(g, Primary, MainForm.Acid, MainForm.OnAccent, PrimaryText, true);
-        DrawButton(g, Advanced, MainForm.Surface, MainForm.Ink, English ? "Advanced" : "高级选项", false);
+        DrawButton(g, Advanced, MainForm.Surface, MainForm.Ink, Configured ?
+            (English ? "Check" : "一键排查") : (English ? "Custom" : "自定义"), false);
         DrawButton(g, Restore, MainForm.Surface, MainForm.Ink, English ? "Restore" : "恢复配置", false);
     }
 

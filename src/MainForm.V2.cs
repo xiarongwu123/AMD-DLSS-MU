@@ -134,7 +134,7 @@ public sealed partial class MainForm
         games.AutoScroll = false;
         homeHero = new ArtworkPanel("AmdNrAssistant.mu-home-banner-new.png") { Radius = 18, ShowBorder = true, FadeBottom = true, BackColor = Color.FromArgb(6, 31, 27), FocusX = .5f };
         homeHero.Controls.Add(new HeroTitleControl { Font = new Font(Font.FontFamily, 34f, FontStyle.Bold), Name = "heroTitle" });
-        heroDlss = Action("开启 DLSS5", "Open DLSS5", async (_, _) => await NavigateAuthorizedAsync(1));
+        heroDlss = Action("智能推荐", "Smart render", async (_, _) => await NavigateAuthorizedAsync(1));
         heroDlss.BackColor = Acid; heroDlss.ForeColor = OnAccent; heroDlss.Radius = 16;
         heroDlss.Glyph = "\uE768"; heroDlss.Font = new Font(Font.FontFamily, 11f, FontStyle.Bold);
         heroMagpie = Action("开启大力喜鹊", "Open Magpie", async (_, _) => await NavigateAuthorizedAsync(7));
@@ -246,10 +246,10 @@ public sealed partial class MainForm
             try { configured = IsConfigured(game.ExePath); }
             catch { /* Show the safe unverified state for an unreadable game directory. */ }
             var state = new StatusChip { Text = configured ? "已配置 · 待验证" : "兼容性待检测" };
-            var detect = Action("检测兼容性", "Check compatibility", async (_, _) =>
+            var detect = Action(configured ? "查看推荐" : "智能推荐", configured ? "View recommendation" : "Smart render", async (_, _) =>
             {
                 selectedGame = game.ExePath;
-                await InspectSelectedAsync(false);
+                await OpenSmartRenderForSelectedAsync();
             });
             detect.Name = "homeDetect"; detect.Radius = 12; detect.BackColor = Acid; detect.ForeColor = OnAccent;
             detect.Glyph = "\uE721";

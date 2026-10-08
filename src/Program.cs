@@ -1276,7 +1276,8 @@ public sealed partial class MainForm : Form
     {
         Official = 0,
         // Persisted IDs are stable: 1 is the retired Pre-SR mode, 2 is OptiScaler.
-        OptiScalerStandard = 2
+        OptiScalerStandard = 2,
+        Dlss5XeFg = 4
     }
 
     readonly ComboBox installMode = new()
@@ -1318,7 +1319,7 @@ public sealed partial class MainForm : Form
 
     readonly Button install = new RoundedButton
     {
-        Text = "开启 DLSS5",
+        Text = "智能推荐",
         AutoSize = true,
         Enabled = false
     };
@@ -1348,9 +1349,7 @@ public sealed partial class MainForm : Form
     string? transactionState;
 
     InstallMode SelectedInstallMode =>
-        installMode.SelectedIndex == 1
-            ? InstallMode.OptiScalerStandard
-            : InstallMode.Official;
+        installMode.SelectedIndex switch { 1 => InstallMode.OptiScalerStandard, 2 => InstallMode.Dlss5XeFg, _ => InstallMode.Official };
 
     RoundedPanel? selectedCard;
 
@@ -1407,7 +1406,7 @@ public sealed partial class MainForm : Form
 
             status.Text = list.Count == 0
                 ? "没有找到游戏。可以使用“添加游戏”选择 EXE。"
-                : $"找到 {list.Count} 个游戏，悬停封面可开启 DLSS5 或管理配置。";
+                : $"找到 {list.Count} 个游戏，悬停封面可选择图形方案或管理配置。";
             status.Text += manualWarning;
         }
         catch (OperationCanceledException)
@@ -1614,7 +1613,7 @@ public sealed partial class MainForm : Form
                     : "已配置 · 等待游戏内验证"
                 : english
                     ? "You can now click Configure."
-                    : "选择安装方案后开启 DLSS5，完成后仍需在游戏内验证。";
+                    : "选择图形方案并完成配置后，仍需在游戏内验证实际效果。";
 
             UpdateButtons();
         }
@@ -1642,7 +1641,7 @@ public sealed partial class MainForm : Form
         card.Controls.Add(icon);
         card.Controls.Add(title);
         card.Controls.Add(availability);
-        var coverAction = new DlssCoverAction { Dock = DockStyle.Fill, Visible = false, English = english, PrimaryText = ready ? (english ? "Launch game" : "启动游戏") : (english ? "Enable DLSS5" : "开启 DLSS5"), AccessibleName = game.Title + " · 开启 DLSS5、高级选项、恢复配置" };
+        var coverAction = new DlssCoverAction { Dock = DockStyle.Fill, Visible = false, English = english, Configured = ready, PrimaryText = ready ? (english ? "Launch game" : "启动游戏") : (english ? "Smart render" : "智能推荐"), AccessibleName = game.Title + " · 智能推荐、一键排查、恢复配置" };
         icon.Controls.Add(coverAction);
         void ShowCoverAction() { coverAction.Visible = true; coverAction.BringToFront(); }
         void HideCoverAction()
@@ -1660,7 +1659,12 @@ public sealed partial class MainForm : Form
             if (IsConfigured(game.ExePath)) await LaunchGameAsync(game.ExePath);
             else await EnableSelectedDlssAsync();
         };
-        coverAction.AdvancedRequested += (_, _) => { Pick(null, EventArgs.Empty); ShowAdvanced(); };
+        coverAction.AdvancedRequested += async (_, _) =>
+        {
+            Pick(null, EventArgs.Empty);
+            if (IsConfigured(game.ExePath)) await ShowQuickDiagnosticsAsync(game.ExePath);
+            else await EnableSelectedDlssAsync(SmartRenderGoal.Custom);
+        };
         coverAction.RestoreRequested += async (_, _) => { Pick(null, EventArgs.Empty); await RestoreAsync(); };
         card.TabStop = true; card.AccessibleName = game.Title;
         card.Enter += (_, _) => ShowCoverAction();
@@ -1710,11 +1714,13 @@ public sealed partial class MainForm : Form
         var targetExe = selectedGame;
         var chosenMode = SelectedInstallMode;
         var chosenVulkan = optiVulkan;
+        var chosenFgInput = optiFgInput;
         var featureKey = chosenMode == InstallMode.OptiScalerStandard ? "optiscaler.configure" : "dlss.configure";
         if (!await RequireFeatureAsync(featureKey) || busy) return;
         using var downloadSession = BeginDownloadSession(Path.GetFileNameWithoutExtension(targetExe) + " · " + (chosenMode == InstallMode.Official ? "模式一组件" : "OptiScaler"), async () =>
         {
-            selectedGame = targetExe; installMode.SelectedIndex = chosenMode == InstallMode.Official ? 0 : 1;
+            selectedGame = targetExe; installMode.SelectedIndex = chosenMode switch { InstallMode.Official => 0, InstallMode.Dlss5XeFg => 2, _ => 1 };
+            optiVulkan = chosenVulkan; optiFgInput = chosenFgInput;
             selected.Text = Path.GetFileNameWithoutExtension(targetExe); await InstallAsync();
         }, featureKey);
         Diagnostics.Record(targetExe, "install", "start", chosenMode.ToString());
@@ -1729,7 +1735,8 @@ public sealed partial class MainForm : Form
 
         try
         {
-            var compatibility = await Task.Run(() => GameManagement.Check(targetExe, true, chosenMode != InstallMode.OptiScalerStandard));
+            var compatibility = await Task.Run(() => GameManagement.Check(targetExe, true,
+                chosenMode != InstallMode.OptiScalerStandard, (int)chosenMode));
             if (compatibility.Blocked)
             {
                 status.Text = "安装检查未通过，请查看提示；旧组件冲突可点击“恢复配置”处理。";
@@ -1739,9 +1746,15 @@ public sealed partial class MainForm : Form
             }
             if (GameManagement.Read(targetExe) is { Phase: not "restored" })
                 throw new IOException("请先恢复此游戏，再安装或切换模式。");
+            if ((chosenMode is InstallMode.Official or InstallMode.Dlss5XeFg) && !SmartRenderDiagnostics.HasHipRuntime())
+                throw new MissingAmdHipRuntimeException();
             if (chosenMode == InstallMode.OptiScalerStandard)
             {
                 await InstallOptiScalerStandardAsync(targetExe, chosenVulkan); return;
+            }
+            if (chosenMode == InstallMode.Dlss5XeFg)
+            {
+                await InstallCombinedRenderAsync(targetExe); return;
             }
 
             var gameDirectory = Path.GetDirectoryName(

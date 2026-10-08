@@ -22,6 +22,46 @@ internal static class RenderingTests
         using var tab = new UnderlineTabButton { Location = new Point(253, 109), Size = new Size(210, 52) };
         parent.Controls.Add(action); parent.Controls.Add(tab);
         form.Show();
+        // Construct the actual dialog icons: setting Transparent before enabling
+        // SupportsTransparentBackColor throws on Windows before the dialog can render.
+        var iconType = typeof(MainForm).Assembly.GetType("AmdNrAssistant.SmartLineIcon", throwOnError: true)!;
+        foreach (var kind in new[] { "chip", "display", "target", "image", "bars", "sliders", "gear", "file", "folder", "shield", "puzzle" })
+        {
+            using var icon = (Control)Activator.CreateInstance(iconType, kind, Color.LightGreen)!;
+            icon.SetBounds(15, 220, 48, 48);
+            parent.Controls.Add(icon);
+            if (!(bool)GetStyle.Invoke(icon, new object[] { ControlStyles.SupportsTransparentBackColor })!)
+                throw new Exception("SmartLineIcon does not support its transparent background");
+            using var rendered = Capture(icon);
+            parent.Controls.Remove(icon);
+        }
+        Console.WriteLine("PASS SmartLineIcon construction and drawing for every dialog icon");
+        var closeType = typeof(MainForm).Assembly.GetType("AmdNrAssistant.SmartCloseButton", throwOnError: true)!;
+        using (var close = (Button)Activator.CreateInstance(closeType)!)
+        {
+            close.Location = new Point(80, 220);
+            close.BackColor = parent.BackColor;
+            close.ForeColor = Color.White;
+            parent.Controls.Add(close);
+            foreach (var size in new[] { 38, 48, 57 })
+            {
+                close.Size = new Size(size, size);
+                using var rendered = Capture(close);
+                if (!string.IsNullOrEmpty(close.Text))
+                    throw new Exception("Close icon must not pass through text ellipsis rendering");
+                var marks = 0;
+                for (var y = size / 4; y < size * 3 / 4; y++)
+                    for (var x = size / 4; x < size * 3 / 4; x++)
+                        if (rendered.GetPixel(x, y).GetBrightness() > .8f) marks++;
+                if (marks == 0) throw new Exception("Close icon was not drawn");
+            }
+            var clicked = false;
+            close.Click += (_, _) => clicked = true;
+            close.PerformClick();
+            if (!clicked) throw new Exception("Close button did not dispatch its action");
+            parent.Controls.Remove(close);
+        }
+        Console.WriteLine("PASS Close button rendering at three sizes and click");
         foreach (var control in new Control[] { action, tab })
         {
             if ((bool)GetStyle.Invoke(control, new object[] { ControlStyles.Opaque })!)

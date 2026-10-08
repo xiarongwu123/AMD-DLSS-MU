@@ -28,11 +28,16 @@ public static class OptiInstaller
         lines[found] = key + "=" + value;
         return string.Join(text.Contains("\r\n") ? "\r\n" : "\n", lines);
     }
-    public static string Configure(string text, string exe, bool vulkan)
+    public static string Configure(string text, string exe, bool vulkan, string fgInput = "nofg")
     {
         text = SetIni(text, "Log", "LogToFile", "true"); text = SetIni(text, "Log", "LogLevel", "2");
         text = SetIni(text, "Menu", "OverlayMenu", "true"); text = SetIni(text, "Menu", "ShortcutKey", "0x2D");
         text = SetIni(text, "ProcessFilter", "TargetProcessName", Path.GetFileName(exe));
+        if (fgInput is not ("nofg" or "dlssg" or "fsrfg")) throw new IOException("未知帧生成输入。");
+        if (vulkan && fgInput != "nofg") throw new IOException("当前 2X 帧生成只适用于 DirectX 12 游戏。");
+        text = SetIni(text, "FrameGen", "Enabled", fgInput == "nofg" ? "false" : "true");
+        text = SetIni(text, "FrameGen", "FGInput", fgInput);
+        text = SetIni(text, "FrameGen", "FGOutput", fgInput == "nofg" ? "nofg" : "fsrfg");
         return text;
     }
     public static void ExtractVerified(string archiveFile, string destination)
@@ -72,7 +77,7 @@ public static class OptiInstaller
         var folder = Path.Combine(cache, "extract-" + Guid.NewGuid().ToString("N"));
         await Task.Run(() => ExtractVerified(package, folder), token); return folder;
     }
-    public static void Install(string exe, string package, bool vulkan)
+    public static void Install(string exe, string package, bool vulkan, string fgInput = "nofg")
     {
         Core.ValidateGame(exe); GameManagement.EnsureClosed(exe);
         var dir = Path.GetDirectoryName(exe)!;
@@ -83,7 +88,7 @@ public static class OptiInstaller
             if (!File.Exists(f.Source) || !GameManagement.IsTracked(f.Name)) throw new IOException("组件无效：" + f.Name);
             if (File.Exists(target) || Directory.Exists(target)) throw new IOException("请先恢复配置，已有组件：" + f.Name);
         }
-        var ini = Configure(File.ReadAllText(Path.Combine(package, "OptiScaler.ini")), exe, vulkan);
+        var ini = Configure(File.ReadAllText(Path.Combine(package, "OptiScaler.ini")), exe, vulkan, fgInput);
         GameManagement.Begin(exe, 2, "OptiScaler " + Version);
         try
         {

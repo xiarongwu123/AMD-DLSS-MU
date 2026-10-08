@@ -16,10 +16,11 @@ public static class GameManagement
     // Storage IDs do not follow the current UI order; retain legacy recovery compatibility.
     public static string ModeName(int mode) => mode switch
     {
-        0 => "模式一 / Mode 1 · AMD",
+        0 => "模式一 / Mode 1 · DLSS 5 神经渲染",
         1 => "旧版 Pre-SR（已移除，仅保留恢复） / Retired Pre-SR",
         2 => "模式二 / Mode 2 · OptiScaler",
         3 => "F8 实时面板 / Live panel",
+        4 => "帧率优先 · DLSS 5 + XeFG 2X",
         _ => "未知模式 / Unknown"
     };
     internal static string? StorageOverride { get; set; }
@@ -44,6 +45,8 @@ public static class GameManagement
     public static readonly string[] Loaders = Core.ProxyNames.Concat(new[] { "d3d11.dll", "d3d12.dll", "nvngx.dll", "OptiScaler.dll", "dlss5-neural.addon64" }).Distinct().ToArray();
     public static bool IsTracked(string name) => Tracked(name);
     static bool Tracked(string name) => SafeRelative(name) && (name.Replace('\\', '/').StartsWith("Licenses/", StringComparison.OrdinalIgnoreCase) && new[] { ".txt", ".md" }.Contains(Path.GetExtension(name).ToLowerInvariant()) ||
+        name.Replace('\\', '/').StartsWith("OptiScaler/", StringComparison.OrdinalIgnoreCase) &&
+        new[] { ".dll", ".ini", ".asi" }.Contains(Path.GetExtension(name).ToLowerInvariant()) ||
         name.Replace('\\', '/').Equals("D3D12_Optiscaler/D3D12Core.dll", StringComparison.OrdinalIgnoreCase) ||
         name.Equals("AMD-DLSS-MU.addon64", StringComparison.OrdinalIgnoreCase) ||
         !name.Contains('/') && !name.Contains('\\') && !name.EndsWith(".log", StringComparison.OrdinalIgnoreCase) && (Loaders.Contains(name, StringComparer.OrdinalIgnoreCase) ||
@@ -60,10 +63,10 @@ public static class GameManagement
     {
         var dir = Path.GetDirectoryName(exe)!;
         var paths = Directory.EnumerateFiles(dir).ToList();
-        foreach (var name in new[] { "Licenses", "D3D12_Optiscaler" })
+        foreach (var name in new[] { "Licenses", "D3D12_Optiscaler", "OptiScaler" })
         {
             var subdir = Path.Combine(dir, name); Core.RejectLinks(subdir);
-            if (Directory.Exists(subdir)) paths.AddRange(Directory.EnumerateFiles(subdir));
+            if (Directory.Exists(subdir)) paths.AddRange(Directory.EnumerateFiles(subdir, "*", SearchOption.AllDirectories));
         }
         return paths.Where(p => Tracked(Path.GetRelativePath(dir, p)))
             .ToDictionary(p => Path.GetRelativePath(dir, p), p => { Core.RejectLinks(p); return Core.Hash(p); }, StringComparer.OrdinalIgnoreCase);
@@ -220,13 +223,23 @@ public static class GameManagement
     public static bool HasRx6000(IReadOnlyList<string> hardware) =>
         hardware.Any(h => Regex.IsMatch(h, @"Radeon.*RX\s*6\d{3}", RegexOptions.IgnoreCase));
 
-    public static Compatibility Check(string exe, bool checkConflicts = true, bool amdNeural = true)
+    public static string? NeuralGpuBlockReason(IEnumerable<string> hardware, int neuralMode)
+    {
+        var rxSeries = hardware.Select(h => Regex.Match(h, @"Radeon.*?RX\s*(\d{4})", RegexOptions.IgnoreCase))
+            .Where(m => m.Success).Select(m => int.Parse(m.Groups[1].Value)).ToArray();
+        if (rxSeries.Length == 0) return null;
+        if ((neuralMode == 0 || neuralMode == 4) && rxSeries.All(series => series < 6000))
+            return "DLSS-NR 0.6.0 的 RX 系列支持从 RX 6000 开始；这块显卡不在支持范围内。";
+        return null;
+    }
+
+    public static Compatibility Check(string exe, bool checkConflicts = true, bool amdNeural = true, int neuralMode = 4)
     {
         var details = new List<string>(); bool blocked = false;
         try { Core.ValidateGame(exe); details.Add("EXE：Windows x64"); } catch (Exception e) { blocked = true; details.Add(e.Message); }
         var hardware = Hardware(); details.AddRange(hardware);
-        if (amdNeural && IsUnsupportedAmdNeuralGpuOnly(hardware))
-        { blocked = true; details.Add("检测到的 Radeon RX 型号不在当前上游支持范围内。"); }
+        if (amdNeural && NeuralGpuBlockReason(hardware, neuralMode) is { } gpuReason)
+        { blocked = true; details.Add(gpuReason); }
         if (amdNeural && HasRx6000(hardware))
             details.Add("RX 6000 系列需要 AMD HIP 7.2 运行时；请在上游安装器中确认依赖已满足，勿跳过缺失警告。");
         if (amdNeural && OperatingSystem.IsWindows() && !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000)) { blocked = true; details.Add("当前运行时要求 Windows 11。"); }
@@ -241,7 +254,9 @@ public static class GameManagement
         if (record is { Phase: not "restored" }) details.Add($"已记录：{ModeName(record.Mode)}，状态 {record.Phase}；切换前请恢复。");
         var evidence = names.Where(n => Regex.IsMatch(n ?? "", "d3d12|fidelityfx|fsr", RegexOptions.IgnoreCase)).ToArray();
         details.Add(evidence.Length > 0 ? "目录中发现 DX12/FSR 相关文件（不证明正在使用）：" + string.Join(", ", evidence) : "未找到 DX12/FSR 文件证据；可能静态链接或位于子目录。");
-        details.Add(amdNeural ? "显卡兼容、实际图形接口和游戏版本尚未实测；上游 v0.6.0 新增 RX 6000 支持（需 AMD HIP 7.2），RX 7000 / RX 9000 的实际效果也需验证。" : "OptiScaler 标准版：需要兼容的 DLSS/FSR/XeSS 输入；不代表 DLSS 5 神经渲染支持。");
+        details.Add(!amdNeural ? "OptiScaler 标准版：需要兼容的 DLSS/FSR/XeSS 输入；不代表 DLSS 5 神经渲染支持。" :
+            neuralMode == 4 ? "组合方案使用 DLSS-NR 0.6.0；RX 6000 已开放但须安装 AMD HIP 7.2。游戏接口与实际效果仍需验证。" :
+            "模式一使用 DLSS-NR 0.6.0；RX 6000 已开放但须安装 AMD HIP 7.2。请在 DX12 游戏中开启 FSR 并验证。");
         return new(blocked, blocked ? "不支持当前安装条件" : "未验证：基础检查通过", details.ToArray());
     }
     // Only lines observed after monitoring starts in this process session are eligible evidence.
@@ -264,7 +279,7 @@ public static class GameManagement
         var log = Path.Combine(Path.GetDirectoryName(exe)!, "dlssnr_on_amd.log");
         var addonLog = Path.Combine(Path.GetDirectoryName(exe)!, "dlss5-neural.log");
         if (Read(exe)?.Mode != 0 && !File.Exists(log) && File.Exists(addonLog)) log = addonLog;
-        if (Read(exe)?.Mode == 2) log = Path.Combine(Path.GetDirectoryName(exe)!, "OptiScaler.log");
+        if (Read(exe)?.Mode is 2 or 4) log = Path.Combine(Path.GetDirectoryName(exe)!, "OptiScaler.log");
         Core.RejectLinks(log);
         long length = File.Exists(log) ? new FileInfo(log).Length : 0;
         if (!Watch.TryGetValue(exe, out var watch) || watch.Start != since || length < watch.Offset)

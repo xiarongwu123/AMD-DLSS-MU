@@ -1,4 +1,5 @@
 using AmdNrAssistant;
+using Mu.Compatibility;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -8,10 +9,119 @@ if (args.Length == 2 && args[0] == "--live-magpie")
     return;
 }
 
+if (args is ["verify-combined", var baseArchive, var overlayArchive, var destination])
+{
+    CombinedRenderInstaller.ExtractVerified(baseArchive, overlayArchive, destination);
+    var configured = CombinedRenderInstaller.Configure(File.ReadAllText(Path.Combine(destination, "OptiScaler.ini")), "game.exe");
+    if (!configured.Contains("FGOutput=xefg") || !configured.Contains("Quality=1")) throw new Exception("Invalid combined configuration");
+    Console.WriteLine("Combined archives and configuration verified.");
+    return;
+}
+if (args is ["verify-combined-install", var sourcePackage, var gameDirectory])
+{
+    Directory.CreateDirectory(gameDirectory);
+    GameManagement.StorageOverride = Path.Combine(gameDirectory, "records");
+    var gameExe = Path.Combine(gameDirectory, "fixture.exe");
+    var pe = new byte[512]; pe[0] = 0x4d; pe[1] = 0x5a;
+    BitConverter.GetBytes(0x80).CopyTo(pe, 0x3c);
+    pe[0x80] = 0x50; pe[0x81] = 0x45;
+    BitConverter.GetBytes((ushort)0x8664).CopyTo(pe, 0x84);
+    File.WriteAllBytes(gameExe, pe);
+    CombinedRenderInstaller.Install(gameExe, sourcePackage);
+    if (GameManagement.Read(gameExe) is not { Mode: 4, Phase: "installed" } ||
+        !File.Exists(Path.Combine(gameDirectory, "OptiScaler", "libxess_fg.dll")))
+        throw new Exception("Combined install was not tracked");
+    GameManagement.Restore(gameExe);
+    if (File.Exists(Path.Combine(gameDirectory, "dxgi.dll")) ||
+        File.Exists(Path.Combine(gameDirectory, "OptiScaler", "libxess_fg.dll")))
+        throw new Exception("Combined restore did not remove installed files");
+    Console.WriteLine("Combined install and restore verified.");
+    return;
+}
+
 var root = Path.Combine(Path.GetTempPath(), "amd-management-tests-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
 GameManagement.StorageOverride = Path.Combine(root, "records");
 var count = 0;
+var capableGpu = new CompatibilityGpu("AMD Radeon RX 9070 XT", "AMD", 16 * 1024, "RDNA4", "known");
+Assert(SmartRenderAdvisor.Recommend(capableGpu, true).QualityMode == 0,
+    "tested GPU family with enough VRAM can receive tentative neural quality recommendation");
+Assert(SmartRenderAdvisor.Recommend(capableGpu, true).PerformanceMode == 4,
+    "performance goal selects combined DLSS 5 and XeFG when neural prerequisites pass");
+var experimentalGpu = new CompatibilityGpu("AMD Radeon RX 7800 XT", "AMD", 16 * 1024, "RDNA3", "known");
+Assert(SmartRenderAdvisor.Recommend(experimentalGpu, true).QualityMode == 0,
+    "RX 7000 can receive the updated neural quality route");
+Assert(SmartRenderAdvisor.Recommend(experimentalGpu, true).PerformanceMode == 4,
+    "RX 7000 can receive the combined neural performance route");
+Assert(SmartRenderAdvisor.Recommend(capableGpu, false).QualityMode == 2,
+    "missing neural prerequisites fall back to standard OptiScaler");
+Assert(SmartRenderAdvisor.Recommend(capableGpu, false).PerformanceMode == 2,
+    "performance goal falls back when neural prerequisites fail");
+Assert(SmartRenderAdvisor.Recommend(capableGpu, false).Availability == SmartRenderAvailability.RequirementsMissing,
+    "missing HIP or game prerequisites are not mislabeled as unsupported hardware");
+var rdna2 = new CompatibilityGpu("AMD Radeon RX 6750 GRE 10GB", "AMD", 10 * 1024, "RDNA2", "known");
+Assert(SmartRenderAdvisor.Recommend(rdna2, true).QualityMode == 0 &&
+    SmartRenderAdvisor.Recommend(rdna2, true).PerformanceMode == 4, "RX 6750 GRE gets both v0.6.0 routes when prerequisites pass");
+foreach (var mode in new[] { 0, 4 })
+{
+    Assert(GameManagement.NeuralGpuBlockReason(new[] { "AMD Radeon RX 6750 GRE 10GB | Driver 32.0.21037.1004" }, mode) == null,
+        $"RX 6750 GRE is not rejected by mode {mode}");
+    Assert(GameManagement.NeuralGpuBlockReason(new[] { "AMD Radeon RX 5700 XT" }, mode) != null,
+        $"RX 5000 remains outside the neural support range in mode {mode}");
+}
+Assert(SmartRenderAdvisor.Recommend(rdna2, false).QualityMode == 2, "RX 6000 without prerequisites keeps standard fallback");
+var combinedTemplate = "[ProcessFilter]\nTargetProcessName=auto\n[Menu]\nOverlayMenu=auto\n[DlssNr]\nEnabled=false\nNrBackend=lmxxf\nQuality=0\n[FrameGen]\nExternal=false\nEnabled=false\nFGInput=auto\nFGOutput=auto\n[XeFG]\nInterpolationCount=auto";
+var combinedIni = CombinedRenderInstaller.Configure(combinedTemplate, "game.exe");
+Assert(combinedIni.Contains("FGInput=upscaler") && combinedIni.Contains("FGOutput=xefg") &&
+    combinedIni.Contains("InterpolationCount=1") && combinedIni.Contains("NrBackend=daniel") &&
+    combinedIni.Contains("Quality=1"), "combined route configures DLSS neural and conservative XeFG 2X");
+Assert(SmartRenderAdvisor.Recommend(null, false).QualityMode == 2,
+    "unknown GPU receives conservative standard recommendation");
+var integrated = new CompatibilityGpu("AMD Radeon(TM) Graphics", "AMD", 512, "unknown", "known");
+Assert(SmartRenderAdvisor.SelectGpu([integrated, capableGpu]) == capableGpu,
+    "recommendation chooses discrete RX card when dxdiag also lists integrated graphics");
+var integratedRecommendation = SmartRenderAdvisor.Recommend(integrated, true, true);
+Assert(SmartRenderAdvisor.RecommendedMode(SmartRenderGoal.Quality, integratedRecommendation) == 2,
+    "integrated graphics with 0.5 GB VRAM selects standard route");
+Assert(integratedRecommendation.Availability == SmartRenderAvailability.HardwareUnsupported &&
+    integratedRecommendation.QualityReason.Contains("不支持开启 DLSS 5"),
+    "unsupported detected graphics explicitly report that DLSS 5 cannot be enabled");
+Assert(SmartRenderAdvisor.RecommendedMode(SmartRenderGoal.Quality,
+    SmartRenderAdvisor.Recommend(capableGpu, true, true)) == 0 &&
+    SmartRenderAdvisor.RecommendedMode(SmartRenderGoal.Performance,
+    SmartRenderAdvisor.Recommend(capableGpu, true, true)) == 4,
+    "quality and performance goals select different install routes");
+var smartChoice = new SmartRenderSelection();
+var performanceOnly = SmartRenderAdvisor.Recommend(capableGpu, false, true);
+Assert(performanceOnly.QualityMode == 2 && performanceOnly.PerformanceMode == 4,
+    "unavailable quality route does not silently reuse the performance route");
+smartChoice.SetRecommendation(SmartRenderAdvisor.Recommend(capableGpu, true, true), SmartRenderGoal.Quality);
+Assert(smartChoice.Mode == 0 && !smartChoice.ShowSchemeList && smartChoice.CanConfigure,
+    "quality automatically selects mode 1 and hides the scheme list");
+Assert(!smartChoice.SelectMode(4) && smartChoice.Mode == 0,
+    "manual route selection cannot override quality mode");
+Assert(smartChoice.SelectGoal(SmartRenderGoal.Performance) && smartChoice.Mode == 4 && !smartChoice.ShowSchemeList,
+    "performance automatically selects XeFG and hides the scheme list");
+Assert(!smartChoice.SelectMode(2) && smartChoice.Mode == 4,
+    "manual route selection cannot override performance mode");
+Assert(smartChoice.SelectGoal(SmartRenderGoal.Custom) && smartChoice.ShowSchemeList && smartChoice.SelectMode(2),
+    "only custom mode exposes and enables manual route selection");
+Assert(smartChoice.SelectGoal(SmartRenderGoal.Quality) && smartChoice.Mode == 0 && !smartChoice.ShowSchemeList,
+    "leaving custom restores the chosen goal's automatic route");
+smartChoice.SetRecommendation(integratedRecommendation, SmartRenderGoal.Quality);
+Assert(!smartChoice.CanConfigure && !smartChoice.ShowSchemeList && !smartChoice.SelectGoal(SmartRenderGoal.Performance),
+    "unsupported GPU never silently auto-configures standard OptiScaler as DLSS 5");
+Assert(smartChoice.SelectGoal(SmartRenderGoal.Custom) && smartChoice.Mode == 2 && !smartChoice.SelectMode(0),
+    "unsupported GPU requires explicit custom selection for the standard route");
+const string fgIni = "[Log]\nLogToFile=auto\nLogLevel=auto\n[Menu]\nOverlayMenu=auto\nShortcutKey=auto\n[ProcessFilter]\nTargetProcessName=auto\n[FrameGen]\nEnabled=auto\nFGInput=auto\nFGOutput=auto";
+var safeFg = OptiInstaller.Configure(fgIni, "game.exe", false);
+Assert(safeFg.Contains("Enabled=false") && safeFg.Contains("FGInput=nofg") && safeFg.Contains("FGOutput=nofg"),
+    "automatic profiles leave unverified FG disabled");
+var customFg = OptiInstaller.Configure(fgIni, "game.exe", false, "dlssg");
+Assert(customFg.Contains("Enabled=true") && customFg.Contains("FGInput=dlssg") && customFg.Contains("FGOutput=fsrfg"),
+    "custom native DLSSG writes a real FSR FG route");
+Reject(() => OptiInstaller.Configure(fgIni, "game.exe", false, "unknown"), "unknown FG routes are rejected");
+Reject(() => OptiInstaller.Configure(fgIni, "game.exe", true, "dlssg"), "DX12 FG cannot be selected with Vulkan injection");
 Assert(LibraryPaging.PageCount(0) == 1 && LibraryPaging.ClampPage(5, 0) == 0, "empty library has stable first page");
 Assert(LibraryPaging.PageCount(8) == 1 && LibraryPaging.PageCount(9) == 2, "ninth game starts a new eight-game page");
 Assert(LibraryPaging.PageCount(16) == 2 && LibraryPaging.PageCount(17) == 3, "exact and partial pages counted correctly");

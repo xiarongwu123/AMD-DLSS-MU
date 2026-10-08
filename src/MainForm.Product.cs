@@ -134,25 +134,6 @@ public sealed partial class MainForm
         stack.Controls.Add(Heading("版本", "Version")); Paragraph(stack, "AMD DLSS MU v" + AutoUpdate.DisplayVersion);
         stack.Controls.Add(Action("检查更新", "Check updates", async (_, _) => await CheckAppUpdateAsync(false)));
     }
-    async void ShowAdvanced()
-    {
-        if (busy) return;
-        if (!await RequireFeatureAsync("configuration.edit") || busy) return;
-        using var dialog = ProductDialog("高级选项", 530, 340);
-        var stack = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false };
-        stack.Controls.Add(Heading("安装方案", "Installation mode", 16));
-        var mode = new ComboBox { Width = 440, DropDownStyle = ComboBoxStyle.DropDownList, BackColor = Surface, ForeColor = ink };
-        mode.Items.AddRange(installMode.Items.Cast<object>().ToArray()); mode.SelectedIndex = installMode.SelectedIndex; stack.Controls.Add(mode);
-        var api = new ComboBox { Width = 440, DropDownStyle = ComboBoxStyle.DropDownList, BackColor = Surface, ForeColor = ink };
-        api.Items.AddRange(new[] { "OptiScaler · DirectX 11 / 12（默认）", "OptiScaler · Vulkan" }); api.SelectedIndex = optiVulkan ? 1 : 0; api.Enabled = mode.SelectedIndex == 1;
-        mode.SelectedIndexChanged += (_, _) => api.Enabled = mode.SelectedIndex == 1; stack.Controls.Add(api);
-        Paragraph(stack, "两种方案效果不同。已配置游戏请先恢复，再切换方案。");
-        var save = Action("保存", "Save", async (_, _) => { if (!await RequireFeatureAsync("configuration.edit") || dialog.IsDisposed) return; installMode.SelectedIndex = mode.SelectedIndex; optiVulkan = api.SelectedIndex == 1; dialog.DialogResult = DialogResult.OK; });
-        stack.Controls.Add(save);
-        var diagnostics = Action("查看诊断", "Diagnostics", (_, _) => { dialog.Close(); ShowDiagnosticsMenu(); });
-        diagnostics.Width = 160; stack.Controls.Add(diagnostics);
-        dialog.Controls.Add(stack); dialog.ShowDialog(this);
-    }
     Form ProductDialog(string title, int width = 560, int height = 330)
     {
         var form = new Form
@@ -166,17 +147,19 @@ public sealed partial class MainForm
     void ShowConfigurationComplete(string exe, bool opti)
     {
         SwitchPage(1);
-        status.Text = opti
+        status.Text = GameManagement.Read(exe)?.Mode == 4
+            ? "配置完成 · DLSS 5 + XeFG 2X 已部署。进入游戏后按 Insert 检查实际生效状态。"
+            : opti
             ? "开启成功 · OptiScaler 组件已部署。进入游戏后按 Insert 验证实际效果。"
             : "开启成功 · 组件已部署。进入游戏后开启 FSR、按 End 验证实际效果。";
-        ShowProductToast("开启成功 · 可以启动游戏", true);
+        ShowProductToast("配置完成 · 可以启动游戏", true);
     }
 
     void ShowInstallationFailure(Exception error, string exe)
     {
         if (IsDisposed || Disposing) return;
         var missingRuntime = error is MissingAmdHipRuntimeException;
-        var title = missingRuntime ? "开启失败：缺少 AMD 运行时" : "开启 DLSS5 失败";
+        var title = missingRuntime ? "配置失败：缺少 AMD 运行时" : "配置图形方案失败";
         var advice = missingRuntime
             ? "如果你使用 NVIDIA 显卡：请勿继续此 AMD 安装方案，也不要在上游提示中强行输入 y。此提示不是 NVIDIA 驱动损坏。\r\n\r\n如果你使用 AMD 显卡：请检查上游支持的显卡型号和 AMD Adrenalin 驱动。\r\n\r\n若游戏显示配置未完成，请先使用“恢复配置”清理本次安装，再重试。"
             : "安装未成功。请保留下面的错误详情；若游戏显示配置未完成，请先恢复配置再重试。";
@@ -246,19 +229,41 @@ public sealed partial class MainForm
         productToastTimer.Start();
     }
 
-    async Task EnableSelectedDlssAsync()
+    async Task OpenSmartRenderForSelectedAsync()
+    {
+        if (selectedGame == null || busy || configureAnimating)
+        {
+            ShowProductToast(english ? "Select a game first." : "请先选择一个游戏。", false);
+            return;
+        }
+        if (!await RequireFeatureAsync("library.manage")) return;
+        if (IsConfigured(selectedGame))
+        {
+            ChooseSmartRender(selectedGame, previewOnly: true);
+            return;
+        }
+        await EnableSelectedDlssAsync();
+    }
+
+    async Task EnableSelectedDlssAsync(SmartRenderGoal initialGoal = SmartRenderGoal.Quality)
     {
         if (selectedGame == null || busy || configureAnimating) return;
+        if (!ChooseSmartRender(selectedGame, initialGoal)) return;
         configureAnimating = true;
         var cover = selectedCard?.Controls.OfType<PictureBox>().FirstOrDefault()?
             .Controls.OfType<DlssCoverAction>().FirstOrDefault();
         if (cover is { IsDisposed: false }) { cover.Progress = 4; cover.Loading = true; cover.Visible = true; }
-        install.Text = english ? "Enabling…" : "正在开启…";
+        install.Text = SelectedInstallMode switch
+        {
+            InstallMode.Official => english ? "Configuring DLSS 5…" : "正在配置 DLSS 5 神经渲染…",
+            InstallMode.Dlss5XeFg => english ? "Configuring DLSS 5 + XeFG…" : "正在配置 DLSS 5 + XeFG…",
+            _ => english ? "Configuring OptiScaler…" : "正在配置 OptiScaler…"
+        };
         try { await InstallAsync(); }
         finally
         {
             configureAnimating = false;
-            install.Text = english ? "Enable DLSS5" : "开启 DLSS5";
+            install.Text = english ? "Smart render" : "智能推荐";
             if (cover is { IsDisposed: false }) { cover.Loading = false; cover.Visible = false; }
         }
     }
@@ -286,9 +291,9 @@ public sealed partial class MainForm
         using var dialog = ProductDialog("诊断与运行状态", 540, 290);
         var stack = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown };
         stack.Controls.Add(Heading("诊断与运行状态", "Diagnostics", 19));
-        foreach (var pair in new[] { ("兼容性 / 安装记录", 0), ("刷新运行状态", 1), ("导出诊断", 2), ("F8 控制面板", 3) })
+        foreach (var pair in new[] { ("一键排查", 4), ("兼容性 / 安装记录", 0), ("刷新运行状态", 1), ("导出诊断", 2), ("F8 控制面板", 3) })
         {
-            var b = Action(pair.Item1, pair.Item1, async (_, _) => { dialog.Close(); if (pair.Item2 == 0) await InspectSelectedAsync(false); else if (pair.Item2 == 1) await InspectSelectedAsync(true); else if (pair.Item2 == 2) await ExportDiagnosticAsync(); else OpenPanel(); });
+            var b = Action(pair.Item1, pair.Item1, async (_, _) => { dialog.Close(); if (pair.Item2 == 4 && selectedGame != null) await ShowQuickDiagnosticsAsync(selectedGame); else if (pair.Item2 == 0) await InspectSelectedAsync(false); else if (pair.Item2 == 1) await InspectSelectedAsync(true); else if (pair.Item2 == 2) await ExportDiagnosticAsync(); else OpenPanel(); });
             b.Width = 240; stack.Controls.Add(b);
         }
         dialog.Controls.Add(stack); dialog.ShowDialog(this);
@@ -411,7 +416,7 @@ public sealed partial class MainForm
         foreach (var row in downloadRows) row.Card.Visible = showCompleted == (row.State == "已完成 · 校验通过");
         var empty = downloadList.Controls.Find("empty", false).FirstOrDefault();
         if (empty == null) { empty = new Label { Name = "empty", AutoSize = true, MaximumSize = new Size(560, 0), ForeColor = muted, Padding = new Padding(12, 36, 12, 36) }; downloadList.Controls.Add(empty); }
-        empty.Text = showCompleted ? "暂无完成记录。" : "没有正在下载的任务。\n\n点击“开启 DLSS5”后，所需组件会出现在这里。";
+        empty.Text = showCompleted ? "暂无完成记录。" : "没有正在下载的任务。\n\n选择游戏并配置图形方案后，所需组件会出现在这里。";
         empty.Visible = !downloadRows.Any(r => showCompleted == (r.State == "已完成 · 校验通过"));
     }
 }
