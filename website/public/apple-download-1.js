@@ -1,0 +1,1 @@
+$('#downloadStory').addEventListener('storychange',e=>{const d=[['v2.0.6','官网更新与完整性校验','SHA-256 · 文件大小 · x64 · 内部版本'],['v2.0.1','大力喜鹊下载加速','完整原包 · 校验后使用 · 自动回退'],['v2.0','界面与交互全面升级','游戏库 · 配置恢复 · 错误提示']][e.detail.index];$('#releaseTag').textContent=d[0];$('#releaseTitle').textContent=d[1];$('#releaseDesc').textContent=d[2]});

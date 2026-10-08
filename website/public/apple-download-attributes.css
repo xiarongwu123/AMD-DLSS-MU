@@ -1,0 +1,9 @@
+.apple-inline-1{--page-art:url("assets/download.jpg?v=20261006logo")}
+.apple-inline-2{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+.apple-inline-3{padding:26px}
+.apple-inline-4{margin:14px 0 0;background:#0b0d12;color:#aab1bc;padding:16px;border-radius:16px;overflow:auto;font-size:11px}
+.apple-inline-5{font-size:34px;margin:0 0 12px}
+.apple-inline-6{color:#878e99;line-height:1.7;font-size:13px}
+.apple-inline-7{margin-top:24px}
+.apple-inline-8{height:140px;margin-top:16px;border-radius:20px;background:radial-gradient(circle at 70% 30%,rgba(184,255,53,.25),transparent 28%),linear-gradient(145deg,#151a21,#0d1015);border:1px solid #222832}
+.apple-inline-9{--banner-art:url(assets/guide.jpg)}

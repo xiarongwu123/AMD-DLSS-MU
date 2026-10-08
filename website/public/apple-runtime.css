@@ -1,0 +1,6 @@
+.apple-release-notes{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;line-height:1.8}
+.apple-game-detail{scroll-margin-top:100px;line-height:1.8}
+.apple-game-detail:not(:empty){padding:24px;margin-top:24px;border:1px solid #30353d;border-radius:20px}
+.apple-game-detail h3{font-size:26px;margin-top:0}
+.apple-requirement-tier{padding:16px 0;border-bottom:1px solid #30353d}
+.apple-game-detail a{display:inline-block;color:#b8ff35;padding:8px 0}
