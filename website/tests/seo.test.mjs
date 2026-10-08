@@ -19,7 +19,8 @@ test('verification tokens cannot inject markup and structured data matches visib
   const faq = JSON.parse(json)['@graph'].find(item => item['@type'] === 'FAQPage');
   assert.equal(faq.mainEntity.length, dlssFaq.length);
   for (const [question, answer] of dlssFaq) {
-    assert.ok(html.includes(`<h3>${question}</h3><p>${answer}</p>`));
+    assert.ok(html.includes(`<button class="faq-q">${question}<span>`));
+    assert.ok(html.includes(`<div class="faq-a">${answer}</div>`));
     assert.ok(faq.mainEntity.some(item => item.name === question && item.acceptedAnswer.text === answer));
   }
 });
@@ -57,6 +58,7 @@ test('HTTP crawl contract: sitemap, metadata, bots, redirects, HEAD and protecte
     assert.equal(response.status, 200, path);
     assert.equal(response.headers.get('x-robots-tag'), null);
     const html = await response.text();
+    assert.ok(html.includes('apple-runtime.js'), path);
     assert.equal([...html.matchAll(/<title>/g)].length, 1);
     assert.equal([...html.matchAll(/name="description"/g)].length, 1);
     assert.equal([...html.matchAll(/rel="canonical"/g)].length, 1);

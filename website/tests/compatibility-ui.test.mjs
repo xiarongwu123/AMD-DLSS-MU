@@ -4,7 +4,8 @@ import test from 'node:test';
 import vm from 'node:vm';
 
 const source = await readFile(new URL('../public/assets/compatibility.js', import.meta.url), 'utf8');
-const html = await readFile(new URL('../public/compatibility.html', import.meta.url), 'utf8');
+// This retained controller uses the legacy DOM; the Apple page has its own runtime.
+const html = await readFile(new URL('fixtures/compatibility-legacy.html', import.meta.url), 'utf8');
 const hardware = JSON.parse(await readFile(new URL('../public/assets/hardware-reference.json', import.meta.url), 'utf8'));
 const requirements = { provider: 'Steam Store', status: 'available', reason: null,
   sourceUrl: 'https://store.steampowered.com/app/1091500/', sourceRetrievedAt: '2026-01-01T00:00:00.000Z', sourceSha256: 'a'.repeat(64),

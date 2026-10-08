@@ -58,8 +58,14 @@ export function renderSeoPage(source, pathname, verification = {}) {
   if (pathname === '/dlss5') {
     graph[0]['@type'] = 'FAQPage';
     graph[0].mainEntity = dlssFaq.map(([name, text]) => ({ '@type': 'Question', name, acceptedAnswer: { '@type': 'Answer', text } }));
-    source = source.replace('<!-- DLSS5_FAQ -->', dlssFaq.map(([question, answer], index) =>
-      `<section id="faq-${index + 1}" class="seo-faq"><h3>${escapeHtml(question)}</h3><p>${escapeHtml(answer)}</p></section>`).join('\n'));
+    if (source.includes('<!-- DLSS5_FAQ -->')) {
+      source = source.replace('<!-- DLSS5_FAQ -->', dlssFaq.map(([question, answer], index) =>
+        `<section id="faq-${index + 1}" class="seo-faq"><h3>${escapeHtml(question)}</h3><p>${escapeHtml(answer)}</p></section>`).join('\n'));
+    } else {
+      const answers = dlssFaq.map(([question, answer]) =>
+        `<div class="faq-item"><button class="faq-q">${escapeHtml(question)}<span>＋</span></button><div class="faq-a">${escapeHtml(answer)}</div></div>`).join('');
+      source = source.replace(/<div class="faq">[\s\S]*?<\/article>/, `<div class="faq">${answers}</div></article>`);
+    }
   }
   const json = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph }).replace(/</g, '\\u003c');
   const scriptHash = createHash('sha256').update(json).digest('base64');
@@ -86,10 +92,16 @@ export function renderSeoPage(source, pathname, verification = {}) {
   for (const [name, value] of [['google-site-verification', verification.google], ['baidu-site-verification', verification.baidu]]) {
     if (value) meta.push(`<meta name="${name}" content="${escapeHtml(value)}">`);
   }
-  const html = source.replace(/<title>[^<]*<\/title>/i, '')
-    .replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/?\s*>/i, '')
+  let html = source.replace(/<title>[^<]*<\/title>/gi, '')
+    .replace(/<meta\b[^>]*>/gi, tag => {
+      const name = tag.match(/\b(name|property)\s*=\s*["']([^"']+)["']/i)?.[2];
+      return /^(description|robots|twitter:.*|og:.*|google-site-verification|baidu-site-verification)$/i.test(name || '') ? '' : tag;
+    })
+    .replace(/<link\b(?=[^>]*\brel\s*=\s*["']canonical["'])[^>]*>/gi, '')
     .replace('</head>', `  ${meta.join('\n  ')}\n</head>`)
     .replace('<div class="footer-links">', '<div class="footer-links"><a href="/dlss5">DLSS5 / 大力水手5</a>')
     .replace(/\/assets\/app\.(css|js)\?v=[^"\s]+/g, '/assets/app.$1?v=20260928-seo1');
+  if (!html.includes('href="/dlss5"'))
+    html = html.replace(/(<footer\b[\s\S]*?<nav>)/, '$1<a href="/dlss5">DLSS5 / 大力水手5</a>');
   return { html, scriptHash };
 }
