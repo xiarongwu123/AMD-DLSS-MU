@@ -48,7 +48,7 @@ public sealed partial class MainForm
         root.Controls.Add(BuildV2Navigation(), 0, 0);
         pageHost.Margin = Padding.Empty; pageHost.BackColor = Base; root.Controls.Add(pageHost, 0, 1);
         Controls.Add(root);
-        BuildLibrary(); BuildV2Home(); BuildAbout(); BuildProductPages(); BuildAccountPage(); BuildMagpiePage(); BuildCompatibilityPage(); SwitchPage(6); ApplyTheme(darkMode, false); ApplyAccountGate();
+        BuildLibrary(); BuildV2Home(); BuildAbout(); BuildProductPages(); BuildAccountPage(); BuildMagpiePage(); BuildCompatibilityPage(); BuildWishesPage(); SwitchPage(6); ApplyTheme(darkMode, false); ApplyAccountGate();
         Shown += async (_, _) => await RestoreAccountAsync();
         FormClosing += (_, e) => { if (busy && !lifetime.IsCancellationRequested) { e.Cancel = true; MessageBox.Show(this, "请等待当前操作完成，或先在下载任务中取消下载。", Text); } };
         FormClosed += (_, _) => { accountHeartbeat.Stop(); accountHeartbeat.Dispose(); accountClient.Changed -= AccountStateChanged; productToastTimer?.Stop(); productToastTimer?.Dispose(); controlPanel?.Close(); lifetime.Cancel(); accountClient.Dispose(); };
@@ -95,19 +95,19 @@ public sealed partial class MainForm
     void SwitchPage(int index)
     {
         if (index != 6 && !accountClient.CanKeepVerifiedView && !(index == 3 && busy)) index = 6;
-        if (index == 0 && accountClient.Account?.Features.Any(f => f.Key == "compatibility.read" && f.Allowed) != true) index = 6;
         pageHost.SuspendLayout();
         try
         {
-            activePage = index; compatibilityPage.Visible = index == 0; libraryPage.Visible = index == 1; if (aboutPanel != null) aboutPanel.Visible = index == 2;
+            activePage = index; compatibilityPage.Visible = false; libraryPage.Visible = index is 0 or 1; if (aboutPanel != null) aboutPanel.Visible = index == 2;
             UpdateAccountHeartbeatSchedule();
             downloadsPage.Visible = index == 3; helpPage.Visible = index == 4; settingsPage.Visible = index == 5;
             accountPage.Visible = index == 6; magpiePage.Visible = index == 7;
+            wishesPage.Visible = index == 8;
             SetHeaderMode(index);
-            if (index == 1) ScrollToLibrarySection(true);
+            if (index is 0 or 1) ScrollToLibrarySection(index == 1);
             for (int i = 0; i < navigation.Count; i++) { bool current = navigationPages[i] == index; navigation[i].BackColor = current ? SelectedSurface : Sidebar; navigation[i].ForeColor = current ? Acid : muted; ((RoundedButton)navigation[i]).Active = current; navigation[i].Invalidate(); }
             if (index == 3) RenderDownloads();
-            var page = index switch { 0 => compatibilityPage, 1 => libraryPage, 2 => aboutPanel, 3 => downloadsPage, 4 => helpPage, 5 => settingsPage, 6 => accountPage, 7 => magpiePage, _ => null };
+            var page = index switch { 0 or 1 => libraryPage, 2 => aboutPanel, 3 => downloadsPage, 4 => helpPage, 5 => settingsPage, 6 => accountPage, 7 => magpiePage, 8 => wishesPage, _ => null };
             // Moving a page containing native text boxes and dozens of child
             // windows per frame leaves stale pixels and thrashes layout. Keep
             // page geometry stable; buttons/cards retain their own animation.
@@ -121,7 +121,7 @@ public sealed partial class MainForm
             pageHost.Invalidate(true);
             headerNavigation?.Parent?.Invalidate(true);
         }
-        if (index == 0) _ = InitializeCompatibilityAsync();
+        if (index == 8) _ = LoadWishesAsync();
     }
     void RefreshHome()
     {

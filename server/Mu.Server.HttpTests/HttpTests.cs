@@ -31,6 +31,11 @@ internal static class HttpTests
             await CompatibilityPaginationHttpTests.RunAsync();
             return;
         }
+        if (args.SequenceEqual(new[] { "--wishes" }))
+        {
+            await WishHttpTests.RunAsync();
+            return;
+        }
         using var factory = new AccountFactory();
         using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
         { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
@@ -89,6 +94,7 @@ internal static class HttpTests
         assertions += await PublicCompatibilityHttpTests.RunAsync();
         assertions += await MaintenanceHttpTests.RunAsync();
         assertions += await CompatibilityPaginationHttpTests.RunAsync();
+        assertions += await WishHttpTests.RunAsync();
         Console.WriteLine($"HTTP integration passed: {assertions} assertions.");
     }
 }

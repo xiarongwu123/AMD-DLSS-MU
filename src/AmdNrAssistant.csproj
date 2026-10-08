@@ -38,5 +38,6 @@
     <EmbeddedResource Include="..\assets\mu-home-banner-new.png" LogicalName="AmdNrAssistant.mu-home-banner-new.png" />
     <EmbeddedResource Include="..\assets\mu-add-game-art.png" LogicalName="AmdNrAssistant.mu-add-game-art.png" />
     <EmbeddedResource Include="..\assets\mu-account-art.png" LogicalName="AmdNrAssistant.mu-account-art.png" />
+    <EmbeddedResource Include="..\assets\mu-wish-pool-hero.png" LogicalName="AmdNrAssistant.mu-wish-pool-hero.png" />
   </ItemGroup>
 </Project>

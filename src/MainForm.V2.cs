@@ -28,7 +28,7 @@ public sealed partial class MainForm
         if (shellLayout != null) shellLayout.RowStyles[0].Height = (int)Math.Ceiling(88 * DeviceDpi / 96d);
         if (headerBrand != null) headerBrand.Visible = true;
         if (headerNavigation != null) headerNavigation.Visible = true;
-        if (headerSearch != null) headerSearch.Visible = page != 0;
+        if (headerSearch != null) headerSearch.Visible = page != 8;
         if (headerUpdate != null) headerUpdate.Visible = true;
     }
 
@@ -55,7 +55,7 @@ public sealed partial class MainForm
         brandName.Click += async (_, _) => await NavigateAuthorizedAsync(0);
         brand.Controls.Add(brandName); brand.Controls.Add(logo); header.Controls.Add(brand); headerBrand = brand;
         var nav = new FlowLayoutPanel { WrapContents = false, Margin = Padding.Empty, Padding = Padding.Empty, BackColor = Color.Transparent };
-        foreach (var item in new[] { (0, "兼容性", "Compatibility"), (1, "游戏库", "Library"), (7, "大力喜鹊", "Magpie"), (3, "下载任务", "Downloads"), (4, "帮助与反馈", "Help") })
+        foreach (var item in new[] { (0, "首页", "Home"), (1, "游戏库", "Library"), (7, "大力喜鹊", "Magpie"), (8, "许愿池", "Wishes"), (3, "下载任务", "Downloads"), (4, "帮助与反馈", "Help") })
         {
             var b = Action(item.Item2, item.Item3, async (_, _) =>
             {
@@ -106,9 +106,17 @@ public sealed partial class MainForm
                 navigation[i].Size = new Size(S(navigationPages[i] == 4 ? 108 : 86), S(38));
                 navigation[i].Margin = new Padding(0, 0, S(7), 0);
             }
-            nav.SetBounds(S(224), S(5), S(532), S(46));
+            nav.SetBounds(S(224), S(5), S(620), S(46));
             var utilityWidth = utility.Controls.Cast<Control>().Sum(c => c.Width + c.Margin.Horizontal);
             utility.SetBounds(width - utilityWidth - S(16), S(5), utilityWidth, S(38));
+            var navWidth = Math.Max(S(450), utility.Left - S(232));
+            var navScale = Math.Min(1f, navWidth / (float)S(580));
+            for (var i = 0; i < navigation.Count; i++)
+            {
+                navigation[i].Width = (int)Math.Round(S(navigationPages[i] == 4 ? 108 : 86) * navScale);
+                navigation[i].Margin = new Padding(0, 0, (int)Math.Round(S(7) * navScale), 0);
+            }
+            nav.Width = navWidth;
             search.SetBounds(width - S(420), S(45), S(244), S(35));
             update.SetBounds(width - S(164), S(45), S(148), S(35));
         }

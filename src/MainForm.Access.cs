@@ -116,13 +116,10 @@ public sealed partial class MainForm
         if (headerNavigation != null) headerNavigation.Enabled = viewAvailable;
         if (headerUpdate != null) headerUpdate.Enabled = viewAvailable;
         libraryPage.Enabled = viewAvailable && !busy;
-        var compatibilityAllowed = viewAvailable && accountClient.Account?.Features.Any(f => f.Key == "compatibility.read" && f.Allowed) == true;
-        compatibilityPage.Enabled = compatibilityAllowed && !busy;
-        if (!compatibilityAllowed)
-        {
-            ClearCompatibilityAccess();
-            if (activePage == 0) SwitchPage(6);
-        }
+        wishesPage.Enabled = viewAvailable;
+        if (!viewAvailable && wishHero != null) ClearWishesAccess();
+        compatibilityPage.Enabled = false;
+        ClearCompatibilityAccess();
         magpiePage.Enabled = viewAvailable && !busy;
         if (!viewAvailable && !busy && accountTransactionDepth == 0 && activePage != 6) SwitchPage(6);
         UpdateAccountHeartbeatSchedule();
@@ -163,7 +160,8 @@ public sealed partial class MainForm
             accountFeedback = "请先联网登录，再使用客户端功能。";
             SwitchPage(6); return false;
         }
-        var feature = page switch { 0 => "compatibility.read", 7 => "magpie.launch", 4 => "diagnostics.use", 5 => "configuration.edit", _ => "library.manage" };
+        if (page == 8) return true;
+        var feature = page switch { 7 => "magpie.launch", 4 => "diagnostics.use", 5 => "configuration.edit", _ => "library.manage" };
         if (accountClient.Account?.Features.Any(f => f.Key == feature && f.Allowed) != true)
         {
             ShowProductToast("当前账户暂无此页面的功能权限。", false); return false;

@@ -841,6 +841,7 @@ public class RoundedPanel : Panel
 
 public sealed class RoundedButton : Button
 {
+    public Color GradientEnd { get; set; } = Color.Empty;
     bool hot;
     bool pressed;
     float hoverAmount;
@@ -935,7 +936,9 @@ public sealed class RoundedButton : Button
                 (int)(fillColor.B + (hoverColor.B - fillColor.B) * hoverAmount));
         }
 
-        using var brush = new SolidBrush(fillColor);
+        using Brush brush = Enabled && !GradientEnd.IsEmpty
+            ? new System.Drawing.Drawing2D.LinearGradientBrush(ClientRectangle, fillColor, GradientEnd, 0f)
+            : new SolidBrush(fillColor);
 
         e.Graphics.FillPath(brush, path);
 

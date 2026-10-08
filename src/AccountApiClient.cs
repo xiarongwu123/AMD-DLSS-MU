@@ -66,6 +66,7 @@ public sealed partial class AccountApiClient : IDisposable
             await RefreshCoreAsync(token);
             return true;
         }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
         catch { connectionGraceEligible = false; IsOnline = false; Changed?.Invoke(); throw; }
         finally { gate.Release(); }
     }
@@ -168,7 +169,11 @@ public sealed partial class AccountApiClient : IDisposable
         try
         {
             if (refreshToken == null) throw new AccountApiException(HttpStatusCode.Unauthorized, "login_required", "请重新登录账户。");
-            ApplySession(await SendAsync<SessionResponse>(HttpMethod.Post, "auth/refresh", new { refreshToken }, null, token));
+            token.ThrowIfCancellationRequested();
+            // Rotation consumes the old token; persist the replacement even after a page switch.
+            using var rotationTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            ApplySession(await SendAsync<SessionResponse>(HttpMethod.Post, "auth/refresh", new { refreshToken }, null, rotationTimeout.Token));
+            token.ThrowIfCancellationRequested();
         }
         catch (AccountApiException e) when (e.Status == HttpStatusCode.Unauthorized || e.Code is "disabled" or "account_disabled" or "user_disabled")
         { ClearLocal(); throw; }
@@ -233,12 +238,22 @@ public sealed partial class AccountApiClient : IDisposable
             ApiError? error = null;
             try { error = JsonSerializer.Deserialize<ApiError>(content, Json); } catch (JsonException) { }
             throw new AccountApiException(response.StatusCode, error?.Code ?? "service_error",
-                error?.Message ?? "账户服务暂时不可用，请稍后重试。", error?.RetryAfterSeconds, error?.Account);
+                error?.Message ?? ResponseError(response.StatusCode, route), error?.RetryAfterSeconds, error?.Account);
         }
         if (response.StatusCode == HttpStatusCode.NoContent) return default!;
         try { return JsonSerializer.Deserialize<T>(content, Json) ?? throw new IOException("账户服务返回空响应。"); }
         catch (JsonException e) { throw new IOException("账户服务响应无效，请稍后重试。", e); }
     }
+
+    static string ResponseError(HttpStatusCode status, string route) => status switch
+    {
+        HttpStatusCode.NotFound when route.StartsWith("wishes", StringComparison.Ordinal) => "许愿池服务尚未上线，请稍后再试（HTTP 404）。",
+        HttpStatusCode.NotFound => "请求的服务接口不存在（HTTP 404），请检查客户端版本。",
+        HttpStatusCode.Unauthorized => "登录已失效，请重新登录（HTTP 401）。",
+        HttpStatusCode.Forbidden => "服务拒绝了此请求（HTTP 403）。",
+        HttpStatusCode.TooManyRequests => "请求过于频繁，请稍后重试（HTTP 429）。",
+        _ => $"服务请求失败（HTTP {(int)status}），请稍后重试。"
+    };
 
     sealed record ApiError(string Code, string Message, int? RetryAfterSeconds, AccountSnapshot? Account);
     public void Dispose() => http.Dispose();

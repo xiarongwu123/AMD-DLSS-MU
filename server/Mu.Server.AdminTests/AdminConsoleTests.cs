@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Mu.Server;
 using Mu.Server.Data;
+using Mu.Wishes;
 
 internal static class AdminConsoleTests
 {
@@ -39,6 +40,7 @@ internal static class AdminConsoleTests
 
         Check((await client.GetAsync("/admin/users")).StatusCode == HttpStatusCode.Redirect, "Anonymous administrator access blocked");
         Check((await client.GetAsync("/admin/mail")).StatusCode == HttpStatusCode.Redirect, "Anonymous mail logs blocked");
+        Check((await client.GetAsync("/admin/wishes")).StatusCode == HttpStatusCode.Redirect, "Anonymous wish management blocked");
         Check((await Post(client, "/admin/login", new() { ["Email"] = AdminEmail, ["Password"] = Password })).StatusCode == HttpStatusCode.BadRequest,
             "Admin login requires CSRF");
         var loginToken = await Token(client, "/admin/login");
@@ -50,6 +52,7 @@ internal static class AdminConsoleTests
         Check(passwordStep.StatusCode == HttpStatusCode.Redirect && passwordStep.Headers.Location?.OriginalString == "/admin/setup", "First admin login requires TOTP setup");
         Check((await client.GetAsync("/admin/users")).StatusCode == HttpStatusCode.Redirect, "Password-only pending cookie cannot manage");
         Check((await client.GetAsync("/admin/mail")).StatusCode == HttpStatusCode.Redirect, "Mail logs require completed MFA");
+        Check((await client.GetAsync("/admin/wishes")).StatusCode == HttpStatusCode.Redirect, "Wish management requires completed MFA");
         var setup = await client.GetAsync("/admin/setup");
         var setupHtml = await setup.Content.ReadAsStringAsync();
         var key = Regex.Match(setupHtml, "<code class=\"secret\">([^<]+)</code>").Groups[1].Value;
@@ -58,6 +61,22 @@ internal static class AdminConsoleTests
         var enrollmentCode = Totp(key);
         var setupPost = await Post(client, "/admin/setup", new() { ["Code"] = enrollmentCode }, ExtractToken(setupHtml));
         Check(setupPost.StatusCode == HttpStatusCode.Redirect && setupPost.Headers.Location?.OriginalString == "/admin", "TOTP enrollment grants full admin session");
+        using (var scope = factory.Services.CreateScope())
+            await WishPoolSchema.SeedAsync(scope.ServiceProvider.GetRequiredService<AppDbContext>());
+        var wishHtml = WebUtility.HtmlDecode(await (await client.GetAsync("/admin/wishes")).Content.ReadAsStringAsync());
+        Check(wishHtml.Contains("自动选择最优渲染方案") && wishHtml.Contains("（示例）"), "Admin can read seeded wishes");
+        var wishFields = new Dictionary<string, string> { ["Id"] = "demo-wish-05", ["Status"] = "planned", ["ExpectedStatus"] = "pending", ["Reason"] = "test wish planning" };
+        Check((await Post(client, "/admin/wishes", wishFields)).StatusCode == HttpStatusCode.BadRequest, "Wish mutations require CSRF");
+        var wishUpdate = await Form(client, "/admin/wishes", null, wishFields);
+        Check(wishUpdate.StatusCode == HttpStatusCode.Redirect, "Wish progress updated through authenticated form: " +
+            WebUtility.HtmlDecode(Regex.Match(await wishUpdate.Content.ReadAsStringAsync(), "<div[^>]*validation-summary-errors[\\s\\S]*?</div>").Value));
+        Check((await Form(client, "/admin/wishes", null, wishFields)).StatusCode == HttpStatusCode.OK, "Stale wish status cannot overwrite newer progress");
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Check((await db.Wishes.SingleAsync(w => w.Id == "demo-wish-05")).Status == "planned", "Admin wish status persisted");
+            Check(await db.AuditEntries.CountAsync(a => a.Action == "wish.status") == 1, "Wish status audited exactly once");
+        }
         var adminCookie = setupPost.Headers.GetValues("Set-Cookie").Single(value => value.StartsWith("__Host-MuAdmin=", StringComparison.Ordinal)).Split(';')[0];
         Check(setupPost.Headers.GetValues("Set-Cookie").Any(value => value.Contains("secure", StringComparison.OrdinalIgnoreCase)
             && value.Contains("httponly", StringComparison.OrdinalIgnoreCase) && value.Contains("samesite=strict", StringComparison.OrdinalIgnoreCase)), "Admin cookie protected");
@@ -130,6 +149,8 @@ internal static class AdminConsoleTests
         var session = (await login.Content.ReadFromJsonAsync<SessionResponse>())!;
         normal.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
         Check((await normal.GetAsync("/admin/users")).StatusCode == HttpStatusCode.Redirect, "Client bearer cannot authenticate administrator page");
+        Check((await normal.GetAsync("/admin/wishes")).StatusCode == HttpStatusCode.Redirect, "Client bearer cannot manage wishes");
+        Check((await normal.GetFromJsonAsync<WishDetail>("/api/v1/wishes/demo-wish-05"))!.Wish.Status == "planned", "Admin progress update visible through client API");
         Check((await Form(client, "/admin/users", "RevokeSessions", new() { ["UserId"] = userId, ["Reason"] = "test revoke sessions" })).StatusCode == HttpStatusCode.Redirect,
             "Session revocation form");
         Check((await normal.GetAsync("/api/v1/account/me")).StatusCode == HttpStatusCode.Unauthorized, "Admin revocation invalidates client immediately");
