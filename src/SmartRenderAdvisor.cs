@@ -141,8 +141,10 @@ public static class SmartRenderDiagnostics
         items.Add(new("安装记录", "已找到这款游戏的安装记录。", false));
         if (record.Mode == 0)
         {
-            var hip = HasHipRuntime();
-            items.Add(new("AMD HIP", hip ? "已找到 AMD HIP 运行组件。" :
+            var rx6000 = GameManagement.HasRx6000(hardware);
+            var hip = rx6000 ? HipRuntime.HasVersion72() : HasHipRuntime();
+            items.Add(new("AMD HIP", hip ? (rx6000 ? "已找到 AMD HIP 7.2。" : "已找到 AMD HIP 运行组件。") :
+                rx6000 ? "未找到 AMD HIP 7.2，请在一键配置时完成安装。" :
                 "未找到 AMD HIP 运行组件；神经渲染可能无法启动，请安装对应版本。", !hip));
             foreach (var (name, label) in new[] { ("nvngx_dlssnr.dll", "神经渲染组件"),
                 ("dlssnr_on_amd.ini", "方案设置"), ("dlssnr_on_amd_weights.bin", "模型数据") })
@@ -164,8 +166,10 @@ public static class SmartRenderDiagnostics
         }
         if (record.Mode == 4)
         {
-            var hip = HasHipRuntime();
-            items.Add(new("AMD HIP", hip ? "已找到 AMD HIP 运行组件。" :
+            var rx6000 = GameManagement.HasRx6000(hardware);
+            var hip = rx6000 ? HipRuntime.HasVersion72() : HasHipRuntime();
+            items.Add(new("AMD HIP", hip ? (rx6000 ? "已找到 AMD HIP 7.2。" : "已找到 AMD HIP 运行组件。") :
+                rx6000 ? "未找到 AMD HIP 7.2，请在一键配置时完成安装。" :
                 "未找到 AMD HIP 运行组件，请安装与显卡匹配的运行时。", !hip));
             foreach (var (name, label) in new[] { ("dlssnr_amd_pass1.dll", "神经渲染运行组件 1"),
                 ("dlssnr_amd_pass2.dll", "神经渲染运行组件 2"),
@@ -187,6 +191,7 @@ public static class SmartRenderDiagnostics
     public static bool HasHipRuntime()
     {
         if (!OperatingSystem.IsWindows()) return false;
+        if (HipRuntime.HasVersion72()) return true;
         var locations = new List<string> { Environment.SystemDirectory };
         locations.AddRange((Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator));
         foreach (var key in new[] { "HIP_PATH", "HIP_PATH_64", "ROCM_PATH" })

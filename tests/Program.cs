@@ -147,6 +147,9 @@ Reject(() => Core.ParseRelease(ReleaseJson("v0.6.0", Core.ReviewedInstallerSha25
 Reject(() => Core.ParseRelease(ReleaseJson("v0.4.0", "2d37453e918a1c5487314b3ae7c088b624ac0be1b82469427ec04b481a845ded", 13183488)), "obsolete 0.4.0 release is rejected");
 Assert(!GameManagement.IsUnsupportedAmdNeuralGpuOnly(new[] { "AMD Radeon RX 6750 GRE 10GB | Driver 32.0.21037.1004" }), "RX 6750 GRE is supported by the runtime gate");
 Assert(GameManagement.HasRx6000(new[] { "AMD Radeon RX 6750 GRE 10GB" }), "RX 6750 GRE requires HIP 7.2 notice");
+Assert(HipRuntime.IsVersion72("7.2.0.0") && HipRuntime.IsVersion72("AMD HIP 7.2 runtime"), "detect HIP 7.2 version");
+Assert(!HipRuntime.IsVersion72("7.1.1") && !HipRuntime.IsVersion72("7.20.0") && !HipRuntime.IsVersion72(null), "reject other HIP versions");
+Assert(HipRuntime.CreateInstallStartInfo("C:/Downloads/" + HipRuntime.InstallerName).Verb == "runas", "AMD installer requests UAC");
 Assert(GameManagement.IsUnsupportedAmdNeuralGpuOnly(new[] { "AMD Radeon RX 5700 XT" }), "RX 5000 remains unsupported");
 Assert(!GameManagement.IsUnsupportedAmdNeuralGpuOnly(new[] { "AMD Radeon RX 5700 XT", "AMD Radeon RX 7800 XT" }), "older secondary adapter does not block supported GPU");
 Assert(Core.InstallerMirror.Contains("/v0.6.0/") && Core.InstallerApi.EndsWith("607036746"), "official mirror and API asset use 0.6.0");

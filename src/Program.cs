@@ -1746,8 +1746,12 @@ public sealed partial class MainForm : Form
             }
             if (GameManagement.Read(targetExe) is { Phase: not "restored" })
                 throw new IOException("请先恢复此游戏，再安装或切换模式。");
-            if ((chosenMode is InstallMode.Official or InstallMode.Dlss5XeFg) && !SmartRenderDiagnostics.HasHipRuntime())
-                throw new MissingAmdHipRuntimeException();
+            if (chosenMode is InstallMode.Official or InstallMode.Dlss5XeFg)
+            {
+                if (!await EnsureHip72ForRx6000Async(targetExe)) return;
+                if (!SmartRenderDiagnostics.HasHipRuntime())
+                    throw new MissingAmdHipRuntimeException();
+            }
             if (chosenMode == InstallMode.OptiScalerStandard)
             {
                 await InstallOptiScalerStandardAsync(targetExe, chosenVulkan); return;

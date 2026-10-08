@@ -45,7 +45,7 @@ OptiScaler 和 Magpie 的默认配置不等同于 DLSS 5 神经渲染。宣传�
 
 ### AMD 方案的要求
 
-当前客户端固定使用上游 `v0.6.0`，下载大小和 SHA-256 均锁定。该版本要求 Windows 11、支持 FSR 的 DirectX 12 游戏、Adrenalin 26.1.1 或更新驱动，以及 `nvngx_dlssnr.dll` 310.8.0.0。v0.6.0 已增加 RX 6000 支持，RX 6000 需安装 AMD HIP 7.2。游戏兼容性和实际效果仍需实测。详见 [上游版本说明](https://github.com/danielblnc/DLSS-NR-on-AMD/blob/v0.6.0/README.md)。
+当前客户端固定使用上游 `v0.6.0`，下载大小和 SHA-256 均锁定。该版本要求 Windows 11、支持 FSR 的 DirectX 12 游戏、Adrenalin 26.1.1 或更新驱动，以及 `nvngx_dlssnr.dll` 310.8.0.0。v0.6.0 已增加 RX 6000 支持，RX 6000 需安装 AMD HIP 7.2。若该运行时缺失，MU 会打开 AMD 官方许可与下载页；用户接受许可、下载并选取安装包后，MU 验证 AMD 数字签名并启动完整安装器。该安装器可能更换显卡驱动，完成后应重启并重新检测。AMD 官方 HIP SDK 支持列表未列出 RX 6000，安装器可能拒绝该型号；游戏兼容性和实际效果仍需实测。详见 [上游版本说明](https://github.com/danielblnc/DLSS-NR-on-AMD/blob/v0.6.0/README.md)。
 
 如果你使用 NVIDIA 显卡，请不要选择这个 AMD 专用方案。出现缺少 `amdhip64_7.dll` 时应停止安装；客户端不会自动忽略上游依赖警告。
 
