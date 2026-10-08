@@ -23,11 +23,17 @@ string ReleaseJson(string tag, string digest, long size) => JsonSerializer.Seria
         browser_download_url = Core.Repository + "/releases/download/" + tag + "/" + Core.InstallerName,
         digest = "sha256:" + digest, size } }
 });
-Assert(Core.ParseRelease(ReleaseJson("v0.4.0", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)).Tag == "v0.4.0", "accept pinned upstream v0.4.0");
+Assert(Core.ParseRelease(ReleaseJson("v0.6.0", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)).Tag == "v0.6.0", "accept pinned upstream v0.6.0");
 Reject(() => Core.ParseRelease(ReleaseJson("v0.3.0", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)), "reject old runtime release");
 Reject(() => Core.ParseRelease(ReleaseJson("v0.3.1", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize)), "reject legacy console installer release");
-Reject(() => Core.ParseRelease(ReleaseJson("v0.4.0", new string('0', 64), Core.ReviewedInstallerSize)), "reject replaced upstream asset");
-Reject(() => Core.ParseRelease(ReleaseJson("v0.4.0", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize + 1)), "reject changed upstream size");
+Reject(() => Core.ParseRelease(ReleaseJson("v0.6.0", new string('0', 64), Core.ReviewedInstallerSize)), "reject replaced upstream asset");
+Reject(() => Core.ParseRelease(ReleaseJson("v0.6.0", Core.ReviewedInstallerSha256, Core.ReviewedInstallerSize + 1)), "reject changed upstream size");
+Reject(() => Core.ParseRelease(ReleaseJson("v0.4.0", "2d37453e918a1c5487314b3ae7c088b624ac0be1b82469427ec04b481a845ded", 13183488)), "obsolete 0.4.0 release is rejected");
+Assert(!GameManagement.IsUnsupportedAmdNeuralGpuOnly(new[] { "AMD Radeon RX 6750 GRE 10GB | Driver 32.0.21037.1004" }), "RX 6750 GRE is supported by the runtime gate");
+Assert(GameManagement.HasRx6000(new[] { "AMD Radeon RX 6750 GRE 10GB" }), "RX 6750 GRE requires HIP 7.2 notice");
+Assert(GameManagement.IsUnsupportedAmdNeuralGpuOnly(new[] { "AMD Radeon RX 5700 XT" }), "RX 5000 remains unsupported");
+Assert(!GameManagement.IsUnsupportedAmdNeuralGpuOnly(new[] { "AMD Radeon RX 5700 XT", "AMD Radeon RX 7800 XT" }), "older secondary adapter does not block supported GPU");
+Assert(Core.InstallerMirror.Contains("/v0.6.0/") && Core.InstallerApi.EndsWith("607036746"), "official mirror and API asset use 0.6.0");
 var guiStart = UpstreamInstaller.CreateStartInfo("installer.exe", a);
 Assert(!guiStart.CreateNoWindow && !guiStart.RedirectStandardInput && !guiStart.RedirectStandardOutput && !guiStart.RedirectStandardError && guiStart.ArgumentList.Count == 0 && guiStart.Arguments == "", "graphical installer is visible and receives no guessed CLI flags or automatic confirmations");
 Assert(guiStart.WorkingDirectory == dir, "graphical installer starts in selected game directory");
