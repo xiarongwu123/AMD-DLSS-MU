@@ -1,0 +1,6 @@
+node_modules/
+public/art/
+public/soundtrack.wav
+out/
+.cache/
+reference/*.mp4
