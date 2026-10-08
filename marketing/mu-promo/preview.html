@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MU / 游戏宣传片</title>
+  <style>
+    :root{color-scheme:dark;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:#05080d;color:#f2f7fb}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0%,#15352280,transparent 65%)}
+    main{max-width:1460px;margin:auto;padding:48px 36px}header{display:flex;align-items:center;justify-content:space-between;gap:24px;border-bottom:1px solid #233041;padding-bottom:30px}
+    .label{font:600 12px ui-monospace,monospace;letter-spacing:3px;color:#adff18}h1{font-size:34px;letter-spacing:-1px;margin:14px 0 0}header span{font:13px ui-monospace,monospace;color:#94a1af}
+    .videos{display:grid;grid-template-columns:minmax(0,1fr) 320px;align-items:start;gap:28px;margin-top:36px}.card{padding:16px;border:1px solid #233041;background:#0b111a;border-radius:14px}
+    video{display:block;width:100%;border-radius:8px;background:#000}.meta{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:20px;margin-bottom:8px}.meta b{font-size:15px}.meta small{font:12px ui-monospace,monospace;color:#94a1af}
+    a{color:#adff18;font-size:13px;text-decoration:none}a:hover{text-decoration:underline}.description{color:#94a1af;font-size:14px;line-height:1.8;max-width:740px;margin-top:28px}
+    @media(max-width:850px){main{padding:32px 18px}.videos{grid-template-columns:1fr}.portrait{max-width:420px;justify-self:center}header{align-items:flex-start;flex-direction:column}h1{font-size:28px}}
+  </style>
+</head>
+<body><main>
+  <header><div><div class="label">AMD DLSS MU / BRAND FILM</div><h1>下一局，由你掌控。</h1></div><span>30 SEC / 60 FPS / ORIGINAL SCORE</span></header>
+  <div class="videos">
+    <article class="card">
+      <video controls playsinline preload="metadata" poster="out/MU-Landscape-1695.jpg" src="out/mu-promo-16x9.mp4"></video>
+      <div class="meta"><b>横屏 / 官网 · B站</b><small>1920 × 1080</small></div>
+      <a href="out/mu-promo-16x9.mp4" download>下载横屏 MP4 ↗</a>
+    </article>
+    <article class="card portrait">
+      <video controls playsinline preload="metadata" poster="out/MU-Portrait-1695.jpg" src="out/mu-promo-9x16.mp4"></video>
+      <div class="meta"><b>竖屏 / 抖音 · 视频号</b><small>1080 × 1920</small></div>
+      <a href="out/mu-promo-9x16.mp4" download>下载竖屏 MP4 ↗</a>
+    </article>
+  </div>
+  <p class="description">MU 黑底荧光绿、HUD 线框与光轨。芯片开场、原创霓虹场景、游戏库动画、三种配置方案、文件恢复和品牌收尾。配乐为原创电子音轨。</p>
+</main>
+<script>
+  const players = [...document.querySelectorAll('video')];
+  players.forEach(player => player.addEventListener('play', () => players.filter(other => other !== player).forEach(other => other.pause())));
+</script>
+</body>
+</html>

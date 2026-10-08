@@ -1,0 +1,26 @@
+{
+  "name": "mu-promo",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "assets": "node scripts/prepare-assets.mjs",
+    "audio": "node scripts/soundtrack.mjs",
+    "studio": "remotion studio src/index.tsx",
+    "render": "node scripts/render.mjs",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.533",
+    "@remotion/cli": "4.0.533",
+    "@remotion/renderer": "4.0.533",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "remotion": "4.0.533"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "typescript": "5.9.3"
+  }
+}
