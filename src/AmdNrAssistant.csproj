@@ -13,6 +13,7 @@
     <InformationalVersion>2.1.1</InformationalVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>../assets/amd-dlss-mu.ico</ApplicationIcon>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="../assets/amd-dlss-mu.ico" LogicalName="AmdNrAssistant.AppIcon" />
