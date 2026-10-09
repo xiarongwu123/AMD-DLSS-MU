@@ -128,11 +128,11 @@ foreach (var name in new[] { "AMD Radeon RX 7700 XT", "AMD Radeon RX 7900 XT", "
         name + " is not blocked solely because dxdiag omitted dedicated memory");
 }
 var measuredLow7900 = new CompatibilityGpu("AMD Radeon RX 7900 XTX", "AMD", 4096, "unknown", "known");
-Assert(SmartRenderAdvisor.Recommend(measuredLow7900, true).Availability == SmartRenderAvailability.HardwareUnsupported,
-    "a measured low memory value is not overwritten by the RX 7900 model fallback");
+Assert(SmartRenderAdvisor.Recommend(measuredLow7900, true).Availability == SmartRenderAvailability.MemoryBelowRecommendation,
+    "measured low memory remains a recommendation warning for RX 7900");
 var measuredLow7700 = new CompatibilityGpu("AMD Radeon RX 7700 XT", "AMD", 4096, "unknown", "known");
-Assert(SmartRenderAdvisor.Recommend(measuredLow7700, true).Availability == SmartRenderAvailability.HardwareUnsupported,
-    "a measured low memory value is not overwritten by the RX 7700 XT model fallback");
+Assert(SmartRenderAdvisor.Recommend(measuredLow7700, true).Availability == SmartRenderAvailability.MemoryBelowRecommendation,
+    "measured low memory remains a recommendation warning for RX 7700 XT");
 var unknownMemoryGpu = new CompatibilityGpu("AMD Radeon RX 7600", "AMD", null, "unknown", "known");
 Assert(SmartRenderAdvisor.Recommend(unknownMemoryGpu, true).Availability == SmartRenderAvailability.HardwareUnconfirmed,
     "unverified GPU models still require measured memory");
@@ -192,10 +192,20 @@ Assert(smartChoice.SelectGoal(SmartRenderGoal.Custom) && smartChoice.ShowSchemeL
 Assert(smartChoice.SelectGoal(SmartRenderGoal.Quality) && smartChoice.Mode == 0 && !smartChoice.ShowSchemeList,
     "leaving custom restores the chosen goal's automatic route");
 smartChoice.SetRecommendation(integratedRecommendation, SmartRenderGoal.Quality);
-Assert(!smartChoice.CanConfigure && !smartChoice.ShowSchemeList && !smartChoice.SelectGoal(SmartRenderGoal.Performance),
-    "unsupported GPU never silently auto-configures standard OptiScaler as DLSS 5");
-Assert(smartChoice.SelectGoal(SmartRenderGoal.Custom) && smartChoice.Mode == 2 && !smartChoice.SelectMode(0),
-    "unsupported GPU requires explicit custom selection for the standard route");
+Assert(smartChoice.CanConfigure && smartChoice.Mode == 0 && smartChoice.SelectGoal(SmartRenderGoal.Performance) && smartChoice.Mode == 4,
+    "non-recommended hardware does not disable quality or performance choices");
+Assert(smartChoice.SelectGoal(SmartRenderGoal.Custom) && smartChoice.SelectMode(2) && smartChoice.SelectMode(0),
+    "custom mode lets users override the recommendation and pick any route");
+smartChoice.SetRecommendation(SmartRenderAdvisor.Recommend(unknownMemoryGpu, true), SmartRenderGoal.Quality);
+Assert(smartChoice.Mode == 0 && smartChoice.CanConfigure && smartChoice.SelectGoal(SmartRenderGoal.Performance) && smartChoice.Mode == 4,
+    "unreported VRAM does not block either user-selected DLSS 5 goal");
+smartChoice.SetRecommendation(SmartRenderAdvisor.Recommend(capableGpu, false), SmartRenderGoal.Performance);
+Assert(smartChoice.Mode == 4 && smartChoice.CanConfigure && smartChoice.SelectGoal(SmartRenderGoal.Custom) && smartChoice.SelectMode(0),
+    "missing prerequisites are checked during setup instead of disabling route selection");
+smartChoice.UseManual();
+Assert(smartChoice.SelectGoal(SmartRenderGoal.Quality) && smartChoice.Mode == 0 &&
+    smartChoice.SelectGoal(SmartRenderGoal.Performance) && smartChoice.Mode == 4,
+    "manual fallback keeps both user-selected goals operable after GPU detection fails");
 const string fgIni = "[Log]\nLogToFile=auto\nLogLevel=auto\n[Menu]\nOverlayMenu=auto\nShortcutKey=auto\n[ProcessFilter]\nTargetProcessName=auto\n[FrameGen]\nEnabled=auto\nFGInput=auto\nFGOutput=auto";
 var safeFg = OptiInstaller.Configure(fgIni, "game.exe", false);
 Assert(safeFg.Contains("Enabled=false") && safeFg.Contains("FGInput=nofg") && safeFg.Contains("FGOutput=nofg"),

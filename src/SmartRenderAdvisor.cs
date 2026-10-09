@@ -4,7 +4,7 @@ using Mu.Compatibility;
 namespace AmdNrAssistant;
 
 public enum SmartRenderGoal { Quality, Performance, Custom }
-public enum SmartRenderAvailability { Ready, HardwareUnsupported, HardwareUnconfirmed, RequirementsMissing }
+public enum SmartRenderAvailability { Ready, HardwareUnsupported, HardwareUnconfirmed, RequirementsMissing, MemoryBelowRecommendation }
 
 public sealed record SmartRenderRecommendation(int QualityMode, string QualityReason,
     int PerformanceMode, string PerformanceReason, string HardwareLabel, string[] Notices,
@@ -40,16 +40,15 @@ public sealed class SmartRenderSelection
             if (Recommendation == null && !ManualWithoutDetection) return false;
             Goal = goal; Mode ??= 2; return true;
         }
-        if (Recommendation == null) return false;
-        var mode = SmartRenderAdvisor.RecommendedMode(goal, Recommendation);
-        if (mode == 2) return false;
-        Goal = goal; Mode = mode; return true;
+        if (Recommendation == null && !ManualWithoutDetection) return false;
+        Goal = goal;
+        Mode = goal == SmartRenderGoal.Quality ? 0 : 4;
+        return true;
     }
     public bool IsModeAvailable(int mode) => mode switch
     {
         2 => Recommendation != null || ManualWithoutDetection,
-        0 => ManualWithoutDetection || Recommendation?.QualityMode == 0,
-        4 => ManualWithoutDetection || Recommendation?.PerformanceMode == 4 || Recommendation?.QualityMode == 4,
+        0 or 4 => Recommendation != null || ManualWithoutDetection,
         _ => false
     };
     public bool SelectMode(int mode)
@@ -95,10 +94,12 @@ public static class SmartRenderAdvisor
         var modelCapacityFallback = amd && (vram is null or <= 0) && HasKnownHighVramModel(name);
         var highCapacity = vram >= 8 * 1024 || modelCapacityFallback;
         var modelEligible = amd && generation is >= 6 and <= 9;
-        var availability = known && (!modelEligible || vram is > 0 and < 8 * 1024)
+        var availability = known && !modelEligible
             ? SmartRenderAvailability.HardwareUnsupported
             : !known || (vram is null or <= 0) && !modelCapacityFallback
                 ? SmartRenderAvailability.HardwareUnconfirmed
+                : vram is > 0 and < 8 * 1024
+                    ? SmartRenderAvailability.MemoryBelowRecommendation
                 : qualityInstallAllowed || combinedInstallAllowed
                     ? SmartRenderAvailability.Ready
                     : SmartRenderAvailability.RequirementsMissing;
@@ -114,6 +115,7 @@ public static class SmartRenderAdvisor
         {
             SmartRenderAvailability.HardwareUnsupported => "当前检测到的显卡不支持开启 DLSS 5，可使用标准 OptiScaler。",
             SmartRenderAvailability.HardwareUnconfirmed => "未能确认显卡型号或显存，暂不推荐开启 DLSS 5。",
+            SmartRenderAvailability.MemoryBelowRecommendation => "显存低于 8 GB 建议值，默认推荐标准 OptiScaler；仍可自行尝试 DLSS 5。",
             _ => "神经渲染所需组件或游戏基础条件未通过，暂时无法开启 DLSS 5。"
         };
         var qualityMode = qualityCandidate ? 0 : 2;

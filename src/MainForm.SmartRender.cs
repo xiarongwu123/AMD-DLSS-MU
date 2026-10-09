@@ -141,22 +141,15 @@ public sealed partial class MainForm
                 dialog.ReportComponents();
                 var checks = await Task.Run(() =>
                 {
-                    var standard = GameManagement.Check(exe, true, false, 2);
                     var rx6000 = GameManagement.HasRx6000([gpu.Name]);
                     var hip = rx6000 ? HipRuntime.HasVersion72() : SmartRenderDiagnostics.HasHipRuntime();
                     // RX 6000 may proceed to the official HIP 7.2 setup before game configuration.
                     var hipCanBePrepared = rx6000 && !hip;
-                    return (Standard: standard,
-                        Quality: (hip || hipCanBePrepared) && !GameManagement.Check(exe, true, true, 0).Blocked,
+                    return (Quality: (hip || hipCanBePrepared) && !GameManagement.Check(exe, true, true, 0).Blocked,
                         Combined: (hip || hipCanBePrepared) && !GameManagement.Check(exe, true, true, 4).Blocked,
                         HipSetupPending: hipCanBePrepared);
                 }, cancellation.Token);
                 if (dialog.IsDisposed || cancellation.IsCancellationRequested) return;
-                if (checks.Standard.Blocked)
-                {
-                    dialog.SetFailure(string.Join(Environment.NewLine, checks.Standard.BlockingReasons), false);
-                    return;
-                }
                 dialog.SetResult(gpu, SmartRenderAdvisor.Recommend(gpu, checks.Quality, checks.Combined),
                     Screen.FromControl(this).Bounds.Size, checks.HipSetupPending);
             }

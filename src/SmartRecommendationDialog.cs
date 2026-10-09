@@ -211,28 +211,34 @@ internal sealed class SmartRecommendationDialog : Form
         {
             var rec = selection.Recommendation;
             var unsupported = rec?.Availability == SmartRenderAvailability.HardwareUnsupported;
-            var unavailable = rec != null && rec.QualityMode == 2 && rec.PerformanceMode == 2;
-            var hasAutomaticRoute = rec?.QualityMode == 0 || rec?.PerformanceMode == 4;
+            var notRecommended = rec != null && (selection.Mode switch
+            {
+                0 => rec.QualityMode != 0,
+                4 => rec.PerformanceMode != 4,
+                _ => false
+            });
             var custom = selection.ShowSchemeList;
             title.Text = checking ? T("正在检测", "Checking") : T("智能推荐", "Smart render");
             content.Visible = !checking && !hasFailure;
             waiting.Visible = checking; failed.Visible = hasFailure;
-            alert.Visible = unavailable || selection.ManualWithoutDetection;
-            alert.Text = unsupported ? T("当前显卡不支持开启 DLSS 5", "This GPU cannot enable DLSS 5") :
-                T("暂时无法开启 DLSS 5，请先确认显卡、HIP 与游戏条件。", "DLSS 5 unavailable. Check GPU, HIP and game prerequisites.");
-            gpuStatus.Text = unsupported ? T("不支持开启 DLSS 5", "DLSS 5 unsupported") :
+            alert.Visible = notRecommended || selection.ManualWithoutDetection;
+            alert.Text = unsupported ? T("当前型号不在已知适配范围；可选择方案，安装前会再检查。", "GPU outside the known range; setup will check again.") :
+                rec?.Availability == SmartRenderAvailability.MemoryBelowRecommendation ?
+                T("显存低于建议值；仍可自行尝试，效果请进游戏验证。", "VRAM is below the recommendation; you can still try.") :
+                T("当前未推荐 DLSS 5；仍可选择，配置前会检查所需条件。", "DLSS 5 is not recommended; setup checks prerequisites.");
+            gpuStatus.Text = unsupported ? T("型号待确认", "GPU model unconfirmed") :
                 selection.ManualWithoutDetection ? T("未完成检测", "Not checked") :
-                unavailable ? T("DLSS 5 暂不可用", "DLSS 5 unavailable") :
+                rec?.Availability == SmartRenderAvailability.MemoryBelowRecommendation ? T("低于建议显存", "Below suggested VRAM") :
+                notRecommended ? T("当前未推荐", "Not recommended") :
                 hipSetupPending ? T("需安装 HIP 7.2", "HIP 7.2 required") :
                 modelCapacityFallback ? T("按型号推荐", "Model-based recommendation") : T("基础检查已完成", "Basic checks complete");
             for (var i = 0; i < goals.Length; i++)
             {
                 var candidate = i == 0 ? rec?.QualityMode : rec?.PerformanceMode;
-                goals[i].Enabled = i == 2 ? rec != null || selection.ManualWithoutDetection : candidate is 0 or 4;
+                goals[i].Enabled = rec != null || selection.ManualWithoutDetection;
                 goals[i].IsSelected = selection.Goal == (SmartRenderGoal)i;
                 goals[i].Detail = i == 2 ? T("从下方列表自行选择", "Choose from the list") :
-                    goals[i].Enabled ? T("推荐 · ", "Recommended · ") + RouteName(candidate) :
-                    unsupported ? T("当前显卡不可用", "GPU unsupported") : T("当前不可用", "Unavailable");
+                    (candidate == (i == 0 ? 0 : 4) ? T("推荐 · ", "Recommended · ") : T("可尝试 · ", "Try · ")) + RouteName(i == 0 ? 0 : 4);
                 goals[i].Invalidate();
             }
             listHeading.Visible = listHint.Visible = listNote.Visible = custom;
@@ -241,18 +247,17 @@ internal sealed class SmartRecommendationDialog : Form
             {
                 SmartRenderGoal.Quality => T("画质优先已自动选用：", "Quality route: "),
                 SmartRenderGoal.Performance => T("帧率优先已自动选用：", "Performance route: "),
-                _ => hasAutomaticRoute ? T("该目标当前不可用。", "This goal is unavailable.") : T("画质优先与帧率优先不可用。", "Automatic routes are unavailable.")
+                _ => T("选择目标后自动选方案。", "Choose a goal to select a route.")
             };
-            summaryValue.Text = selection.Mode == 0 ? T("DLSS 5 神经渲染 · 模式一", "DLSS 5 neural · Mode 1") : selection.Mode.HasValue ? RouteName(selection.Mode) : hasAutomaticRoute
-                ? T("请选择其他目标或自定义。", "Choose another goal or Custom.")
-                : T("选择「自定义」可查看其他方案。", "Choose Custom for other routes.");
+            summaryValue.Text = selection.Mode == 0 ? T("DLSS 5 神经渲染 · 模式一", "DLSS 5 neural · Mode 1") :
+                selection.Mode.HasValue ? RouteName(selection.Mode) : T("请选择目标。", "Choose a goal.");
             int[] modes = [0, 4, 2];
             for (var i = 0; i < routes.Length; i++)
             {
                 routes[i].Visible = custom;
                 routes[i].Enabled = custom && selection.IsModeAvailable(modes[i]);
                 routes[i].IsSelected = selection.Mode == modes[i];
-                routes[i].Tail = !routes[i].Enabled ? T("不可用", "Unavailable") : routes[i].IsSelected ? T("✓ 已选", "✓ Selected") :
+                routes[i].Tail = routes[i].IsSelected ? T("✓ 已选", "✓ Selected") :
                     i == 0 ? T("画质方案", "Quality") : i == 1 ? T("帧率方案", "Performance") : T("可使用", "Available");
                 routes[i].Invalidate();
             }
@@ -260,7 +265,7 @@ internal sealed class SmartRecommendationDialog : Form
                 T("手动选择后，游戏内实际效果仍需验证。", "Verify the selected route in game.");
             configure.Enabled = previewOnly || selection.CanConfigure;
             configure.Text = previewOnly ? T("关闭预览", "Close preview") : selection.CanConfigure ? T("一键配置 · ", "Configure · ") + RouteName(selection.Mode) :
-                checking ? T("正在检测", "Checking") : hasAutomaticRoute ? T("请选择可用目标", "Choose an available goal") : T("当前无法开启 DLSS 5", "DLSS 5 unavailable");
+                checking ? T("正在检测", "Checking") : T("请选择目标", "Choose a goal");
             configure.Invalidate();
             LayoutPrototype();
         }
