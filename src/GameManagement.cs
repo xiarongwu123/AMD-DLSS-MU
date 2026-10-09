@@ -9,7 +9,10 @@ namespace AmdNrAssistant;
 public record ManagedFile(string Name, string Before, string After);
 public record GameRecord(string Exe, int Mode, string Version, DateTime InstalledUtc,
     string Phase, List<ManagedFile> Files);
-public record Compatibility(bool Blocked, string Summary, string[] Details);
+public record Compatibility(bool Blocked, string Summary, string[] Details)
+{
+    public string[] BlockingReasons { get; init; } = [];
+}
 
 public static class GameManagement
 {
@@ -235,29 +238,39 @@ public static class GameManagement
 
     public static Compatibility Check(string exe, bool checkConflicts = true, bool amdNeural = true, int neuralMode = 4)
     {
-        var details = new List<string>(); bool blocked = false;
-        try { Core.ValidateGame(exe); details.Add("EXE：Windows x64"); } catch (Exception e) { blocked = true; details.Add(e.Message); }
+        var details = new List<string>();
+        var blockingReasons = new List<string>();
+        try { Core.ValidateGame(exe); details.Add("EXE：Windows x64"); }
+        catch (Exception e) { details.Add(e.Message); blockingReasons.Add(e.Message); }
         var hardware = Hardware(); details.AddRange(hardware);
         if (amdNeural && NeuralGpuBlockReason(hardware, neuralMode) is { } gpuReason)
-        { blocked = true; details.Add(gpuReason); }
+        { details.Add(gpuReason); blockingReasons.Add(gpuReason); }
         if (amdNeural && HasRx6000(hardware))
             details.Add("RX 6000 系列需要 AMD HIP 7.2 运行时；请在上游安装器中确认依赖已满足，勿跳过缺失警告。");
-        if (amdNeural && OperatingSystem.IsWindows() && !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000)) { blocked = true; details.Add("当前运行时要求 Windows 11。"); }
+        if (amdNeural && OperatingSystem.IsWindows() && !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000))
+        { details.Add("当前运行时要求 Windows 11。"); blockingReasons.Add("当前运行时要求 Windows 11。"); }
         details.Add("驱动显示的是 Windows 驱动版本；未自动等同 Adrenalin 版本，最低要求需人工核对。");
         var dir = Path.GetDirectoryName(exe)!;
         var names = Directory.EnumerateFileSystemEntries(dir).Select(Path.GetFileName).ToArray();
-        if (names.Any(n => Regex.IsMatch(n ?? "", "easyanticheat|battleye|(^|_)eac|bedaisy|beclient", RegexOptions.IgnoreCase))) { blocked = true; details.Add("发现反作弊组件；不支持安装。"); }
+        if (names.Any(n => Regex.IsMatch(n ?? "", "easyanticheat|battleye|(^|_)eac|bedaisy|beclient", RegexOptions.IgnoreCase)))
+        { details.Add("发现反作弊组件；不支持安装。"); blockingReasons.Add("发现反作弊组件；不支持安装。"); }
         var proxy = Loaders.Where(n => File.Exists(Path.Combine(dir, n))).ToArray();
         var record = Read(exe);
         if (proxy.Length > 0) details.Add("发现插件/代理：" + string.Join(", ", proxy));
-        if (checkConflicts && proxy.Length > 0 && (record == null || record.Phase == "restored")) { blocked = true; details.Add("检测到旧安装或其他插件。点击“恢复配置”查看并备份移出候选文件后重试；未知组件请使用原安装器卸载。"); }
+        if (checkConflicts && proxy.Length > 0 && (record == null || record.Phase == "restored"))
+        {
+            const string reason = "检测到旧安装或其他插件。点击“恢复配置”查看并备份移出候选文件后重试；未知组件请使用原安装器卸载。";
+            details.Add(reason); blockingReasons.Add(reason);
+        }
         if (record is { Phase: not "restored" }) details.Add($"已记录：{ModeName(record.Mode)}，状态 {record.Phase}；切换前请恢复。");
         var evidence = names.Where(n => Regex.IsMatch(n ?? "", "d3d12|fidelityfx|fsr", RegexOptions.IgnoreCase)).ToArray();
         details.Add(evidence.Length > 0 ? "目录中发现 DX12/FSR 相关文件（不证明正在使用）：" + string.Join(", ", evidence) : "未找到 DX12/FSR 文件证据；可能静态链接或位于子目录。");
         details.Add(!amdNeural ? "OptiScaler 标准版：需要兼容的 DLSS/FSR/XeSS 输入；不代表 DLSS 5 神经渲染支持。" :
             neuralMode == 4 ? "组合方案使用 DLSS-NR 0.6.0；RX 6000 已开放但须安装 AMD HIP 7.2。游戏接口与实际效果仍需验证。" :
             "模式一使用 DLSS-NR 0.6.0；RX 6000 已开放但须安装 AMD HIP 7.2。请在 DX12 游戏中开启 FSR 并验证。");
-        return new(blocked, blocked ? "不支持当前安装条件" : "未验证：基础检查通过", details.ToArray());
+        var blocked = blockingReasons.Count > 0;
+        return new(blocked, blocked ? "不支持当前安装条件" : "未验证：基础检查通过", details.ToArray())
+        { BlockingReasons = blockingReasons.ToArray() };
     }
     // Only lines observed after monitoring starts in this process session are eligible evidence.
     static readonly Dictionary<string, (DateTime Start, long Offset)> Watch = new(StringComparer.OrdinalIgnoreCase);

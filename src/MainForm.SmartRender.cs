@@ -154,7 +154,7 @@ public sealed partial class MainForm
                 if (dialog.IsDisposed || cancellation.IsCancellationRequested) return;
                 if (checks.Standard.Blocked)
                 {
-                    dialog.SetFailure(checks.Standard.Summary, false);
+                    dialog.SetFailure(string.Join(Environment.NewLine, checks.Standard.BlockingReasons), false);
                     return;
                 }
                 dialog.SetResult(gpu, SmartRenderAdvisor.Recommend(gpu, checks.Quality, checks.Combined),

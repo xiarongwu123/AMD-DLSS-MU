@@ -327,9 +327,9 @@ internal sealed class SmartRecommendationDialog : Form
         Place(waitElapsed, 28, 126, inside, 25);
         Place(progress, 28, 175, inside, 6);
         Place(failTitle, 28, 35, inside, 34);
-        Place(failDetail, 28, 82, inside, 80);
-        Place(retry, 28, 190, 130, 40);
-        Place(manual, 170, 190, 175, 40);
+        Place(failDetail, 28, 82, inside, 115);
+        Place(retry, 28, 210, 130, 40);
+        Place(manual, 170, 210, 175, 40);
         using var actionFont = new Font("Microsoft YaHei", 13 * ScaleFactor, FontStyle.Bold, GraphicsUnit.Pixel);
         var actionWidth = Math.Max(194, TextRenderer.MeasureText(configure.Text, actionFont).Width / ScaleFactor + 40);
         Place(configure, width - 30 - actionWidth, 13, actionWidth, 40);

@@ -43,6 +43,15 @@ var root = Path.Combine(Path.GetTempPath(), "amd-management-tests-" + Guid.NewGu
 Directory.CreateDirectory(root);
 GameManagement.StorageOverride = Path.Combine(root, "records");
 var count = 0;
+var invalidGame = Game("invalid-game");
+var invalidCheck = GameManagement.Check(invalidGame, true, false, 2);
+Assert(invalidCheck.Blocked && invalidCheck.BlockingReasons.Any(reason => reason.Contains("Windows 程序")),
+    "smart check exposes the invalid game executable instead of a generic failure");
+File.WriteAllText(Path.Combine(Path.GetDirectoryName(invalidGame)!, "dxgi.dll"), "existing mod");
+var conflictCheck = GameManagement.Check(invalidGame, true, false, 2);
+Assert(conflictCheck.BlockingReasons.Length == 2 &&
+    conflictCheck.BlockingReasons.Any(reason => reason.Contains("旧安装或其他插件")),
+    "smart check preserves multiple exact blocking reasons");
 var capableGpu = new CompatibilityGpu("AMD Radeon RX 9070 XT", "AMD", 16 * 1024, "RDNA4", "known");
 Assert(SmartRenderAdvisor.Recommend(capableGpu, true).QualityMode == 0,
     "tested GPU family with enough VRAM can receive tentative neural quality recommendation");
