@@ -160,17 +160,20 @@ public sealed partial class MainForm
     {
         if (busy) return;
         if (!await RequireFeatureAsync("library.manage") || busy) return;
-        if (Directory.Exists(path)) { var exe = GameScanner.FindGameExe(path); if (exe == null) { SelectGameManually(this, EventArgs.Empty); return; } path = exe; }
+        var folderTitle = Directory.Exists(path) ? Path.GetFileName(Path.TrimEndingDirectorySeparator(path)) : null;
+        if (folderTitle != null) { var exe = GameScanner.FindGameExe(path); if (exe == null) { SelectGameManually(this, EventArgs.Empty); return; } path = exe; }
         try
         {
             path = Path.GetFullPath(path);
+            var displayTitle = folderTitle ?? Path.GetFileNameWithoutExtension(path);
+            path = GameManagement.ResolveGameExecutable(path);
             Core.ValidateGame(path);
             GameLibrary.AddManual(path);
             librarySearch.Clear();
             var game = libraryGames.FirstOrDefault(g => string.Equals(g.ExePath, path, StringComparison.OrdinalIgnoreCase));
             if (game == null)
             {
-                game = new GameCandidate { Title = Path.GetFileNameWithoutExtension(path), ExePath = path, InstallDirectory = Path.GetDirectoryName(path)! };
+                game = new GameCandidate { Title = displayTitle, ExePath = path, InstallDirectory = Path.GetDirectoryName(path)! };
                 libraryGames.Add(game);
                 telemetryMonitor?.SetGames(libraryGames);
                 games.Controls.Add(CreateGameCard(game));

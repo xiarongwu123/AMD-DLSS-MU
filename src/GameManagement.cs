@@ -16,6 +16,17 @@ public record Compatibility(bool Blocked, string Summary, string[] Details)
 
 public static class GameManagement
 {
+    // AssettoCorsa.exe starts the menu; acs.exe is the x64 game process that loads graphics mods.
+    public static string ResolveGameExecutable(string path)
+    {
+        if (!string.Equals(Path.GetFileName(path), "AssettoCorsa.exe", StringComparison.OrdinalIgnoreCase)) return path;
+        var game = Path.Combine(Path.GetDirectoryName(path)!, "acs.exe");
+        try { if (File.Exists(game)) { Core.ValidateGame(game); return game; } }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+        return path;
+    }
+
     // Storage IDs do not follow the current UI order; retain legacy recovery compatibility.
     public static string ModeName(int mode) => mode switch
     {

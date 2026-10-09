@@ -184,7 +184,7 @@ public static class GameScanner
         {
             token.ThrowIfCancellationRequested();
             if (!IsGameProduct(entry.Title)) continue;
-            var exe = entry.Exe ?? FindGameExe(entry.Directory);
+            var exe = entry.Exe is { } saved ? GameManagement.ResolveGameExecutable(saved) : FindGameExe(entry.Directory);
             if (exe != null && !found.ContainsKey(exe))
                 found[exe] = new GameCandidate { Title = entry.Title, ExePath = exe, InstallDirectory = entry.Directory };
         }
@@ -486,6 +486,9 @@ public static class GameScanner
 
     public static string? FindGameExe(string directory)
     {
+        var launcher = Path.Combine(directory, "AssettoCorsa.exe");
+        var assettoGame = GameManagement.ResolveGameExecutable(launcher);
+        if (!string.Equals(assettoGame, launcher, StringComparison.OrdinalIgnoreCase)) return assettoGame;
         var folderName = Path.GetFileName(
             Path.TrimEndingDirectorySeparator(directory));
 
@@ -1377,9 +1380,12 @@ public sealed partial class MainForm : Form
             var manualWarning = "";
             try
             {
-                foreach (var exe in GameLibrary.ReadManual().Where(File.Exists))
+                foreach (var saved in GameLibrary.ReadManual().Where(File.Exists))
+                {
+                    var exe = GameManagement.ResolveGameExecutable(saved);
                     if (!list.Any(g => string.Equals(g.ExePath, exe, StringComparison.OrdinalIgnoreCase)))
-                        list.Add(new GameCandidate { Title = Path.GetFileNameWithoutExtension(exe), ExePath = exe, InstallDirectory = Path.GetDirectoryName(exe)! });
+                        list.Add(new GameCandidate { Title = Path.GetFileNameWithoutExtension(saved), ExePath = exe, InstallDirectory = Path.GetDirectoryName(exe)! });
+                }
             }
             catch (IOException e) { manualWarning = "；" + e.Message; }
             libraryGames = list;

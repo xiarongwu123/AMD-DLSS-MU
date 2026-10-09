@@ -43,6 +43,21 @@ var root = Path.Combine(Path.GetTempPath(), "amd-management-tests-" + Guid.NewGu
 Directory.CreateDirectory(root);
 GameManagement.StorageOverride = Path.Combine(root, "records");
 var count = 0;
+var assettoDirectory = Path.Combine(root, "assettocorsa");
+Directory.CreateDirectory(assettoDirectory);
+var assettoLauncher = Path.Combine(assettoDirectory, "AssettoCorsa.exe");
+var assettoGame = Path.Combine(assettoDirectory, "acs.exe");
+File.WriteAllText(assettoLauncher, "launcher fixture");
+Assert(GameManagement.ResolveGameExecutable(assettoLauncher) == assettoLauncher,
+    "Assetto Corsa launcher stays selected when the x64 game is absent");
+var assettoPe = new byte[256];
+assettoPe[0] = 0x4d; assettoPe[1] = 0x5a;
+BitConverter.GetBytes(0x80).CopyTo(assettoPe, 0x3c);
+assettoPe[0x80] = 0x50; assettoPe[0x81] = 0x45;
+BitConverter.GetBytes((ushort)0x8664).CopyTo(assettoPe, 0x84);
+File.WriteAllBytes(assettoGame, assettoPe);
+Assert(GameManagement.ResolveGameExecutable(assettoLauncher) == assettoGame,
+    "Assetto Corsa launcher resolves to its x64 game executable");
 var invalidGame = Game("invalid-game");
 var invalidCheck = GameManagement.Check(invalidGame, true, false, 2);
 Assert(invalidCheck.Blocked && invalidCheck.BlockingReasons.Any(reason => reason.Contains("Windows 程序")),
