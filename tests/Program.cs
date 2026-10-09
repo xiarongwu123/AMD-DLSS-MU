@@ -58,6 +58,9 @@ BitConverter.GetBytes((ushort)0x8664).CopyTo(assettoPe, 0x84);
 File.WriteAllBytes(assettoGame, assettoPe);
 Assert(GameManagement.ResolveGameExecutable(assettoLauncher) == assettoGame,
     "Assetto Corsa launcher resolves to its x64 game executable");
+File.Delete(assettoLauncher);
+Assert(GameManagement.ResolveGameExecutable(assettoLauncher) == assettoLauncher,
+    "unrelated folders containing acs.exe do not become Assetto Corsa games");
 var invalidGame = Game("invalid-game");
 var invalidCheck = GameManagement.Check(invalidGame, true, false, 2);
 Assert(invalidCheck.Blocked && invalidCheck.BlockingReasons.Any(reason => reason.Contains("Windows 程序")),

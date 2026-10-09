@@ -19,7 +19,7 @@ public static class GameManagement
     // AssettoCorsa.exe starts the menu; acs.exe is the x64 game process that loads graphics mods.
     public static string ResolveGameExecutable(string path)
     {
-        if (!string.Equals(Path.GetFileName(path), "AssettoCorsa.exe", StringComparison.OrdinalIgnoreCase)) return path;
+        if (!string.Equals(Path.GetFileName(path), "AssettoCorsa.exe", StringComparison.OrdinalIgnoreCase) || !File.Exists(path)) return path;
         var game = Path.Combine(Path.GetDirectoryName(path)!, "acs.exe");
         try { if (File.Exists(game)) { Core.ValidateGame(game); return game; } }
         catch (IOException) { }
