@@ -41,6 +41,11 @@ if (args is ["verify-combined-install", var sourcePackage, var gameDirectory])
     if (!SmartRenderDiagnostics.Check(gameExe).Any(item => item.Title == "神经渲染模型组件" && item.Problem))
         throw new Exception("Combined diagnosis missed the absent model DLL");
     File.Copy(Path.Combine(sourcePackage, Core.DllName), Path.Combine(gameDirectory, Core.DllName));
+    var pass = Path.Combine(gameDirectory, "dlssnr_amd_pass1.dll");
+    File.WriteAllText(pass, "tampered");
+    if (!SmartRenderDiagnostics.Check(gameExe).Any(item => item.Title == "安装文件完整性" && item.Problem && item.Detail.Contains("dlssnr_amd_pass1.dll")))
+        throw new Exception("Combined diagnosis missed a modified runtime file");
+    File.Copy(Path.Combine(sourcePackage, "version.dll"), pass, true);
     GameManagement.Restore(gameExe);
     if (File.Exists(Path.Combine(gameDirectory, "dxgi.dll")) ||
         File.Exists(Path.Combine(gameDirectory, "OptiScaler", "libxess_fg.dll")) ||
@@ -56,6 +61,18 @@ if (args is ["verify-combined-install", var sourcePackage, var gameDirectory])
     if (!File.Exists(Path.Combine(existingDirectory, Core.DllName)) ||
         Core.Hash(Path.Combine(existingDirectory, Core.DllName)) != Core.BundledDllSha256)
         throw new Exception("Combined restore changed the game's existing model DLL");
+    var missingSource = Path.Combine(sourcePackage, "version.dll");
+    var heldSource = missingSource + ".audit-hold";
+    File.Move(missingSource, heldSource);
+    try
+    {
+        var rejected = false;
+        try { CombinedRenderInstaller.Install(gameExe, sourcePackage); }
+        catch (IOException) { rejected = true; }
+        if (!rejected || GameManagement.Read(gameExe)?.Phase != "restored")
+            throw new Exception("Incomplete package was not rejected before installation");
+    }
+    finally { File.Move(heldSource, missingSource); }
     Console.WriteLine("Combined install and restore verified.");
     return;
 }

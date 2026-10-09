@@ -157,8 +157,13 @@ public static class CombinedRenderInstaller
         }
         else sources.Add((neuralDll, Core.DllName));
         if (Directory.Exists(Path.Combine(root, "OptiScaler"))) throw new IOException("游戏已有 OptiScaler 文件夹，请先恢复或卸载旧方案。");
-        foreach (var (_, name) in sources)
+        if (sources.Select(f => f.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() != sources.Count)
+            throw new IOException("帧率优先安装包包含重复的目标文件。");
+        foreach (var (source, name) in sources)
         {
+            Core.RejectLinks(source);
+            if (!File.Exists(source) || new FileInfo(source).Length == 0)
+                throw new IOException("帧率优先安装包缺少组件：" + name);
             var path = Path.Combine(root, name.Replace('/', Path.DirectorySeparatorChar)); Core.RejectLinks(path);
             if (!GameManagement.IsTracked(name) || File.Exists(path) || Directory.Exists(path))
                 throw new IOException("目标目录存在冲突或无法跟踪：" + name);
@@ -174,6 +179,14 @@ public static class CombinedRenderInstaller
                 if (name == "OptiScaler.ini") File.WriteAllText(path, ini);
                 else { File.Copy(source, path, false); if (Core.Hash(source) != Core.Hash(path)) throw new IOException("组件复制校验失败：" + name); }
             }
+            foreach (var (source, name) in sources.Where(f => f.Name != "OptiScaler.ini"))
+            {
+                var installed = Path.Combine(root, name.Replace('/', Path.DirectorySeparatorChar));
+                if (!File.Exists(installed) || !string.Equals(Core.Hash(installed), Core.Hash(source), StringComparison.OrdinalIgnoreCase))
+                    throw new IOException("安装后组件校验失败，已回退本次安装：" + name);
+            }
+            if (!string.Equals(File.ReadAllText(Path.Combine(root, "OptiScaler.ini")), ini, StringComparison.Ordinal))
+                throw new IOException("安装后方案设置校验失败，已回退本次安装。");
             if (!string.Equals(Core.Hash(Path.Combine(root, Core.DllName)), Core.BundledDllSha256, StringComparison.OrdinalIgnoreCase))
                 throw new IOException("神经渲染 DLL 写入后校验失败，已回退本次安装。");
             GameManagement.Finish(exe, true);

@@ -140,6 +140,15 @@ public static class Core
         {
             return new InstallCheck(false, "游戏目录中的 nvngx_dlssnr.dll 不是已核验的 310.8.0.0 版本：" + error.Message, proxy, hasConfig, hasWeights);
         }
+        try
+        {
+            if (!string.Equals(Hash(dll), BundledDllSha256, StringComparison.OrdinalIgnoreCase))
+                return new InstallCheck(false, "游戏目录中的 nvngx_dlssnr.dll 与 MU 内置的已校验文件不一致；请先恢复配置，再重新安装。", proxy, hasConfig, hasWeights);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return new InstallCheck(false, "无法读取游戏目录中的 nvngx_dlssnr.dll：" + error.Message, proxy, hasConfig, hasWeights);
+        }
         if (!hasConfig || !hasWeights)
             return new InstallCheck(false, "官方安装器没有生成完整配置（缺少 dlssnr_on_amd.ini 或 dlssnr_on_amd_weights.bin）。请在安装器窗口中完成安装，并确认 DLL 版本为 310.8.0.0。", proxy, hasConfig, hasWeights);
         if (proxy == null)

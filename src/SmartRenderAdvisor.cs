@@ -146,6 +146,24 @@ public static class SmartRenderDiagnostics
             return items.ToArray();
         }
         items.Add(new("安装记录", "已找到这款游戏的安装记录。", false));
+        if (record.Mode is 2 or 4)
+        {
+            var changed = new List<string>();
+            foreach (var file in record.Files.Where(f => f.Before != f.After))
+            {
+                try
+                {
+                    var path = Path.Combine(directory, file.Name);
+                    Core.RejectLinks(path);
+                    if (!File.Exists(path) || !string.Equals(Core.Hash(path), file.After, StringComparison.OrdinalIgnoreCase))
+                        changed.Add(file.Name);
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                { changed.Add(file.Name); }
+            }
+            items.Add(new("安装文件完整性", changed.Count == 0 ? "MU 安装的文件与记录一致。" :
+                "以下文件缺失或已变化：" + string.Join("、", changed.Take(3)) + (changed.Count > 3 ? $" 等 {changed.Count} 个文件" : ""), changed.Count > 0));
+        }
         if (record.Mode == 0)
         {
             var rx6000 = GameManagement.HasRx6000(hardware);
@@ -159,9 +177,16 @@ public static class SmartRenderDiagnostics
                     !File.Exists(Path.Combine(directory, name))));
             if (File.Exists(Path.Combine(directory, Core.DllName)))
             {
-                try { Core.ValidateDll(Path.Combine(directory, Core.DllName));
-                    items.Add(new("神经渲染版本", "组件版本符合当前安装要求。", false)); }
-                catch (IOException) { items.Add(new("神经渲染版本", "组件版本不匹配，建议恢复后重新配置。", true)); }
+                try
+                {
+                    var dll = Path.Combine(directory, Core.DllName);
+                    Core.ValidateDll(dll);
+                    var correct = string.Equals(Core.Hash(dll), Core.BundledDllSha256, StringComparison.OrdinalIgnoreCase);
+                    items.Add(new("神经渲染版本", correct ? "组件版本符合当前安装要求。" :
+                        "组件与 MU 内置文件不一致，建议恢复后重新配置。", !correct));
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                { items.Add(new("神经渲染版本", "组件无法验证，建议退出游戏后重新排查。", true)); }
             }
         }
         else if (record.Mode == 2)
@@ -173,7 +198,8 @@ public static class SmartRenderDiagnostics
         }
         if (record.Mode == 4)
         {
-            foreach (var (name, label) in new[] { ("OptiScaler.ini", "方案设置"),
+            foreach (var (name, label) in new[] { ("dxgi.dll", "帧率方案加载组件"),
+                ("OptiScaler.ini", "方案设置"),
                 ("OptiScaler/libxess_fg.dll", "XeFG 组件") })
                 items.Add(new(label, File.Exists(Path.Combine(directory, name)) ? "已找到。" : "缺失，建议恢复后重新配置。",
                     !File.Exists(Path.Combine(directory, name))));
