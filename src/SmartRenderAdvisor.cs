@@ -61,10 +61,11 @@ public sealed class SmartRenderSelection
 
 public static class SmartRenderAdvisor
 {
-    // AMD lists every named RX 7900 XT/XTX/GRE model above the 8 GB recommendation threshold.
+    // AMD publishes RX 7700 XT (12 GB) and the named RX 7900 XT/XTX/GRE models
+    // above the 8 GB recommendation threshold.
     // Use the model only when dxdiag did not report dedicated memory; never replace a measured value.
     public static bool HasKnownHighVramModel(string name) =>
-        Regex.IsMatch(name, @"\bRX\s*7900\s*(?:XTX|XT|GRE)\b", RegexOptions.IgnoreCase);
+        Regex.IsMatch(name, @"\bRX\s*(?:7700\s*XT|7900\s*(?:XTX|XT|GRE))\b", RegexOptions.IgnoreCase);
 
     // Prefer a discrete RX card over an integrated adapter when dxdiag lists both.
     // This is still only a recommendation; the game may use another adapter.
@@ -105,7 +106,7 @@ public static class SmartRenderAdvisor
         var combinedCandidate = amd && generation is >= 6 and <= 9 && highCapacity && combinedInstallAllowed;
         var label = known ? name + (vram is > 0 ? $" · {vram / 1024d:0.#} GB" : "") : "显卡信息未读到";
         var notices = new List<string>();
-        if (modelCapacityFallback) notices.Add("显存未读到；仅根据 RX 7900 明确型号估计容量，实际显存仍需确认。");
+        if (modelCapacityFallback) notices.Add("显存未读到；仅根据 AMD 官方公布的明确型号估计容量，实际显存仍需确认。");
         else if (!known || vram is null or <= 0) notices.Add("部分显卡信息未读到，已采用保守推荐。");
         if (!qualityInstallAllowed && !combinedInstallAllowed) notices.Add("神经渲染安装条件未通过，可在一键排查中查看原因。");
         notices.Add("游戏的 DLSS / XeSS 入口与实际帧生成状态需进游戏确认。");
