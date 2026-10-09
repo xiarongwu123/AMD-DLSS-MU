@@ -61,6 +61,11 @@ public sealed class SmartRenderSelection
 
 public static class SmartRenderAdvisor
 {
+    // AMD lists every named RX 7900 XT/XTX/GRE model above the 8 GB recommendation threshold.
+    // Use the model only when dxdiag did not report dedicated memory; never replace a measured value.
+    public static bool HasKnownHighVramModel(string name) =>
+        Regex.IsMatch(name, @"\bRX\s*7900\s*(?:XTX|XT|GRE)\b", RegexOptions.IgnoreCase);
+
     // Prefer a discrete RX card over an integrated adapter when dxdiag lists both.
     // This is still only a recommendation; the game may use another adapter.
     public static CompatibilityGpu? SelectGpu(IReadOnlyList<CompatibilityGpu> gpus) =>
@@ -86,20 +91,22 @@ public static class SmartRenderAdvisor
         var series = Regex.Match(name, @"\bRX\s*(\d{4})\b", RegexOptions.IgnoreCase);
         var generation = series.Success ? int.Parse(series.Groups[1].Value) / 1000 : 0;
         var vram = gpu?.VramMb;
-        var highCapacity = vram >= 8 * 1024;
+        var modelCapacityFallback = amd && (vram is null or <= 0) && HasKnownHighVramModel(name);
+        var highCapacity = vram >= 8 * 1024 || modelCapacityFallback;
         var modelEligible = amd && generation is >= 6 and <= 9;
         var availability = known && (!modelEligible || vram is > 0 and < 8 * 1024)
             ? SmartRenderAvailability.HardwareUnsupported
-            : !known || vram is null or <= 0
+            : !known || (vram is null or <= 0) && !modelCapacityFallback
                 ? SmartRenderAvailability.HardwareUnconfirmed
                 : qualityInstallAllowed || combinedInstallAllowed
                     ? SmartRenderAvailability.Ready
                     : SmartRenderAvailability.RequirementsMissing;
         var qualityCandidate = amd && generation is >= 6 and <= 9 && highCapacity && qualityInstallAllowed;
-        var combinedCandidate = amd && generation is >= 6 and <= 9 && vram >= 8 * 1024 && combinedInstallAllowed;
+        var combinedCandidate = amd && generation is >= 6 and <= 9 && highCapacity && combinedInstallAllowed;
         var label = known ? name + (vram is > 0 ? $" · {vram / 1024d:0.#} GB" : "") : "显卡信息未读到";
         var notices = new List<string>();
-        if (!known || vram == null) notices.Add("部分显卡信息未读到，已采用保守推荐。");
+        if (modelCapacityFallback) notices.Add("显存未读到；仅根据 RX 7900 明确型号估计容量，实际显存仍需确认。");
+        else if (!known || vram is null or <= 0) notices.Add("部分显卡信息未读到，已采用保守推荐。");
         if (!qualityInstallAllowed && !combinedInstallAllowed) notices.Add("神经渲染安装条件未通过，可在一键排查中查看原因。");
         notices.Add("游戏的 DLSS / XeSS 入口与实际帧生成状态需进游戏确认。");
         var fallbackReason = availability switch

@@ -53,6 +53,21 @@ Assert(SmartRenderAdvisor.Recommend(experimentalGpu, true).QualityMode == 0,
     "RX 7000 can receive the updated neural quality route");
 Assert(SmartRenderAdvisor.Recommend(experimentalGpu, true).PerformanceMode == 4,
     "RX 7000 can receive the combined neural performance route");
+foreach (var name in new[] { "AMD Radeon RX 7900 XT", "AMD Radeon RX 7900 XTX", "AMD Radeon RX 7900 GRE" })
+{
+    var unreportedVram = new CompatibilityGpu(name, "AMD", null, "unknown", "known");
+    var recommendation = SmartRenderAdvisor.Recommend(unreportedVram, true);
+    Assert(recommendation.Availability == SmartRenderAvailability.Ready &&
+        recommendation.QualityMode == 0 && recommendation.PerformanceMode == 4 &&
+        recommendation.Notices.Any(n => n.Contains("显存未读到")),
+        name + " is not blocked solely because dxdiag omitted dedicated memory");
+}
+var measuredLow7900 = new CompatibilityGpu("AMD Radeon RX 7900 XTX", "AMD", 4096, "unknown", "known");
+Assert(SmartRenderAdvisor.Recommend(measuredLow7900, true).Availability == SmartRenderAvailability.HardwareUnsupported,
+    "a measured low memory value is not overwritten by the RX 7900 model fallback");
+var unknownMemoryGpu = new CompatibilityGpu("AMD Radeon RX 7700 XT", "AMD", null, "unknown", "known");
+Assert(SmartRenderAdvisor.Recommend(unknownMemoryGpu, true).Availability == SmartRenderAvailability.HardwareUnconfirmed,
+    "unverified GPU models still require measured memory");
 Assert(SmartRenderAdvisor.Recommend(capableGpu, false).QualityMode == 2,
     "missing neural prerequisites fall back to standard OptiScaler");
 Assert(SmartRenderAdvisor.Recommend(capableGpu, false).PerformanceMode == 2,

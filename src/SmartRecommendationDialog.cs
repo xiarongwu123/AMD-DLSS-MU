@@ -35,7 +35,7 @@ internal sealed class SmartRecommendationDialog : Form
     readonly ToolTip details = new();
     DateTime started;
     string stage = "";
-    bool checking = true, hasFailure, layingOut, hipSetupPending;
+    bool checking = true, hasFailure, layingOut, hipSetupPending, modelCapacityFallback;
     public event EventHandler? DetectionRequested;
     public SmartRenderGoal? SelectedGoal => selection.Goal;
     public int? SelectedMode => selection.Mode;
@@ -178,6 +178,9 @@ internal sealed class SmartRecommendationDialog : Form
     {
         StopChecking(); hasFailure = false;
         hipSetupPending = requiresHipSetup;
+        modelCapacityFallback = detected.VramMb is null or <= 0 &&
+            SmartRenderAdvisor.HasKnownHighVramModel(detected.Name) &&
+            recommendation.Availability == SmartRenderAvailability.Ready;
         selection.SetRecommendation(recommendation, initialGoal);
         gpu.Text = detected.Name;
         gpuDetail.Text = $"{display.Width} × {display.Height} · " + (detected.VramMb is > 0
@@ -220,7 +223,8 @@ internal sealed class SmartRecommendationDialog : Form
             gpuStatus.Text = unsupported ? T("不支持开启 DLSS 5", "DLSS 5 unsupported") :
                 selection.ManualWithoutDetection ? T("未完成检测", "Not checked") :
                 unavailable ? T("DLSS 5 暂不可用", "DLSS 5 unavailable") :
-                hipSetupPending ? T("需安装 HIP 7.2", "HIP 7.2 required") : T("基础检查已完成", "Basic checks complete");
+                hipSetupPending ? T("需安装 HIP 7.2", "HIP 7.2 required") :
+                modelCapacityFallback ? T("按型号推荐", "Model-based recommendation") : T("基础检查已完成", "Basic checks complete");
             for (var i = 0; i < goals.Length; i++)
             {
                 var candidate = i == 0 ? rec?.QualityMode : rec?.PerformanceMode;
