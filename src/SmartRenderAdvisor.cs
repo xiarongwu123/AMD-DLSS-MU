@@ -164,7 +164,7 @@ public static class SmartRenderDiagnostics
                 catch (IOException) { items.Add(new("神经渲染版本", "组件版本不匹配，建议恢复后重新配置。", true)); }
             }
         }
-        else if (record.Mode is 2 or 4)
+        else if (record.Mode == 2)
         {
             foreach (var (name, label) in new[] { ("OptiScaler.ini", "方案设置"),
                 ("libxess_fg.dll", "XeFG 组件"), ("amd_fidelityfx_framegeneration_dx12.dll", "FSR 帧生成组件") })
@@ -173,17 +173,32 @@ public static class SmartRenderDiagnostics
         }
         if (record.Mode == 4)
         {
+            foreach (var (name, label) in new[] { ("OptiScaler.ini", "方案设置"),
+                ("OptiScaler/libxess_fg.dll", "XeFG 组件") })
+                items.Add(new(label, File.Exists(Path.Combine(directory, name)) ? "已找到。" : "缺失，建议恢复后重新配置。",
+                    !File.Exists(Path.Combine(directory, name))));
             var rx6000 = GameManagement.HasRx6000(hardware);
             var hip = rx6000 ? HipRuntime.HasVersion72() : HasHipRuntime();
             items.Add(new("AMD HIP", hip ? (rx6000 ? "已找到 AMD HIP 7.2。" : "已找到 AMD HIP 运行组件。") :
                 rx6000 ? "未找到 AMD HIP 7.2，请在一键配置时完成安装。" :
                 "未找到 AMD HIP 运行组件，请安装与显卡匹配的运行时。", !hip));
-            foreach (var (name, label) in new[] { ("dlssnr_amd_pass1.dll", "神经渲染运行组件 1"),
+            foreach (var (name, label) in new[] { (Core.DllName, "神经渲染模型组件"),
+                ("dlssnr_amd_pass1.dll", "神经渲染运行组件 1"),
                 ("dlssnr_amd_pass2.dll", "神经渲染运行组件 2"),
                 ("dlssnr_amd_pass3.dll", "神经渲染运行组件 3"),
-                ("dlssnr_on_amd_weights.bin", "模型数据"), ("OptiScaler/libxess_fg.dll", "XeFG 组件") })
+                ("dlssnr_on_amd_weights.bin", "模型数据") })
                 items.Add(new(label, File.Exists(Path.Combine(directory, name)) ? "已找到。" : "缺失，建议恢复后重新配置。",
                     !File.Exists(Path.Combine(directory, name))));
+            if (File.Exists(Path.Combine(directory, Core.DllName)))
+            {
+                try
+                {
+                    var correct = string.Equals(Core.Hash(Path.Combine(directory, Core.DllName)), Core.BundledDllSha256, StringComparison.OrdinalIgnoreCase);
+                    items.Add(new("神经渲染模型版本", correct ? "组件版本符合当前安装要求。" : "组件不匹配，建议恢复后重新配置。", !correct));
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                { items.Add(new("神经渲染模型版本", "组件无法读取，建议退出游戏后重新排查。", true)); }
+            }
         }
         var proxy = GameManagement.Loaders.Any(name => File.Exists(Path.Combine(directory, name)));
         items.Add(new("游戏加载组件", proxy ? "已找到游戏目录中的加载文件；是否被游戏加载需启动后验证。" :

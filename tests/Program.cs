@@ -29,12 +29,33 @@ if (args is ["verify-combined-install", var sourcePackage, var gameDirectory])
     File.WriteAllBytes(gameExe, pe);
     CombinedRenderInstaller.Install(gameExe, sourcePackage);
     if (GameManagement.Read(gameExe) is not { Mode: 4, Phase: "installed" } ||
-        !File.Exists(Path.Combine(gameDirectory, "OptiScaler", "libxess_fg.dll")))
+        !File.Exists(Path.Combine(gameDirectory, "OptiScaler", "libxess_fg.dll")) ||
+        !File.Exists(Path.Combine(gameDirectory, Core.DllName)) ||
+        Core.Hash(Path.Combine(gameDirectory, Core.DllName)) != Core.BundledDllSha256)
         throw new Exception("Combined install was not tracked");
+    var checks = SmartRenderDiagnostics.Check(gameExe);
+    if (checks.Any(item => (item.Title is "神经渲染模型组件" or "XeFG 组件") && item.Problem) ||
+        checks.Any(item => item.Title == "FSR 帧生成组件"))
+        throw new Exception("Combined diagnosis reported missing or unrelated components");
+    File.Delete(Path.Combine(gameDirectory, Core.DllName));
+    if (!SmartRenderDiagnostics.Check(gameExe).Any(item => item.Title == "神经渲染模型组件" && item.Problem))
+        throw new Exception("Combined diagnosis missed the absent model DLL");
+    File.Copy(Path.Combine(sourcePackage, Core.DllName), Path.Combine(gameDirectory, Core.DllName));
     GameManagement.Restore(gameExe);
     if (File.Exists(Path.Combine(gameDirectory, "dxgi.dll")) ||
-        File.Exists(Path.Combine(gameDirectory, "OptiScaler", "libxess_fg.dll")))
+        File.Exists(Path.Combine(gameDirectory, "OptiScaler", "libxess_fg.dll")) ||
+        File.Exists(Path.Combine(gameDirectory, Core.DllName)))
         throw new Exception("Combined restore did not remove installed files");
+    var existingDirectory = gameDirectory + "-existing";
+    Directory.CreateDirectory(existingDirectory);
+    var existingExe = Path.Combine(existingDirectory, "fixture.exe");
+    File.Copy(gameExe, existingExe);
+    File.Copy(Path.Combine(sourcePackage, Core.DllName), Path.Combine(existingDirectory, Core.DllName));
+    CombinedRenderInstaller.Install(existingExe, sourcePackage);
+    GameManagement.Restore(existingExe);
+    if (!File.Exists(Path.Combine(existingDirectory, Core.DllName)) ||
+        Core.Hash(Path.Combine(existingDirectory, Core.DllName)) != Core.BundledDllSha256)
+        throw new Exception("Combined restore changed the game's existing model DLL");
     Console.WriteLine("Combined install and restore verified.");
     return;
 }

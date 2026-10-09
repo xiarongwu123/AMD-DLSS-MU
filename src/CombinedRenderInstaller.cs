@@ -125,6 +125,7 @@ public static class CombinedRenderInstaller
         try
         {
             await Task.Run(() => ExtractVerified(baseFile, overlayFile, target), token);
+            Core.ExtractBundledDll(Path.Combine(target, Core.DllName));
             foreach (var name in new[] { "OptiScaler.dll", "version.dll", "OptiScaler/libxess_fg.dll" })
                 Core.CheckPe(Path.Combine(target, name.Replace('/', Path.DirectorySeparatorChar)), true);
             return target;
@@ -145,6 +146,16 @@ public static class CombinedRenderInstaller
         sources.Add((Path.Combine(package, "OptiScaler.ini"), "OptiScaler.ini"));
         for (var i = 1; i <= 3; i++) sources.Add((Path.Combine(package, "version.dll"), $"dlssnr_amd_pass{i}.dll"));
         sources.Add((Path.Combine(package, "dlssnr_on_amd_weights.bin"), "dlssnr_on_amd_weights.bin"));
+        var neuralDll = Path.Combine(package, Core.DllName);
+        if (!File.Exists(neuralDll) || !string.Equals(Core.Hash(neuralDll), Core.BundledDllSha256, StringComparison.OrdinalIgnoreCase))
+            throw new IOException("帧率优先安装包缺少已校验的 nvngx_dlssnr.dll，请重新准备组件。");
+        var existingNeuralDll = Path.Combine(root, Core.DllName);
+        if (File.Exists(existingNeuralDll))
+        {
+            if (!string.Equals(Core.Hash(existingNeuralDll), Core.BundledDllSha256, StringComparison.OrdinalIgnoreCase))
+                throw new IOException("游戏目录已有不同的 nvngx_dlssnr.dll；请先备份并移出冲突文件，MU 不会覆盖它。");
+        }
+        else sources.Add((neuralDll, Core.DllName));
         if (Directory.Exists(Path.Combine(root, "OptiScaler"))) throw new IOException("游戏已有 OptiScaler 文件夹，请先恢复或卸载旧方案。");
         foreach (var (_, name) in sources)
         {
@@ -163,6 +174,8 @@ public static class CombinedRenderInstaller
                 if (name == "OptiScaler.ini") File.WriteAllText(path, ini);
                 else { File.Copy(source, path, false); if (Core.Hash(source) != Core.Hash(path)) throw new IOException("组件复制校验失败：" + name); }
             }
+            if (!string.Equals(Core.Hash(Path.Combine(root, Core.DllName)), Core.BundledDllSha256, StringComparison.OrdinalIgnoreCase))
+                throw new IOException("神经渲染 DLL 写入后校验失败，已回退本次安装。");
             GameManagement.Finish(exe, true);
         }
         catch { GameManagement.Finish(exe, false); GameManagement.Restore(exe); throw; }
