@@ -11,34 +11,42 @@ public record UpdatePlan(string Target, int ProcessId, string OriginalHash, stri
 
 public static class AutoUpdate
 {
-    public const string Repository = "https://github.com/xiarongwu123/AMD-DLSS-MU";
+    public const string Website = "https://amd-dlss-mu.claude-api.cn";
+    public const string ManifestUrl = Website + "/release.json";
+    public const string DownloadUrl = Website + "/download/file";
     public const string AssetName = "AMD-DLSS-MU.exe";
     public static Version CurrentVersion => typeof(AutoUpdate).Assembly.GetName().Version ?? new Version(0, 0, 0);
     public static string DisplayVersion => CurrentVersion.ToString(3);
     public static AppRelease? Parse(string json, Version current)
     {
         using var document = JsonDocument.Parse(json); var root = document.RootElement;
-        if (root.GetProperty("draft").GetBoolean() || root.GetProperty("prerelease").GetBoolean()) return null;
-        var tag = root.GetProperty("tag_name").GetString() ?? "";
-        if (!Regex.IsMatch(tag, @"^v\d+\.\d+\.\d+$") || !Version.TryParse(tag[1..], out var version)) throw new IOException("发布版本格式不正确。");
+        var tag = root.GetProperty("tag").GetString() ?? "";
+        var siteVersion = root.GetProperty("version").GetString() ?? "";
+        if (!Regex.IsMatch(tag, @"^v\d+\.\d+\.\d+$") ||
+            !Version.TryParse(tag[1..], out var version) || siteVersion != tag[1..])
+            throw new IOException("官网发布版本格式不正确。");
+        if (root.GetProperty("channel").GetString() != "stable" ||
+            root.GetProperty("platform").GetString() != "Windows x64" ||
+            root.GetProperty("file").GetString() != AssetName)
+            throw new IOException("官网发布信息不是 Windows x64 正式版。");
         var normalized = new Version(current.Major, current.Minor, Math.Max(0, current.Build));
         if (version <= normalized) return null;
-        var assets = root.GetProperty("assets").EnumerateArray().Where(a => a.GetProperty("name").GetString() == AssetName).ToArray();
-        if (assets.Length != 1) throw new IOException("新版缺少唯一的 AMD-DLSS-MU.exe 资源。");
-        var asset = assets[0]; var url = asset.GetProperty("browser_download_url").GetString() ?? "";
-        if (url != Repository + "/releases/download/" + tag + "/" + AssetName) throw new IOException("发布文件不来自指定仓库。");
-        var digest = asset.TryGetProperty("digest", out var d) ? d.GetString() ?? "" : "";
-        if (!Regex.IsMatch(digest, "^sha256:[a-fA-F0-9]{64}$")) throw new IOException("新版缺少 GitHub SHA-256，暂不能自动更新。");
-        var size = asset.GetProperty("size").GetInt64();
+        var url = root.GetProperty("downloadUrl").GetString() ?? "";
+        if (url != DownloadUrl || root.GetProperty("delivery").GetString() != "server")
+            throw new IOException("官网更新文件必须由本站服务器提供。");
+        var digest = root.GetProperty("sha256").GetString() ?? "";
+        if (!Regex.IsMatch(digest, "^[a-fA-F0-9]{64}$")) throw new IOException("官网更新文件缺少有效 SHA-256。");
+        var size = root.GetProperty("size").GetInt64();
         if (size < 1024 || size > 1024L * 1024 * 1024) throw new IOException("新版文件大小异常。");
-        var notes = root.TryGetProperty("body", out var body) ? body.GetString() ?? "" : "";
-        return new(tag, url, digest[7..].ToLowerInvariant(), size, notes[..Math.Min(notes.Length, 4000)], DownloadSources.AssetApi("xiarongwu123/AMD-DLSS-MU", asset));
+        var notes = root.TryGetProperty("notes", out var body) ? body.GetString() ?? "" : "";
+        return new(tag, url, digest.ToLowerInvariant(), size, notes[..Math.Min(notes.Length, 4000)]);
     }
     public static async Task<AppRelease?> CheckAsync(CancellationToken token)
     {
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+        using var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
+            { Timeout = TimeSpan.FromSeconds(15) };
         client.DefaultRequestHeaders.UserAgent.ParseAdd("AMD-DLSS-MU/" + DisplayVersion);
-        return Parse(await client.GetStringAsync("https://api.github.com/repos/xiarongwu123/AMD-DLSS-MU/releases/latest", token), CurrentVersion);
+        return Parse(await client.GetStringAsync(ManifestUrl, token), CurrentVersion);
     }
     public static async Task<string> DownloadAsync(AppRelease release, IProgress<int> progress, CancellationToken token, Action<string>? status = null)
     {
@@ -47,7 +55,8 @@ public static class AutoUpdate
         var partial = Path.Combine(folder, "download.partial"); var result = Path.Combine(folder, "candidate.exe");
         try
         {
-            using var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+            using var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
+                { Timeout = Timeout.InfiniteTimeSpan };
             await DownloadSources.DownloadAsync(client, release.Url, release.ApiUrl, release.Sha256,
                 release.Size, partial, progress, token, status);
             DownloadSources.CurrentSession.Value?.Report("正在校验", 100, release.Size, "核对 EXE 架构与内部版本");

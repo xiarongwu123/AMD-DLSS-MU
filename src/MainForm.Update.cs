@@ -16,11 +16,12 @@ public sealed partial class MainForm
             var release = await AutoUpdate.CheckAsync(lifetime.Token);
             if (release == null)
             {
-                if (!automatic) MessageBox.Show(this, "当前已是最新正式版 v" + AutoUpdate.DisplayVersion, "检查更新");
+                if (!automatic) MessageBox.Show(this, "官网当前没有比本机 v" + AutoUpdate.DisplayVersion + " 更新的正式版。", "检查更新");
                 return;
             }
             if (busy || IsDisposed) return;
-            if (MessageBox.Show(this, $"发现新版 {release.Tag}（当前 v{AutoUpdate.DisplayVersion}）\n下载大小：{release.Size / 1024d / 1024:0.0} MB\n\n{release.Notes}\n\n现在下载？安装记录与配置会保留。", "启动器更新", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+            var notes = string.IsNullOrWhiteSpace(release.Notes) ? "" : "\n\n" + release.Notes;
+            if (MessageBox.Show(this, $"官网发现新版 {release.Tag}（当前 v{AutoUpdate.DisplayVersion}）\n下载大小：{release.Size / 1024d / 1024:0.0} MiB{notes}\n\n现在从官网下载？安装记录与配置会保留。", "启动器更新", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
             if (!await RequireFeatureAsync("app.update") || busy) return;
             busy = true;
             ownsBusy = true;
