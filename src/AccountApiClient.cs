@@ -11,6 +11,12 @@ public sealed record AccountSnapshot(string Id, string Email, MembershipInfo Mem
 public sealed record SessionResponse(string AccessToken, string RefreshToken, DateTimeOffset AccessTokenExpiresAt, AccountSnapshot Account);
 public sealed record CodeResponse(string Message, int RetryAfterSeconds);
 public sealed record AuthorizationResponse(bool Allowed, string? Reason, AccountSnapshot Account);
+public sealed record PurchasePlan(string Id, string Name, int DurationDays, long PriceMinor, string Currency);
+public sealed record PurchasePlans(PurchasePlan[] Items, bool PaymentsEnabled, string? PaymentMethod);
+public sealed record ManualPaymentDetails(string Method, string Instructions, string? QrImageUrl);
+public sealed record PurchaseOrder(string Id, string PlanId, string PlanName, int DurationDays, string Status,
+    long AmountMinor, string Currency, long CreatedAt, long? PaidAt, ManualPaymentDetails? Payment);
+public sealed record PurchaseOrderList(PurchaseOrder[] Items, bool PaymentsEnabled);
 
 public sealed class AccountApiException : Exception
 {
@@ -128,6 +134,21 @@ public sealed partial class AccountApiClient : IDisposable
         if (!response.Allowed) throw new AccountApiException(HttpStatusCode.Forbidden, "feature_denied", response.Reason ?? "当前账户没有此功能权限。", account: response.Account);
         return true;
     }
+
+    public Task<PurchasePlans> GetPurchasePlansAsync(CancellationToken token) =>
+        SendAsync<PurchasePlans>(HttpMethod.Get, "plans", null, null, token);
+
+    public Task<PurchaseOrder> CreatePurchaseOrderAsync(string planId, CancellationToken token) =>
+        AuthenticatedAsync<PurchaseOrder>(HttpMethod.Post, "orders", new { planId }, token);
+
+    public Task<PurchaseOrder> GetPurchaseOrderAsync(string orderId, CancellationToken token) =>
+        AuthenticatedAsync<PurchaseOrder>(HttpMethod.Get, "orders/" + Uri.EscapeDataString(orderId), null, token);
+
+    public Task SubmitPurchaseForReviewAsync(string orderId, CancellationToken token) =>
+        AuthenticatedAsync<object?>(HttpMethod.Post, "orders/" + Uri.EscapeDataString(orderId) + "/review", null, token);
+
+    public Task<PurchaseOrderList> GetPurchaseOrdersAsync(CancellationToken token) =>
+        AuthenticatedAsync<PurchaseOrderList>(HttpMethod.Get, "orders", null, token);
 
     async Task<T> AuthenticatedAsync<T>(HttpMethod method, string route, object? body, CancellationToken token)
     {

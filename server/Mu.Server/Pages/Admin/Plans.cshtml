@@ -2,7 +2,7 @@
 @model Mu.Server.Pages.Admin.PlansModel
 @{ ViewData["Title"] = "会员套餐"; }
 <h1>会员套餐</h1>
-<p class="muted">购买入口关闭。保存或上架套餐不会启用收款。既有订单使用创建时保存的价格，不随套餐修改变化。</p>
+<p class="muted">上架套餐不会单独启用收款。服务端还须配置人工收款信息并开放至少一项 Pro 权益。既有订单使用创建时保存的价格，不随套餐修改变化。</p>
 <div asp-validation-summary="All" role="alert"></div>
 <section class="card"><h2>新增套餐</h2>
     <form method="post" class="row">

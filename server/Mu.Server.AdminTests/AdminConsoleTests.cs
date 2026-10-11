@@ -171,6 +171,40 @@ internal static class AdminConsoleTests
             var plan = await scope.ServiceProvider.GetRequiredService<AppDbContext>().Plans.SingleAsync();
             Check(plan.PriceMinor == 12345 && plan.DurationDays == 60 && plan.Enabled, "Plan edit persisted and invalid edit ignored");
         }
+        var paymentConfig = factory.Services.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
+        paymentConfig["ManualPayment:Enabled"] = "true";
+        paymentConfig["ManualPayment:Instructions"] = "Test payment instructions";
+        using (var buyer = factory.CreateClient(new() { BaseAddress = new("https://localhost"), AllowAutoRedirect = false }))
+        {
+            var buyerLogin = await buyer.PostAsJsonAsync("/api/v1/auth/login", new { email = UserEmail, password = Password });
+            var buyerSession = (await buyerLogin.Content.ReadFromJsonAsync<SessionResponse>())!;
+            buyer.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", buyerSession.AccessToken);
+            var request = await buyer.PostAsJsonAsync("/api/v1/orders", new { planId });
+            Check(request.IsSuccessStatusCode, "Client can request an enabled manual order");
+            var createdOrder = await request.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            var orderId = createdOrder.GetProperty("id").GetString()!;
+            Check(createdOrder.GetProperty("status").GetString() == "pending", "Client receives pending order and no instant entitlement");
+            Check((await buyer.PostAsync("/api/v1/orders/" + orderId + "/review", null)).StatusCode == HttpStatusCode.NoContent,
+                "Buyer can request manual payment review");
+            using (var reviewScope = factory.Services.CreateScope())
+                Check((await reviewScope.ServiceProvider.GetRequiredService<AppDbContext>().Orders.AsNoTracking().SingleAsync(x => x.Id == orderId)).Status == "review_requested",
+                    "Review request only updates order status");
+            var confirmation = new Dictionary<string, string> { ["OrderId"] = orderId,
+                ["PaymentReference"] = "verified-receipt-001", ["Reason"] = "verified on payment platform", ["ReceiptVerified"] = "true" };
+            Check((await Post(client, "/admin/orders?handler=Confirm", confirmation)).StatusCode == HttpStatusCode.BadRequest,
+                "Manual confirmation requires administrator CSRF token");
+            Check((await Form(client, "/admin/orders", "Confirm", confirmation)).StatusCode == HttpStatusCode.Redirect,
+                "Administrator confirms actual receipt through form");
+            Check((await Form(client, "/admin/orders", "Confirm", confirmation)).StatusCode == HttpStatusCode.OK,
+                "Repeated administrator confirmation is rejected");
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Check((await db.Orders.SingleAsync(x => x.Id == orderId)).Status == "paid"
+                && (await db.Users.SingleAsync(x => x.Id == userId)).ProExpiresAt > DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                "Only confirmed order grants Pro");
+            Check(await db.MembershipChanges.CountAsync(x => x.Source == "manual-order:" + orderId) == 1,
+                "Repeated form submission cannot grant Pro twice");
+        }
         Check((await Form(client, "/admin/users", "Disable", new() { ["UserId"] = adminId, ["Reason"] = "test disable admin" })).StatusCode == HttpStatusCode.OK,
             "User management cannot disable an administrator");
 

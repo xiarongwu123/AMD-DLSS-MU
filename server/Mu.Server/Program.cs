@@ -38,6 +38,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<AccountManagementService>();
+builder.Services.AddScoped<ManualOrderService>();
 builder.Services.AddScoped<CompatibilityService>();
 builder.Services.AddScoped<WishService>();
 builder.Services.AddSingleton<IPaymentProvider, DisabledPaymentProvider>();

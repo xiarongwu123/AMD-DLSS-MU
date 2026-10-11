@@ -41,7 +41,7 @@ public sealed class PlansModel(AppDbContext db) : AdminPageModel
         });
         await db.SaveChangesAsync();
         await transaction.CommitAsync();
-        TempData["Notice"] = "套餐已保存。购买入口仍处于关闭状态。";
+        TempData["Notice"] = "套餐已保存。购买申请是否开放由服务端收款配置和 Pro 权益共同决定。";
         return RedirectToPage();
     }
 }

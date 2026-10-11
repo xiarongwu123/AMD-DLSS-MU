@@ -46,28 +46,37 @@ public static class ApiEndpoints
             return Results.Json(new { allowed, reason, account, code = allowed ? null : reason,
                 message = allowed ? null : reason == "pro_required" ? "此功能需要有效的 Pro 会员。" : "该功能暂不可用。" }, statusCode: allowed ? 200 : 403);
         });
-        api.MapGet("/plans", async (AppDbContext db) => Results.Ok(new
+        api.MapGet("/plans", async (AppDbContext db, ManualOrderService orders) => Results.Ok(new
         {
             items = await db.Plans.AsNoTracking().Where(x => x.Enabled).Select(x => new { x.Id, x.Name, x.DurationDays, x.PriceMinor, x.Currency }).ToArrayAsync(),
-            paymentsEnabled = false
+            paymentsEnabled = await orders.AvailableAsync(), paymentMethod = await orders.AvailableAsync() ? "manual" : null
         }));
-        authenticated.MapPost("/orders", async (CreateOrderRequest input, ClaimsPrincipal user, IPaymentProvider payments, CancellationToken ct) =>
+        authenticated.MapPost("/orders", async (CreateOrderRequest input, ClaimsPrincipal user, ManualOrderService orders, CancellationToken ct) =>
         {
-            // The only registered provider is disabled. No order or membership is mutated before a real provider exists.
-            return Results.Ok(await payments.CreateCheckoutAsync(new Order { UserId = UserId(user), PlanId = input.PlanId }, ct));
+            var order = await orders.CreateAsync(UserId(user), input.PlanId, ct);
+            return Results.Ok(new { order.Id, order.PlanId, order.PlanName, order.DurationDays, order.Status,
+                order.AmountMinor, order.Currency, order.CreatedAt, payment = orders.PaymentDetails });
         });
-        authenticated.MapGet("/orders", async (ClaimsPrincipal user, AppDbContext db) =>
+        authenticated.MapPost("/orders/{orderId}/review", async (string orderId, ClaimsPrincipal user, ManualOrderService orders, CancellationToken ct) =>
+        {
+            await orders.SubmitForReviewAsync(UserId(user), orderId, ct);
+            return Results.NoContent();
+        });
+        authenticated.MapGet("/orders", async (ClaimsPrincipal user, AppDbContext db, ManualOrderService orders) =>
         {
             var id = UserId(user);
             return Results.Ok(new { items = await db.Orders.AsNoTracking().Where(x => x.UserId == id).OrderByDescending(x => x.CreatedAt).Take(100)
-                .Select(x => new { x.Id, x.PlanId, x.PlanName, x.DurationDays, x.Status, x.AmountMinor, x.Currency, x.CreatedAt, x.PaidAt }).ToArrayAsync(), paymentsEnabled = false });
+                .Select(x => new { x.Id, x.PlanId, x.PlanName, x.DurationDays, x.Status, x.AmountMinor, x.Currency, x.CreatedAt, x.PaidAt }).ToArrayAsync(), paymentsEnabled = await orders.AvailableAsync() });
         });
-        authenticated.MapGet("/orders/{orderId}", async (string orderId, ClaimsPrincipal user, AppDbContext db) =>
+        authenticated.MapGet("/orders/{orderId}", async (string orderId, ClaimsPrincipal user, AppDbContext db, ManualOrderService orders) =>
         {
             var id = UserId(user);
             var order = await db.Orders.AsNoTracking().Where(x => x.Id == orderId && x.UserId == id)
                 .Select(x => new { x.Id, x.PlanId, x.PlanName, x.DurationDays, x.Status, x.AmountMinor, x.Currency, x.CreatedAt, x.PaidAt }).SingleOrDefaultAsync();
-            return order == null ? Results.NotFound(new ApiError("order_not_found", "订单不存在。")) : Results.Ok(order);
+            return order == null ? Results.NotFound(new ApiError("order_not_found", "订单不存在。"))
+                : Results.Ok(new { order.Id, order.PlanId, order.PlanName, order.DurationDays, order.Status,
+                    order.AmountMinor, order.Currency, order.CreatedAt, order.PaidAt,
+                    payment = (order.Status is "pending" or "review_requested") && await orders.AvailableAsync() ? orders.PaymentDetails : null });
         });
     }
 }

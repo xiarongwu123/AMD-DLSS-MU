@@ -43,6 +43,7 @@ sealed class Suite : IAsyncDisposable
         collection.AddSingleton<IVerificationEmailSender>(mailer);
         collection.AddScoped<AccountService>();
         collection.AddScoped<AccountManagementService>();
+        collection.AddScoped<ManualOrderService>();
         collection.AddScoped<CompatibilityService>();
         services = collection.BuildServiceProvider();
     }
@@ -201,6 +202,7 @@ sealed class Suite : IAsyncDisposable
         Assert((await Accounts(a => a.SnapshotAsync(userId))).Email == email, "account survives reopening database");
         Assert((await Accounts(a => a.SnapshotAsync(userId))).Features.Single(x => x.Key == "game.launch").Version == 3, "reinitialization preserves feature version and rules");
         assertions += await CompatibilityTests.RunAsync(services, clock, userId);
+        await VerifyManualOrdersAsync(userId);
         await Scope(async provider =>
         {
             var db = provider.GetRequiredService<AppDbContext>();
@@ -210,6 +212,55 @@ sealed class Suite : IAsyncDisposable
             throw new Exception("FAILED: future schema should be rejected");
         });
         Console.WriteLine($"PASS: {assertions} account service assertions with real SQLite, concurrency, identity hashing, token rotation, backup and schema migration.");
+    }
+
+    private async Task VerifyManualOrdersAsync(string userId)
+    {
+        const string planId = "manual-test-plan";
+        await Error(() => Scope(provider => provider.GetRequiredService<ManualOrderService>().CreateAsync(userId, planId)),
+            503, "payments_unavailable");
+        await Scope(provider => provider.GetRequiredService<AccountManagementService>().SetFeatureAsync(
+            "game.launch", true, "pro", "test paid benefit", "test-admin"));
+        await Scope(async provider =>
+        {
+            var db = provider.GetRequiredService<AppDbContext>();
+            db.Plans.Add(new Plan { Id = planId, Name = "测试会员", DurationDays = 30, PriceMinor = 1990, Enabled = true });
+            await db.SaveChangesAsync();
+        });
+        var config = services.GetRequiredService<IConfiguration>();
+        config["ManualPayment:Enabled"] = "true";
+        config["ManualPayment:Instructions"] = "测试环境收款信息";
+        var order = await Scope(provider => provider.GetRequiredService<ManualOrderService>().CreateAsync(userId, planId));
+        Assert(order.Status == "pending" && order.AmountMinor == 1990, "manual order snapshots amount without granting membership");
+        Assert((await Scope(provider => provider.GetRequiredService<ManualOrderService>().CreateAsync(userId, planId))).Id == order.Id,
+            "repeated purchase request reuses recent pending order");
+        Assert((await Accounts(a => a.SnapshotAsync(userId))).Membership.Tier == "standard", "pending order cannot unlock Pro");
+        await Scope(provider => provider.GetRequiredService<ManualOrderService>().SubmitForReviewAsync(userId, order.Id));
+        await Scope(provider => provider.GetRequiredService<ManualOrderService>().SubmitForReviewAsync(userId, order.Id));
+        Assert((await Accounts(a => a.SnapshotAsync(userId))).Membership.Tier == "standard", "self-reported payment cannot unlock Pro");
+        await Scope(async provider =>
+        {
+            var db = provider.GetRequiredService<AppDbContext>();
+            var plan = await db.Plans.SingleAsync(x => x.Id == planId);
+            plan.PriceMinor = 9990;
+            await db.SaveChangesAsync();
+        });
+        await Scope(provider => provider.GetRequiredService<ManualOrderService>().ConfirmAsync(
+            order.Id, "receipt-1234", "independently verified receipt", "test-admin"));
+        Assert((await Accounts(a => a.SnapshotAsync(userId))).Membership.Tier == "pro", "verified receipt grants Pro");
+        await Error(() => Scope(provider => provider.GetRequiredService<ManualOrderService>().ConfirmAsync(
+            order.Id, "receipt-1234", "repeat confirmation", "test-admin")), 409, "order_not_pending");
+        var second = await Scope(provider => provider.GetRequiredService<ManualOrderService>().CreateAsync(userId, planId));
+        await Error(() => Scope(provider => provider.GetRequiredService<ManualOrderService>().ConfirmAsync(
+            second.Id, "receipt-1234", "duplicate receipt", "test-admin")), 409, "reference_used");
+        await Scope(async provider =>
+        {
+            var db = provider.GetRequiredService<AppDbContext>();
+            Assert(await db.PaymentEvents.CountAsync() == 1 && await db.MembershipChanges.CountAsync(x => x.Source.StartsWith("manual-order:")) == 1,
+                "repeat or reused receipt cannot create duplicate entitlement");
+            Assert((await db.Orders.SingleAsync(x => x.Id == order.Id)).AmountMinor == 1990
+                && (await db.Orders.SingleAsync(x => x.Id == second.Id)).Status == "pending", "plan edits and failed confirmation preserve orders");
+        });
     }
 
     private async Task VerifyVersionOneUpgradeAsync()

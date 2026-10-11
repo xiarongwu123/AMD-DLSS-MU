@@ -227,7 +227,11 @@ public sealed class AccountService(AppDbContext db, UserManager<ApplicationUser>
         var pro = user.ProExpiresAt > Now;
         var features = await db.FeatureDefinitions.AsNoTracking().OrderBy(x => x.Key).ToListAsync();
         return new(user.Id, user.Email!, new(pro ? "pro" : "standard", user.ProExpiresAt is long expiry ? DateTimeOffset.FromUnixTimeSeconds(expiry) : null),
-            features.Select(f => new FeatureSnapshot(f.Key, f.Enabled, f.MinimumTier, f.Enabled && (f.MinimumTier == "standard" || pro && f.MinimumTier == "pro"), f.Version)).ToArray());
+            features.Select(f => new FeatureSnapshot(f.Key, f.Enabled, f.MinimumTier, f.Enabled && (f.MinimumTier == "standard" || pro && f.MinimumTier == "pro"), f.Version)).ToArray(),
+            config.GetValue<bool>("ManualPayment:Enabled") && !string.IsNullOrWhiteSpace(config["ManualPayment:Instructions"])
+                && features.Any(f => f.Enabled && f.MinimumTier == "pro")
+                && await db.Plans.AnyAsync(x => x.Enabled && x.DurationDays >= 1 && x.DurationDays <= 3650
+                    && x.PriceMinor > 0 && x.Currency == "CNY"));
     }
 
     private static ApiException InvalidSession() => new(401, "invalid_session", "登录已失效，请重新登录。");
