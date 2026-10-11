@@ -48,7 +48,7 @@ public sealed partial class MainForm
         int S(int value) => (int)Math.Round(value * DeviceDpi / 96d);
         var background = new ArtworkPanel("AmdNrAssistant.mu-account-art.png") { BackColor = Base, Radius = 1, ShowBorder = false, FocusX = .5f };
         var headline = new Label { Text = "MU 通行证\n连接你的游戏体验", ForeColor = Ink, Font = new Font(Font.FontFamily, 29, FontStyle.Bold), BackColor = Color.Transparent };
-        var description = new Label { Text = "登录 MU 账户后使用客户端功能。\n\n账户安全与会员状态统一管理。\n客户端需联网验证登录与功能权限。\n\nPro 付费服务暂未开放。", ForeColor = Muted, Font = new Font(Font.FontFamily, 12), BackColor = Color.Transparent };
+        var description = new Label { Text = "登录 MU 账户后使用客户端功能。\n\n账户安全与会员状态统一管理。\n客户端需联网验证登录与功能权限。\n\nPro 购买流程可在本预览版中体验。", ForeColor = Muted, Font = new Font(Font.FontFamily, 12), BackColor = Color.Transparent };
         background.Controls.Add(headline); background.Controls.Add(description);
         var panel = new GlassPanel { BackColor = Color.Transparent, Radius = 22, Padding = Padding.Empty };
         var form = new TableLayoutPanel { AutoSize = false, ColumnCount = 1, RowCount = 0, Margin = Padding.Empty, BackColor = Color.Transparent };
@@ -137,7 +137,7 @@ public sealed partial class MainForm
                 if (await RequireFeatureAsync("library.manage")) { SwitchPage(0); if (libraryGames.Count == 0) await ScanGamesAsync(); }
             }, "正在验证账户…"), true);
             ButtonRow("刷新会员状态", async (_, _) => await RunAccountActionAsync(async () => { await accountClient.HeartbeatAsync(lifetime.Token); accountFeedback = "会员状态已更新。"; }, "正在刷新会员状态…"));
-            Row(new Label { Text = "Pro 购买暂未开放。开通方式与可用权益将以正式上线内容为准。", ForeColor = Muted }, 64);
+            Row(new Label { Text = "Pro 尚未开放购买；可体验购买流程预览。", ForeColor = Muted }, 44);
             ButtonRow("修改密码", (_, _) => Mode("password"));
             ButtonRow("退出登录", async (_, _) =>
             {
@@ -225,6 +225,7 @@ public sealed partial class MainForm
                 catch (Exception e) { feedback.Text = e.Message; }
             }; legal.Controls.Add(button);
         }
+        ButtonRow("查看 Pro 购买流程预览", (_, _) => { using var preview = new ProPreviewDialog(); preview.ShowDialog(this); });
         Row(legal, 32); Row(feedback, 48);
         panel.Controls.Add(form); background.Controls.Add(panel); accountPage.Controls.Add(background);
         renderedAccountMode = accountMode;

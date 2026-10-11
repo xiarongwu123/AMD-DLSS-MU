@@ -39,7 +39,7 @@ public sealed partial class MainForm
         using (var iconStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("AmdNrAssistant.AppIcon"))
             if (iconStream != null) { using var embeddedIcon = new Icon(iconStream); Icon = (Icon)embeddedIcon.Clone(); }
         ShowIcon = true;
-        Text = "AMD DLSS MU · 2.0 Preview"; Size = new Size(1440, 910); MinimumSize = new Size(1200, 740);
+        Text = "AMD DLSS MU · Pro 购买预览版"; Size = new Size(1440, 910); MinimumSize = new Size(1200, 740);
         Font = new Font("Microsoft YaHei UI", 10f, FontStyle.Regular); AutoScaleDimensions = new SizeF(96, 96); AutoScaleMode = AutoScaleMode.Dpi;
         StartPosition = FormStartPosition.CenterScreen; BackColor = Line; ForeColor = ink; Padding = new Padding(1);
         FormBorderStyle = FormBorderStyle.None;
