@@ -108,18 +108,25 @@ export function AccountPage({
               </div>
             </div>
             <p className="muted">
-              {state.online ? "账户已联网验证" : "连接暂时中断，请重新验证。"}
+              {state.online
+                ? "已联网验证"
+                : state.reconnecting
+                  ? "账户连接暂时波动，正在重试…"
+                  : "连接中断：重新联网验证后可使用功能。"}
             </p>
             <Button
               primary
               disabled={busy}
-              onClick={() => run("refreshAccount", {})}
+              onClick={() => run("enterHome", {})}
             >
-              刷新账户状态
+              {state.online ? "进入首页 →" : "重新连接账户服务"}
+            </Button>
+            <Button disabled={busy} onClick={() => run("refreshAccount", {})}>
+              刷新会员状态
             </Button>
             {state.account!.paymentsEnabled && (
               <Button onClick={() => setPurchase(true)}>
-                开通 Pro · 人工收款
+                申请 Pro · 人工核对到账
               </Button>
             )}
             <Button

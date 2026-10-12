@@ -132,12 +132,14 @@ public sealed partial class MainForm
         version = AutoUpdate.DisplayVersion, page = activePage switch { 1 => "library", 2 => "about", 3 => "downloads", 4 => "help", 5 => "settings", 6 => "account", 7 => "magpie", 8 => "wishes", _ => "home" },
         games = libraryGames.Select(g => new { id = ReactGameId(g.ExePath), g.Title,
             cover = ReactCover(g), state = GetLibraryState(g).ToString(), mode = GameManagement.Read(g.ExePath)?.Mode, g.SteamAppId }).ToArray(),
-        account = accountClient.Account, online = accountClient.IsOnline, viewAvailable = accountClient.CanKeepVerifiedView,
-        busy, scanning = !scan.Enabled, status = status.Text, accountFeedback,
+        account = accountClient.Account, online = accountClient.IsOnline, reconnecting = accountClient.IsReconnecting, viewAvailable = accountClient.CanKeepVerifiedView,
+        busy, scanning = !scan.Enabled, status = ReactAccountStatus(status.Text), accountFeedback = ReactAccountStatus(accountFeedback),
         settings = new { dark = darkMode, english, autoUpdate = autoCheckUpdates, presentMon = presentMonPath ?? "" },
         downloads = downloadRows.Select(r => new { id = r.Id, r.Title, r.State, r.Percent, r.Size, r.Detail, paused = r.Session.Paused }).ToArray(),
         magpieStatus = magpieStatus.Text
     };
+    string ReactAccountStatus(string text) => accountClient.IsOnline && text == "账户连接暂时波动，正在重试…"
+        ? "账户连接已恢复。" : text;
     readonly Dictionary<string, (DateTime Time, string? Data)> reactCoverCache = new();
     string? ReactCover(GameCandidate game)
     {
@@ -208,9 +210,9 @@ public sealed partial class MainForm
                 var page = Arg(args, "page") switch { "home" => 0, "library" => 1, "about" => 2, "downloads" => 3, "help" => 4, "settings" => 5, "account" => 6, "magpie" => 7, "wishes" => 8, _ => throw new IOException("未知页面。") };
                 if (!CanNavigateToPage(page)) throw new IOException("请先登录 MU 账户。");
                 SwitchPage(page); return null;
-            case "login": case "register": case "resetPassword": case "changePassword": case "logout": case "sendCode": case "refreshAccount":
-                if (reactAccountMutation) throw new IOException("账户请求正在处理中。");
-                reactAccountMutation = true;
+            case "login": case "register": case "resetPassword": case "changePassword": case "logout": case "sendCode": case "refreshAccount": case "enterHome":
+                if (reactAccountMutation || accountRequestBusy) throw new IOException("账户请求正在处理中。");
+                reactAccountMutation = true; accountRequestBusy = true;
                 try
                 {
                     switch (command)
@@ -221,11 +223,17 @@ public sealed partial class MainForm
                         case "resetPassword": await accountClient.ResetPasswordAsync(Arg(args,"email"),Arg(args,"code"),Arg(args,"password"),lifetime.Token); break;
                         case "changePassword": await accountClient.ChangePasswordAsync(Arg(args,"current"),Arg(args,"password"),lifetime.Token); break;
                         case "logout": if (busy || accountTransactionDepth > 0) throw new IOException("请先等待安装或恢复操作完成。"); await accountClient.LogoutAsync(lifetime.Token); SwitchPage(6); break;
-                        case "refreshAccount": await accountClient.HeartbeatAsync(lifetime.Token); break;
+                        case "refreshAccount": await accountClient.HeartbeatAsync(lifetime.Token); accountFeedback = "会员状态已更新。"; status.Text = accountFeedback; break;
+                        case "enterHome":
+                            await accountClient.HeartbeatAsync(lifetime.Token); accountFeedback = "账户状态已更新。"; status.Text = accountFeedback;
+                            await ReactAuthorize("library.manage"); SwitchPage(0);
+                            if (libraryGames.Count == 0) await ScanGamesAsync();
+                            break;
                     }
                     ApplyAccountGate(); return null;
                 }
-                finally { reactAccountMutation=false; }
+                catch (Exception error) { accountFeedback = AccountError(error); status.Text = accountFeedback; throw; }
+                finally { reactAccountMutation=false; accountRequestBusy=false; ApplyAccountGate(); }
             case "scan": await ScanGamesAsync(); return null;
             case "addGame":
                 await ReactAuthorize("library.manage"); if (busy || reactMutation) throw new IOException("请等待当前操作完成。");

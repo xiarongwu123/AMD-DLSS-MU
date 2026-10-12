@@ -39,6 +39,7 @@ export interface State {
   games: Game[];
   account: Account | null;
   online: boolean;
+  reconnecting?: boolean;
   viewAvailable: boolean;
   busy: boolean;
   scanning: boolean;
