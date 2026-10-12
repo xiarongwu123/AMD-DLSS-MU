@@ -196,9 +196,10 @@ export default function App() {
   const gameCard = (game: Game) => (
     <article
       key={game.id}
-      className={`game-card ${selected?.id === game.id ? "chosen" : ""}`}
+      className={`game-card ${selected?.id === game.id ? "chosen" : ""} ${state.page === "library" && state.games[0]?.id === game.id && (guideStep === 1 || guideStep === 4) ? "guide-active" : ""}`}
       tabIndex={0}
       aria-label={game.title}
+      data-guide="game-smart"
       onClick={() => setSelected(game)}
       onKeyDown={(e) => {
         if (e.key === "Enter" && e.target === e.currentTarget)
@@ -251,7 +252,7 @@ export default function App() {
               ? t("启动游戏", "Launch game")
               : t("开启 DLSS 5", "Enable DLSS 5")}
           </Button>
-          <div className="actions">
+          <div className="actions" data-guide="game-support">
             <Button disabled={busy} onClick={() => show(game, "diagnostics")}>
               <ScanLine size={17} />
               {t("排查", "Check")}
@@ -276,20 +277,6 @@ export default function App() {
               : t("未配置", "Not configured")}
           {game.mode != null && <span> · {modeName(game.mode)}</span>}
         </p>
-        {state.page === "library" && <>
-          <div className="game-quick-actions">
-            <Button data-guide="game-smart" disabled={busy} onClick={() => show(game, "smart")}>
-              <Sparkles size={15} />智能推荐
-            </Button>
-            <Button data-guide="game-community" primary disabled={busy} onClick={() => show(game, "community")}>
-              <UsersRound size={15} />玩家方案
-            </Button>
-          </div>
-          <div className="game-support-actions" data-guide="game-support">
-            <button disabled={busy} onClick={() => show(game, "diagnostics")}>一键排查</button>
-            <button disabled={busy} onClick={() => void run("restore", { gameId: game.id })}>恢复配置</button>
-          </div>
-        </>}
       </div>
     </article>
   );

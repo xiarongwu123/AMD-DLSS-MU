@@ -35,7 +35,7 @@ it("首次进入游戏库自动引导，跳过后重新打开不会自动播放"
   expect(screen.queryByRole("dialog", { name: "新手引导" })).toBeNull();
 });
 
-it("游戏卡片的玩家方案入口直达社区页", async () => {
+it("选择游戏后从游戏库顶部直达玩家方案", async () => {
   localStorage.setItem("mu-first-use-guide-v1", "done");
   const state = { ...emptyState, games: [{ id: "game-1", title: "游戏一", cover: null,
     state: "Unconfigured", mode: null, steamAppId: null }] };
@@ -45,8 +45,9 @@ it("游戏卡片的玩家方案入口直达社区页", async () => {
     return undefined;
   });
   render(<App />);
-  await waitFor(() => expect(document.querySelector('[data-guide="game-community"]')).not.toBeNull());
-  fireEvent.click(document.querySelector('[data-guide="game-community"]')!);
+  await waitFor(() => expect(document.querySelector('[data-guide="community-header"]')).not.toBeNull());
+  fireEvent.click(screen.getByLabelText("游戏一"));
+  fireEvent.click(document.querySelector('[data-guide="community-header"]')!);
   expect((await screen.findByRole("tab", { name: /玩家方案/ })).getAttribute("aria-selected")).toBe("true");
   expect(rpc).toHaveBeenCalledWith("presets", { gameId: "game-1" });
   expect(rpc).not.toHaveBeenCalledWith("recommend", { gameId: "game-1" });

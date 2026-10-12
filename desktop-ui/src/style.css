@@ -465,7 +465,8 @@ small {
   pointer-events: none;
 }
 .game-card:hover .game-overlay,
-.game-card:focus-within .game-overlay {
+.game-card:focus-within .game-overlay,
+.game-card.guide-active .game-overlay {
   opacity: 1;
   pointer-events: auto;
 }
@@ -497,11 +498,6 @@ small {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.game-quick-actions { display: flex; gap: 7px; margin-top: 15px; }
-.game-quick-actions .button { flex: 1; min-width: 0; padding: 9px 6px; font-size: 12px; display: flex; justify-content: center; align-items: center; gap: 5px; }
-.game-support-actions { display: flex; gap: 14px; margin-top: 9px; }
-.game-support-actions button { font-size: 11px; color: var(--muted); padding: 2px 0; }
-.game-support-actions button:hover { color: var(--acid); }
 .new-badge { display: inline-block; padding: 2px 5px; border-radius: 4px; background: var(--acid); color: var(--on-accent); font-size: 10px; font-weight: 800; }
 .add-game-card {
   border-radius: 19px;
