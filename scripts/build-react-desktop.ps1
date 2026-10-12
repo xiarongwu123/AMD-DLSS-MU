@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "2.2.0-react-preview.1",
+    [string]$Version = "2.2.0-react-preview.4",
     [string]$Output = "artifacts/react-desktop/win-x64"
 )
 $ErrorActionPreference = "Stop"
