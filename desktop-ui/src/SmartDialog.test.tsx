@@ -145,4 +145,27 @@ describe("推荐目标与真实配置命令", () => {
     );
     expect(complete).not.toHaveBeenCalled();
   });
+  it("社区入口按游戏列方案，选中后才应用对应分享", async () => {
+    const item = { id: "preset-1", gameKey: "steam:123", gameName: "游戏",
+      mode: 4, goal: "performance", vulkan: false, componentVersion: "v1",
+      title: "我的顺滑配置", description: "XeFG 设置", author: "玩家 A",
+      createdAt: 1, hasImage: false, isMine: false, settingCount: 1 };
+    vi.mocked(rpc).mockImplementation(async (command) => {
+      if (command === "recommend") return recommendation;
+      if (command === "presets") return { items: [item], total: 1 };
+      if (command === "preset") return { item, settings: [{ file: "OptiScaler.ini",
+        section: "XeFG", key: "InterpolationCount", value: "1" }], imageData: null };
+      return undefined;
+    });
+    const complete = vi.fn();
+    render(<SmartDialog game={game} state={emptyState} onClose={() => {}} onComplete={complete} />);
+    await screen.findByText("AMD RX 7900 XT");
+    fireEvent.click(screen.getByRole("button", { name: /看看朋友们怎么配/ }));
+    expect(screen.queryByRole("button", { name: "一键配置" })).toBeNull();
+    fireEvent.click(await screen.findByRole("button", { name: /我的顺滑配置/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "一键配置这套方案" }));
+    await waitFor(() => expect(rpc).toHaveBeenCalledWith("applyPreset",
+      { gameId: "test-game", id: "preset-1" }));
+    await waitFor(() => expect(complete).toHaveBeenCalledTimes(1));
+  });
 });

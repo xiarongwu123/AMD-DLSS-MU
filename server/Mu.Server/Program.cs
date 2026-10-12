@@ -41,6 +41,7 @@ builder.Services.AddScoped<AccountManagementService>();
 builder.Services.AddScoped<ManualOrderService>();
 builder.Services.AddScoped<CompatibilityService>();
 builder.Services.AddScoped<WishService>();
+builder.Services.AddScoped<CommunityPresetService>();
 builder.Services.AddSingleton<IPaymentProvider, DisabledPaymentProvider>();
 builder.Services.AddDbContextFactory<MailLogDbContext>(options => options.UseSqlite(new SqliteConnectionStringBuilder
 {
@@ -129,7 +130,8 @@ if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"
 app.UseForwardedHeaders();
 app.Use(async (context, next) =>
 {
-    if (context.Request.Path == "/api/v1/wishes" || context.Request.Path == "/api/v1/wishes/")
+    if (context.Request.Path == "/api/v1/wishes" || context.Request.Path == "/api/v1/wishes/"
+        || context.Request.Path == "/api/v1/presets" || context.Request.Path == "/api/v1/presets/")
     {
         var limit = context.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpMaxRequestBodySizeFeature>();
         if (limit is { IsReadOnly: false }) limit.MaxRequestBodySize = 384 * 1024;
@@ -191,6 +193,7 @@ app.MapAccountApi();
 app.MapCompatibilityApi();
 app.MapTelemetryApi();
 app.MapWishApi();
+app.MapCommunityPresets();
 app.MapRazorPages();
 await app.RunAsync();
 

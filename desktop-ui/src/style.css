@@ -739,7 +739,7 @@ small {
 }
 .goals {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 14px;
 }
 .goal {
@@ -788,6 +788,41 @@ small {
 .goal.selected strong {
   color: var(--acid);
 }
+.community-panel { margin-top: 22px; }
+.community-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.community-toolbar > div { flex: 1; min-width: 0; }
+.community-toolbar h3 { font-size: 19px; }
+.community-toolbar p, .community-hint { color: var(--muted); font-size: 12px; margin-top: 5px; }
+.community-toolbar .button { display: inline-flex; align-items: center; gap: 8px; }
+.community-empty { border: 1px solid var(--line); background: var(--surface); border-radius: 15px; padding: 28px; color: var(--muted); }
+.community-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.community-card { text-align: left; display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 15px; min-width: 0; }
+.community-card:hover, .community-card.selected { border-color: var(--acid); }
+.community-card-top { display: flex; align-items: center; gap: 9px; }
+.community-card strong { font-size: 16px; flex: 1; }
+.community-card em { color: var(--acid); font-size: 12px; font-style: normal; }
+.community-card > span:not(.community-card-top) { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.community-card small, .community-detail small { color: var(--muted); font-size: 11px; }
+.community-detail { border: 1px solid var(--line); background: var(--surface); border-radius: 16px; margin-top: 16px; padding: 18px; }
+.community-detail-head { display: flex; align-items: center; gap: 18px; }
+.community-detail-head > div { flex: 1; }
+.community-detail-head h3 { font-size: 18px; }
+.community-detail-head p { font-size: 13px; margin: 5px 0; }
+.community-detail > img { max-height: 250px; max-width: 100%; border-radius: 10px; margin-top: 16px; object-fit: contain; }
+.community-detail details { margin-top: 15px; color: var(--muted); font-size: 12px; }
+.community-detail summary { cursor: pointer; }
+.community-settings { margin-top: 8px; max-height: 175px; overflow-y: auto; }
+.community-settings > div { display: flex; justify-content: space-between; gap: 14px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.community-settings strong { color: var(--ink); font-weight: 500; }
+.community-upload-screen { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0, 0, 0, .76); }
+.community-upload { width: min(680px, 100%); max-height: calc(100dvh - 40px); overflow-y: auto; border: 1px solid var(--line); background: var(--surface); padding: 24px; border-radius: 18px; box-shadow: var(--shadow); }
+.community-upload > label { display: flex; flex-direction: column; gap: 7px; margin: 12px 0; font-size: 13px; }
+.community-upload input:not([type=file]), .community-upload textarea, .community-upload select { width: 100%; background: var(--base); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; }
+.community-upload .community-image { flex-direction: row; align-items: center; cursor: pointer; color: var(--acid); }
+.community-image input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.community-upload-preview { max-height: 160px; max-width: 100%; border-radius: 9px; object-fit: contain; display: block; margin: 8px 0 14px; }
+.community-summary { border: 1px solid var(--line); background: var(--base); border-radius: 11px; padding: 12px 15px; display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
+.community-summary strong { color: var(--acid); }
 .advice {
   font-size: 12px;
   color: var(--muted);
@@ -1464,6 +1499,8 @@ small {
   .goals {
     grid-template-columns: 1fr;
   }
+  .community-list { grid-template-columns: 1fr; }
+  .community-toolbar, .community-detail-head, .community-summary { flex-wrap: wrap; }
   .goal {
     min-height: 95px;
   }

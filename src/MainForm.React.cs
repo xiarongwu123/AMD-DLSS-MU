@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
+using Mu.Presets;
 using Mu.Wishes;
 
 namespace AmdNrAssistant;
@@ -159,6 +160,22 @@ public sealed partial class MainForm
         var id = Arg(args, "gameId");
         return libraryGames.FirstOrDefault(g => ReactGameId(g.ExePath) == id)?.ExePath ?? throw new IOException("游戏不在本机游戏库中，请重新扫描。");
     }
+    string ReactPresetGameKey(string exe)
+    {
+        var game = libraryGames.FirstOrDefault(g => g.ExePath.Equals(exe, StringComparison.OrdinalIgnoreCase))
+            ?? throw new IOException("游戏不在本机游戏库中。");
+        if (game.SteamAppId is { Length: > 0 } steam && steam.All(char.IsAsciiDigit)) return "steam:" + steam;
+        var title = game.Title.Trim().ToLowerInvariant();
+        return "title:" + Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(title)))[..24];
+    }
+    string ReactPresetGameName(string exe) => libraryGames.First(g => g.ExePath.Equals(exe, StringComparison.OrdinalIgnoreCase)).Title;
+    static string CurrentPresetVersion(int mode) => mode switch
+    {
+        0 => Core.ReviewedTag,
+        2 => "OptiScaler " + OptiInstaller.Version,
+        4 => "DLSS5 + XeFG 2X (v1.10.3.1/v10.6)",
+        _ => throw new IOException("未知图形方案。")
+    };
     static string Arg(JsonElement args, string name, string fallback = "") => args.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? fallback : fallback;
     static bool Flag(JsonElement args, string name, bool fallback = false) => args.TryGetProperty(name, out var value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False ? value.GetBoolean() : fallback;
     static int Number(JsonElement args, string name, int fallback = 0) => args.TryGetProperty(name, out var value) && value.TryGetInt32(out var result) ? result : fallback;
@@ -242,6 +259,75 @@ public sealed partial class MainForm
                 reactCoverCache.Clear(); libraryStateCache.Clear(); telemetryMonitor?.SetGames(libraryGames);
                 if (selectedGame == removedExe) selectedGame = null;
                 return null;
+            case "presetSnapshot":
+            {
+                await ReactAuthorize("configuration.edit");
+                var exe = ReactGame(args);
+                var (record, settings) = CommunityPresetConfig.Capture(exe);
+                return new { mode = record.Mode, componentVersion = record.Version,
+                    vulkan = CommunityPresetConfig.UsesVulkan(record),
+                    gameName = ReactPresetGameName(exe), settings };
+            }
+            case "presets":
+            {
+                var exe = ReactGame(args);
+                return await accountClient.GetPresetsAsync(ReactPresetGameKey(exe), lifetime.Token);
+            }
+            case "preset": return await accountClient.GetPresetAsync(Arg(args, "id"), lifetime.Token);
+            case "submitPreset":
+            {
+                await ReactAuthorize("configuration.edit");
+                var exe = ReactGame(args);
+                var (record, settings) = CommunityPresetConfig.Capture(exe);
+                var goal = Arg(args, "goal");
+                if (goal is not ("quality" or "performance" or "custom") ||
+                    (goal == "quality" && record.Mode != 0) || (goal == "performance" && record.Mode != 4))
+                    throw new IOException("分享类型与实际安装方案不匹配。");
+                return await accountClient.SubmitPresetAsync(new PresetSubmission(
+                    Arg(args, "submissionId"), ReactPresetGameKey(exe), ReactPresetGameName(exe),
+                    record.Mode, goal, CommunityPresetConfig.UsesVulkan(record),
+                    record.Version, Arg(args, "title"), Arg(args, "description"),
+                    Arg(args, "imageData") is { Length: > 0 } image ? image : null, settings), lifetime.Token);
+            }
+            case "applyPreset":
+            {
+                if (reactMutation || busy) throw new IOException("请等待当前操作完成。");
+                reactMutation = true; reactFailure = null;
+                try
+                {
+                    await ReactAuthorize("configuration.edit");
+                    var exe = ReactGame(args);
+                    var preset = await accountClient.GetPresetAsync(Arg(args, "id"), lifetime.Token);
+                    if (preset.Item.GameKey != ReactPresetGameKey(exe)) throw new IOException("该方案不属于当前游戏。");
+                    PresetRules.Validate(preset.Item.Mode, preset.Settings);
+                    if (!CurrentPresetVersion(preset.Item.Mode).Equals(preset.Item.ComponentVersion, StringComparison.OrdinalIgnoreCase))
+                        throw new IOException("分享方案的组件版本与当前 MU 不同，暂不能一键复用。");
+                    var installed = GameManagement.Read(exe);
+                    if (installed is { Phase: "installed" } &&
+                        (installed.Mode != preset.Item.Mode || !installed.Version.Equals(preset.Item.ComponentVersion, StringComparison.OrdinalIgnoreCase) ||
+                         installed.Mode == 2 && CommunityPresetConfig.UsesVulkan(installed) != preset.Item.Vulkan))
+                    {
+                        selectedGame = exe;
+                        await RestoreAsync();
+                        if (GameManagement.Read(exe) is { Phase: "installed" })
+                            throw new IOException("尚未恢复旧方案，当前配置未改变。");
+                        installed = GameManagement.Read(exe);
+                    }
+                    if (installed is not { Phase: "installed" })
+                    {
+                        selectedGame = exe;
+                        installMode.SelectedIndex = preset.Item.Mode switch { 0 => 0, 4 => 2, _ => 1 };
+                        optiVulkan = preset.Item.Vulkan; optiFgInput = "nofg";
+                        await InstallAsync();
+                        if (reactFailure != null) throw new IOException(reactFailure);
+                    }
+                    await Task.Run(() => CommunityPresetConfig.Apply(exe, preset), lifetime.Token);
+                    status.Text = "已应用社区方案：" + preset.Item.Title + "。效果请在游戏中确认。";
+                    libraryStateCache.Clear();
+                    return null;
+                }
+                finally { reactMutation = false; }
+            }
             case "scan": await ScanGamesAsync(); return null;
             case "addGame":
                 await ReactAuthorize("library.manage"); if (busy || reactMutation) throw new IOException("请等待当前操作完成。");

@@ -15,6 +15,8 @@
     <Compile Include="../src/CompatibilityEnvironment.cs" Link="CompatibilityEnvironment.cs"/>
     <Compile Include="../src/SmartRenderAdvisor.cs" Link="SmartRenderAdvisor.cs"/>
     <Compile Include="../src/LivePanel.cs" Link="LivePanel.cs"/>
+    <Compile Include="../src/CommunityPresetModels.cs" Link="CommunityPresetModels.cs"/>
+    <Compile Include="../src/CommunityPresetConfig.cs" Link="CommunityPresetConfig.cs"/>
     <PackageReference Include="SharpCompress" Version="0.48.1" />
   </ItemGroup>
 </Project>

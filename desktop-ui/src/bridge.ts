@@ -66,7 +66,7 @@ export async function rpc<T = void>(
         pending.delete(id);
         reject(new Error("操作仍未完成，请查看下载任务或诊断状态。"));
       },
-      command === "configure" || command === "update" || command === "magpie"
+      command === "configure" || command === "applyPreset" || command === "update" || command === "magpie"
         ? 3600000
         : 120000,
     );
@@ -165,5 +165,21 @@ async function preview(
     ];
   if (command === "wishes")
     return { items: [], total: 0, page: 1, pageSize: 20, counts: {} };
+  if (command === "presets")
+    return { items: [previewPreset], total: 1 };
+  if (command === "preset")
+    return { item: previewPreset, imageData: null, settings: [
+      { file: "OptiScaler.ini", section: "DlssNr", key: "Quality", value: "1" },
+      { file: "OptiScaler.ini", section: "XeFG", key: "InterpolationCount", value: "1" },
+    ] };
+  if (command === "presetSnapshot")
+    return { mode: 4, componentVersion: "预览示例", vulkan: false, gameName: "我的游戏",
+      settings: [{ file: "OptiScaler.ini", section: "XeFG", key: "InterpolationCount", value: "1" }] };
   throw new Error("这是界面预览；请在 Windows 客户端中测试真实功能。");
 }
+const previewPreset = {
+  id: "preview-preset", gameKey: "title:PREVIEW", gameName: "我的游戏",
+  mode: 4, goal: "performance", vulkan: false, componentVersion: "预览示例",
+  title: "预览示例 · 流畅设置", description: "展示列表与详情的样式，非真实玩家方案。",
+  author: "预览数据", createdAt: 0, hasImage: false, isMine: false, settingCount: 2,
+};

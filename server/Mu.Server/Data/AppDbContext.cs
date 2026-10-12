@@ -20,6 +20,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     public DbSet<WishEntry> Wishes => Set<WishEntry>();
     public DbSet<WishVoteEntry> WishVotes => Set<WishVoteEntry>();
     public DbSet<WishCommentEntry> WishComments => Set<WishCommentEntry>();
+    public DbSet<CommunityPresetEntry> CommunityPresets => Set<CommunityPresetEntry>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -33,6 +34,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
         builder.Entity<WishCommentEntry>().HasIndex(x => new { x.WishId, x.CreatedAt });
         builder.Entity<WishCommentEntry>().HasOne<WishEntry>().WithMany().HasForeignKey(x => x.WishId).OnDelete(DeleteBehavior.Cascade);
         builder.Entity<WishCommentEntry>().HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<CommunityPresetEntry>().HasIndex(x => new { x.UserId, x.SubmissionId }).IsUnique();
+        builder.Entity<CommunityPresetEntry>().HasIndex(x => new { x.GameKey, x.CreatedAt });
+        builder.Entity<CommunityPresetEntry>().HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
         builder.Entity<ApplicationUser>().HasIndex(x => x.NormalizedEmail).IsUnique();
         builder.Entity<AuthSession>().HasIndex(x => x.AccessHash).IsUnique();
         builder.Entity<AuthSession>().HasIndex(x => x.RefreshHash).IsUnique();

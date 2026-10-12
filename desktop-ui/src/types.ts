@@ -9,6 +9,44 @@ export type Page =
   | "account"
   | "about";
 export type Goal = "quality" | "performance" | "custom";
+export interface PresetSetting {
+  file: string;
+  section: string;
+  key: string;
+  value: string;
+}
+export interface CommunityPreset {
+  id: string;
+  gameKey: string;
+  gameName: string;
+  mode: number;
+  goal: Goal;
+  vulkan: boolean;
+  componentVersion: string;
+  title: string;
+  description: string;
+  author: string;
+  createdAt: number;
+  hasImage: boolean;
+  isMine: boolean;
+  settingCount: number;
+}
+export interface CommunityPresetDetail {
+  item: CommunityPreset;
+  settings: PresetSetting[];
+  imageData: string | null;
+}
+export interface CommunityPresetList {
+  items: CommunityPreset[];
+  total: number;
+}
+export interface CommunityPresetSnapshot {
+  mode: number;
+  componentVersion: string;
+  vulkan: boolean;
+  gameName: string;
+  settings: PresetSetting[];
+}
 export interface Game {
   id: string;
   title: string;

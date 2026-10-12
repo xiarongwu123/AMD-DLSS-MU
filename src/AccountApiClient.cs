@@ -269,6 +269,7 @@ public sealed partial class AccountApiClient : IDisposable
     static string ResponseError(HttpStatusCode status, string route) => status switch
     {
         HttpStatusCode.NotFound when route.StartsWith("wishes", StringComparison.Ordinal) => "许愿池服务尚未上线，请稍后再试（HTTP 404）。",
+        HttpStatusCode.NotFound when route.StartsWith("presets", StringComparison.Ordinal) => "社区方案后台尚未更新，请稍后再试（HTTP 404）。",
         HttpStatusCode.NotFound => "请求的服务接口不存在（HTTP 404），请检查客户端版本。",
         HttpStatusCode.Unauthorized => "登录已失效，请重新登录（HTTP 401）。",
         HttpStatusCode.Forbidden => "服务拒绝了此请求（HTTP 403）。",

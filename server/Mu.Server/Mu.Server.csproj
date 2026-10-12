@@ -8,6 +8,7 @@
     <Compile Include="../../src/CompatibilityModels.cs" Link="CompatibilityModels.cs" />
     <Compile Include="../../src/TelemetryModels.cs" Link="TelemetryModels.cs" />
     <Compile Include="../../src/WishModels.cs" Link="WishModels.cs" />
+    <Compile Include="../../src/CommunityPresetModels.cs" Link="CommunityPresetModels.cs" />
     <EmbeddedResource Include="Data/Catalog/steam-games.json" />
     <EmbeddedResource Include="Data/Catalog/technology-references.json" Condition="Exists('Data/Catalog/technology-references.json')" />
     <EmbeddedResource Include="Data/Catalog/steam-requirements.json" Condition="Exists('Data/Catalog/steam-requirements.json')" />

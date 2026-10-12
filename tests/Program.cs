@@ -1,5 +1,6 @@
 using AmdNrAssistant;
 using Mu.Compatibility;
+using Mu.Presets;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -81,6 +82,35 @@ var root = Path.Combine(Path.GetTempPath(), "amd-management-tests-" + Guid.NewGu
 Directory.CreateDirectory(root);
 GameManagement.StorageOverride = Path.Combine(root, "records");
 var count = 0;
+var sharedIni = "[ProcessFilter]\nTargetProcessName=private.exe\n[DlssNr]\nQuality=1\n[FrameGen]\nEnabled=true\n[XeFG]\nInterpolationCount=1\n";
+var sharedSettings = CommunityPresetConfig.ReadFromText(4, sharedIni);
+Assert(sharedSettings.Length == 3 && sharedSettings.All(s => s.Key != "TargetProcessName"),
+    "shared preset excludes local process name");
+var patchedIni = CommunityPresetConfig.Patch(4, sharedIni,
+    [new PresetSetting("OptiScaler.ini", "XeFG", "InterpolationCount", "2")]);
+Assert(patchedIni.Contains("InterpolationCount=2") && patchedIni.Contains("TargetProcessName=private.exe"),
+    "shared preset patches the allowed setting without changing local process name");
+var neuralSettings = CommunityPresetConfig.ReadFromText(0,
+    "[DlssNrOnAmd]\nEnabled=1\nScale=0.03125\nHipDevice=-1\nUseFsrInputs=1\n");
+Assert(neuralSettings.Length == 3 && neuralSettings.All(s => s.Key != "HipDevice"),
+    "neural preset excludes machine-specific HIP device");
+var vulkanRecord = new GameRecord("game.exe", 2, "OptiScaler 0.9.4", DateTime.UtcNow, "installed",
+    [new ManagedFile("winmm.dll", "", "")]);
+Assert(CommunityPresetConfig.UsesVulkan(vulkanRecord) &&
+    !CommunityPresetConfig.UsesVulkan(vulkanRecord with { Files = [new ManagedFile("dxgi.dll", "", "")] }),
+    "community preset identifies the installed Vulkan loader");
+try
+{
+    CommunityPresetConfig.Patch(4, sharedIni,
+        [new PresetSetting("OptiScaler.ini", "ProcessFilter", "TargetProcessName", "other.exe")]);
+    throw new Exception("Unsafe community setting accepted");
+}
+catch (InvalidDataException) { count++; }
+if (args is ["verify-presets"])
+{
+    Console.WriteLine($"PASS: {count} community preset config assertions.");
+    return;
+}
 var assettoDirectory = Path.Combine(root, "assettocorsa");
 Directory.CreateDirectory(assettoDirectory);
 var assettoLauncher = Path.Combine(assettoDirectory, "AssettoCorsa.exe");

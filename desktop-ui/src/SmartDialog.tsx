@@ -9,6 +9,7 @@ import {
 import { rpc, subscribe } from "./bridge";
 import { Button, Modal, Loading, Progress } from "./components";
 import type { Game, Goal, Recommendation, Check, State } from "./types";
+import { CommunityPanel } from "./CommunityPanel";
 export const modeName = (mode: number) =>
   mode === 0
     ? "DLSS 5 神经渲染（模式一）"
@@ -29,7 +30,7 @@ export function SmartDialog({
   onClose: () => void;
   onComplete: () => void;
 }) {
-  const [goal, setGoal] = useState<Goal>("quality"),
+  const [goal, setGoal] = useState<Goal | "community">("quality"),
     [custom, setCustom] = useState(0),
     [result, setResult] = useState<Recommendation | null>(null),
     [checking, setChecking] = useState(true),
@@ -38,7 +39,7 @@ export function SmartDialog({
     [working, setWorking] = useState(false),
     [vulkan, setVulkan] = useState(false),
     [fgInput, setFgInput] = useState("nofg");
-  const mode = selectedMode(goal, custom);
+  const mode = selectedMode(goal === "community" ? "custom" : goal, custom);
   const detect = useCallback(async () => {
     setChecking(true);
     setError("");
@@ -95,7 +96,7 @@ export function SmartDialog({
           <Button disabled={working} onClick={close}>
             返回游戏库
           </Button>
-          <Button
+          {goal !== "community" && <Button
             primary
             disabled={
               checking ||
@@ -110,7 +111,7 @@ export function SmartDialog({
               : game.state === "Configured"
                 ? "请先恢复再切换"
                 : "一键配置"}
-          </Button>
+          </Button>}
         </>
       }
     >
@@ -146,6 +147,7 @@ export function SmartDialog({
                 ["quality", "画质优先", "DLSS 5 神经渲染", "更清晰的画面"],
                 ["performance", "帧率优先", "DLSS 5 + XeFG 2X", "更流畅的体验"],
                 ["custom", "自定义", "", "自己选择方案"],
+                ["community", "看看朋友们怎么配", "", "查看和分享游戏配置"],
               ] as const
             ).map(([key, title, route, note]) => (
               <button
@@ -214,7 +216,8 @@ export function SmartDialog({
               )}
             </section>
           )}
-          {result && (
+          {goal === "community" && <CommunityPanel game={game} onApplied={onComplete} />}
+          {result && goal !== "community" && (
             <div className="advice">
               <p>
                 {result.recommendation.availability === 0
@@ -228,7 +231,7 @@ export function SmartDialog({
               )}
             </div>
           )}
-          {!result && <Button onClick={detect}>重新检测</Button>}
+          {!result && goal !== "community" && <Button onClick={detect}>重新检测</Button>}
         </>
       )}
       {working && (

@@ -202,6 +202,7 @@ sealed class Suite : IAsyncDisposable
         Assert((await Accounts(a => a.SnapshotAsync(userId))).Email == email, "account survives reopening database");
         Assert((await Accounts(a => a.SnapshotAsync(userId))).Features.Single(x => x.Key == "game.launch").Version == 3, "reinitialization preserves feature version and rules");
         assertions += await CompatibilityTests.RunAsync(services, clock, userId);
+        assertions += await CommunityPresetTests.RunAsync(services, userId);
         await VerifyManualOrdersAsync(userId);
         await Scope(async provider =>
         {
