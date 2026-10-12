@@ -1394,7 +1394,7 @@ public sealed partial class MainForm : Form
             selectedCard = null;
             while (games.Controls.Count > 0) { var card = games.Controls[0]; games.Controls.Remove(card); card.Dispose(); }
 
-            foreach (var game in list)
+            foreach (var game in reactReady ? Array.Empty<GameCandidate>() : list.ToArray())
             {
                 var card = CreateGameCard(game);
                 card.Visible = game.Title.Contains(librarySearch.Text, StringComparison.OrdinalIgnoreCase);
@@ -1747,7 +1747,7 @@ public sealed partial class MainForm : Form
             {
                 status.Text = "安装检查未通过，请查看提示；旧组件冲突可点击“恢复配置”处理。";
                 Diagnostics.Record(targetExe, "compatibility", "blocked", string.Join("; ", compatibility.Details));
-                MessageBox.Show(this, string.Join("\n", compatibility.Details), "安装检查", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                await UiMessageAsync( string.Join("\n", compatibility.Details), "安装检查", MessageBoxButtons.OK);
                 return;
             }
             if (GameManagement.Read(targetExe) is { Phase: not "restored" })
@@ -1957,14 +1957,12 @@ public sealed partial class MainForm : Form
                 Diagnostics.Record(targetExe, "installed-files", "incomplete", check.Message);
                 status.Text = check.Message;
 
-                MessageBox.Show(
-                    this,
+                await UiMessageAsync(
                     check.Message +
                     "\n\n请确认安装器与 nvngx_dlssnr.dll " +
                     "位于游戏 EXE 同一目录，并在游戏设置中启用 FSR。",
                     "安装未完成",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                    MessageBoxButtons.OK);
 
                 return;
             }
@@ -2080,8 +2078,8 @@ public sealed partial class MainForm : Form
             if (GameManagement.Read(target) is { Phase: not "restored" } record)
             {
                 var files = string.Join("\n", record.Files.Where(f => f.Before != f.After).Select(f => (f.Before.Length == 0 ? "移除：" : "还原：") + f.Name));
-                if (MessageBox.Show(this, "将恢复安装前备份，移除本次新增组件。改动过的 INI 配置会先另存备份。\n\n" + files,
-                    "恢复配置", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+                if (await UiMessageAsync( "将恢复安装前备份，移除本次新增组件。改动过的 INI 配置会先另存备份。\n\n" + files,
+                    "恢复配置", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
                 if (!await RequireFeatureAsync("game.restore")) return;
                 fileTransaction = BeginAccountTransaction();
                 await Task.Run(() => GameManagement.Restore(target, true));
@@ -2091,14 +2089,14 @@ public sealed partial class MainForm : Form
             {
                 var candidates = await Task.Run(() => GameManagement.LegacyCandidates(target));
                 if (candidates.Count == 0) { status.Text = "未发现可清理的组件。"; return; }
-                if (MessageBox.Show(this, "此游戏没有有效的安装前备份，无法保证还原原始状态。\n以下文件可能属于旧版 DLSS 或其他插件；移出后相关插件可能停止工作。\n\n" +
+                if (await UiMessageAsync( "此游戏没有有效的安装前备份，无法保证还原原始状态。\n以下文件可能属于旧版 DLSS 或其他插件；移出后相关插件可能停止工作。\n\n" +
                     string.Join("\n", candidates.Keys) + "\n\n确认将以上文件从游戏目录移到独立备份目录？如需撤销，可关闭游戏后从备份目录复制回原位置。",
-                    "恢复配置 — 旧组件清理", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+                    "恢复配置 — 旧组件清理", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
                 if (!await RequireFeatureAsync("game.restore")) return;
                 fileTransaction = BeginAccountTransaction();
                 var archive = await Task.Run(() => GameManagement.QuarantineLegacy(target, candidates));
                 status.Text = "候选组件已移出，可重新配置。备份：" + archive;
-                MessageBox.Show(this, "清理完成。文件及清单已保存到：\n" + archive + "\n\n如游戏异常，关闭游戏后将所需文件复制回游戏 EXE 目录。", "恢复配置");
+                await UiMessageAsync( "清理完成。文件及清单已保存到：\n" + archive + "\n\n如游戏异常，关闭游戏后将所需文件复制回游戏 EXE 目录。", "恢复配置");
             }
             var configuredFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AMD-NR-Assistant", "configured-games.txt");
             if (File.Exists(configuredFile))
@@ -2108,7 +2106,7 @@ public sealed partial class MainForm : Form
         catch (Exception exception)
         {
             status.Text = exception.Message;
-            MessageBox.Show(this, exception.Message, "恢复未完成", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            await UiMessageAsync( exception.Message, "恢复未完成", MessageBoxButtons.OK);
         }
         finally
         {

@@ -257,10 +257,10 @@ public sealed partial class MainForm
 
     async Task StartMagpieAsync()
     {
-        if (busy) { MessageBox.Show(this, "请等待当前操作完成后再开启大力喜鹊。", Text); return; }
+        if (busy) { await UiMessageAsync( "请等待当前操作完成后再开启大力喜鹊。", Text); return; }
         if (!await RequireFeatureAsync("magpie.launch") || busy) return;
         if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041) || System.Runtime.InteropServices.RuntimeInformation.OSArchitecture != System.Runtime.InteropServices.Architecture.X64)
-        { MessageBox.Show(this, "此集成需要 Windows 10 2004 或更新版本的 x64 系统。", Text); return; }
+        { await UiMessageAsync( "此集成需要 Windows 10 2004 或更新版本的 x64 系统。", Text); return; }
         // Upstream is single-instance: do not silently switch another installation's settings.
         var processes = Process.GetProcessesByName("Magpie");
         var running = processes.Length > 0;

@@ -27,6 +27,9 @@ public sealed partial class MainForm
 
     sealed class DownloadRow
     {
+        public string Id = Guid.NewGuid().ToString("N");
+        public required Func<Task> RetryAction;
+        public required string FeatureKey;
         public required DownloadSession Session;
         public required RoundedPanel Card;
         public required Label Info;
@@ -158,6 +161,7 @@ public sealed partial class MainForm
     void ShowInstallationFailure(Exception error, string exe)
     {
         if (IsDisposed || Disposing) return;
+        if (reactReady) { reactFailure = error.Message; ReactEvent("failure", new { title = "配置失败", text = Diagnostics.Redact(error.ToString(), exe) }); return; }
         var missingRuntime = error is MissingAmdHipRuntimeException;
         var title = missingRuntime ? "配置失败：缺少 AMD 运行时" : "配置图形方案失败";
         var advice = missingRuntime
@@ -206,6 +210,7 @@ public sealed partial class MainForm
 
     void ShowProductToast(string message, bool success)
     {
+        if (reactReady) { ReactEvent("toast", new { message, success }); return; }
         productToastTimer?.Stop(); productToastTimer?.Dispose(); productToastTimer = null;
         if (productToast != null) { pageHost.Controls.Remove(productToast); productToast.Dispose(); }
         var toast = productToast = new RoundedPanel
@@ -281,7 +286,7 @@ public sealed partial class MainForm
                 : new ProcessStartInfo(exe) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(exe)! };
             Process.Start(info); status.Text = "已发送启动请求：" + (game?.Title ?? Path.GetFileNameWithoutExtension(exe));
         }
-        catch (Exception e) { MessageBox.Show(this, e.Message, "启动失败"); }
+        catch (Exception e) { await UiMessageAsync(e.Message, "启动失败"); }
     }
     async void ShowDiagnosticsMenu()
     {
@@ -390,7 +395,7 @@ public sealed partial class MainForm
         var pause = Action("暂停", "Pause", async (_, _) => { if (!session.Paused || await RequireFeatureAsync(featureKey)) session.TogglePause(); }); pause.Width = 76;
         var cancel = Action("取消", "Cancel", (_, _) => session.Cancel()); cancel.Width = 76;
         var again = Action("重试", "Retry", async (_, _) => { if (busy) { MessageBox.Show(this, "请等待当前操作结束。", Text); return; } await retry(); }); again.Width = 76;
-        var row = new DownloadRow { Session = session, Card = card, Info = info, Bar = bar, Pause = pause, Cancel = cancel, Retry = again, Title = title };
+        var row = new DownloadRow { RetryAction = retry, FeatureKey = featureKey, Session = session, Card = card, Info = info, Bar = bar, Pause = pause, Cancel = cancel, Retry = again, Title = title };
         var detail = Action("详情", "Details", (_, _) => ShowDownloadDetails(row)); detail.Width = 76;
         actions.Controls.AddRange(new Control[] { pause, cancel, again, detail });
         card.Controls.Add(bar); card.Controls.Add(info); card.Controls.Add(actions); downloadRows.Insert(0, row); downloadList.Controls.Add(card); downloadList.Controls.SetChildIndex(card, 0); return row;

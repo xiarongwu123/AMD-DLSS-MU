@@ -14,11 +14,13 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>../assets/amd-dlss-mu.ico</ApplicationIcon>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+      <WebView2UseWinRT>false</WebView2UseWinRT>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="../assets/amd-dlss-mu.ico" LogicalName="AmdNrAssistant.AppIcon" />
     <EmbeddedResource Include="..\assets\wechat-xrwCoder.jpg" LogicalName="AmdNrAssistant.WeChatQr" />
     <PackageReference Include="SharpCompress" Version="0.48.1" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3537.50" />
     <EmbeddedResource Include="..\assets\AMD-DLSS-MU.addon64" LogicalName="AmdNrAssistant.LivePanel" />
     <EmbeddedResource Include="..\native\LICENSE-Swapper" LogicalName="Licenses.DLSS5-Swapper" />
     <EmbeddedResource Include="..\native\LICENSE-SharpCompress.txt" LogicalName="Licenses.SharpCompress" />
@@ -42,4 +44,13 @@
     <EmbeddedResource Include="..\assets\mu-account-art.png" LogicalName="AmdNrAssistant.mu-account-art.png" />
     <EmbeddedResource Include="..\assets\mu-wish-pool-hero.png" LogicalName="AmdNrAssistant.mu-wish-pool-hero.png" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="../desktop-ui/dist/**/*" Exclude="../desktop-ui/dist/artwork/**/*" LogicalName="ReactUI/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <Target Name="RequireReactUI" BeforeTargets="AssignTargetPaths">
+    <Error Condition="!Exists('../desktop-ui/dist/index.html')" Text="缺少 React 构建，请先在 desktop-ui 运行 npm ci 与 npm run build。" />
+  </Target>
+  <Target Name="RemoveUnusedWebViewWpf" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup><Reference Remove="@(Reference)" Condition="'%(Reference.Filename)' == 'Microsoft.Web.WebView2.Wpf'" /></ItemGroup>
+  </Target>
 </Project>

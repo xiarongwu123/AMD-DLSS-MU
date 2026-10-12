@@ -39,7 +39,7 @@ public sealed partial class MainForm
         using (var iconStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("AmdNrAssistant.AppIcon"))
             if (iconStream != null) { using var embeddedIcon = new Icon(iconStream); Icon = (Icon)embeddedIcon.Clone(); }
         ShowIcon = true;
-        Text = "AMD DLSS MU · 2.0 Preview"; Size = new Size(1440, 910); MinimumSize = new Size(1200, 740);
+        Text = "AMD DLSS MU · React"; Size = new Size(1440, 910); MinimumSize = new Size(1200, 740);
         Font = new Font("Microsoft YaHei UI", 10f, FontStyle.Regular); AutoScaleDimensions = new SizeF(96, 96); AutoScaleMode = AutoScaleMode.Dpi;
         StartPosition = FormStartPosition.CenterScreen; BackColor = Line; ForeColor = ink; Padding = new Padding(1);
         FormBorderStyle = FormBorderStyle.None;
@@ -50,11 +50,11 @@ public sealed partial class MainForm
         shellLayout = root;
         root.Controls.Add(BuildV2Navigation(), 0, 0);
         pageHost.Margin = Padding.Empty; pageHost.BackColor = Base; root.Controls.Add(pageHost, 0, 1);
-        Controls.Add(root);
+        Controls.Add(root); root.Visible = false;
         BuildLibrary(); BuildV2Home(); BuildAbout(); BuildProductPages(); BuildAccountPage(); BuildMagpiePage(); BuildWishesPage(); SwitchPage(6); ApplyTheme(darkMode, false); ApplyAccountGate();
-        Shown += async (_, _) => await RestoreAccountAsync();
+        Shown += async (_, _) => { await InitializeReactAsync(); await RestoreAccountAsync(); };
         Shown += (_, _) => telemetryMonitor?.Start();
-        FormClosing += (_, e) => { if (busy && !lifetime.IsCancellationRequested) { e.Cancel = true; MessageBox.Show(this, "请等待当前操作完成，或先在下载任务中取消下载。", Text); } };
+        FormClosing += (_, e) => { if (busy && !lifetime.IsCancellationRequested) { e.Cancel = true; ShowProductToast("请等待当前操作完成，或先在下载任务中取消下载。", false); } };
         FormClosed += (_, _) => { telemetryMonitor?.Dispose(); accountHeartbeat.Stop(); accountHeartbeat.Dispose(); accountClient.Changed -= AccountStateChanged; productToastTimer?.Stop(); productToastTimer?.Dispose(); controlPanel?.Close(); lifetime.Cancel(); accountClient.Dispose(); };
     }
 
@@ -103,6 +103,7 @@ public sealed partial class MainForm
     void SwitchPage(int index)
     {
         if (index != 6 && !accountClient.CanKeepVerifiedView && !(index == 3 && busy)) index = 6;
+        if (reactReady) { activePage = index; UpdateAccountHeartbeatSchedule(); PublishReactState(); return; }
         pageHost.SuspendLayout();
         try
         {
@@ -134,6 +135,7 @@ public sealed partial class MainForm
     void RefreshHome()
     {
         libraryStateCache.Clear();
+        if (reactReady) { PublishReactState(); return; }
         foreach (Control card in games.Controls)
         {
             if (card.Tag is not GameCandidate game) continue;

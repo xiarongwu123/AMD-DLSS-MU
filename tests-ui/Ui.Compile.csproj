@@ -10,9 +10,14 @@
     <RootNamespace>AmdNrAssistant</RootNamespace>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <IsPublishable>false</IsPublishable>
+      <WebView2UseWinRT>false</WebView2UseWinRT>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../src/*.cs" Link="%(Filename)%(Extension)" />
     <PackageReference Include="SharpCompress" Version="0.48.1" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3537.50" />
   </ItemGroup>
+  <Target Name="RemoveUnusedWebViewWpf" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup><Reference Remove="@(Reference)" Condition="'%(Reference.Filename)' == 'Microsoft.Web.WebView2.Wpf'" /></ItemGroup>
+  </Target>
 </Project>
