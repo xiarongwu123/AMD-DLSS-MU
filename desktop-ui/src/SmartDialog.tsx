@@ -262,9 +262,7 @@ export function DiagnosticsDialog({
 }) {
   const [checks, setChecks] = useState<Check[] | null>(null),
     [error, setError] = useState(""),
-    [expanded, setExpanded] = useState<string[]>([]),
-    [details, setDetails] = useState(""),
-    [pending, setPending] = useState(false);
+    [expanded, setExpanded] = useState<string[]>([]);
   useEffect(() => {
     let active = true;
     rpc<Check[]>("checks", { gameId: game.id })
@@ -274,19 +272,6 @@ export function DiagnosticsDialog({
       active = false;
     };
   }, [game.id]);
-  async function inspect(command: string) {
-    setPending(true);
-    try {
-      const value = await rpc(command, { gameId: game.id });
-      setDetails(
-        typeof value === "string" ? value : JSON.stringify(value, null, 2),
-      );
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setPending(false);
-    }
-  }
   return (
     <Modal
       title="一键排查"
@@ -298,7 +283,7 @@ export function DiagnosticsDialog({
             文件齐全不代表已生效，请进游戏确认。
           </span>
           <Button onClick={onClose}>关闭</Button>
-          <Button primary onClick={onConfigure}>
+          <Button primary disabled={!!error} onClick={onConfigure}>
             继续配置
           </Button>
         </>
@@ -315,10 +300,18 @@ export function DiagnosticsDialog({
                 {error
                   ? "检查未完成"
                   : checks?.some((x) => x.problem && !x.unknown)
-                    ? "有项目需要处理"
-                    : "基础检查已完成"}
+                    ? `发现 ${checks.filter((x) => x.problem && !x.unknown).length} 项需要处理`
+                    : checks?.some((x) => x.unknown)
+                      ? "基础检查已完成"
+                      : "基础检查通过"}
               </h2>
-              <p>{game.title}</p>
+              <p>
+                {checks?.some((x) => x.problem && !x.unknown)
+                  ? "请查看未通过的项目，再继续配置。"
+                  : checks?.some((x) => x.unknown)
+                    ? `${checks.filter((x) => x.unknown).length} 项仍需在游戏中验证。`
+                    : "当前环境已满足基础运行条件，可继续配置与验证。"}
+              </p>
             </div>
           </div>
           {checks?.map((c) => (
@@ -367,35 +360,6 @@ export function DiagnosticsDialog({
               )}
             </div>
           ))}
-        </>
-      )}
-      <div className="actions">
-        <Button disabled={pending} onClick={() => inspect("inspect")}>
-          刷新运行状态
-        </Button>
-        <Button disabled={pending} onClick={() => inspect("exportDiagnostic")}>
-          诊断预览
-        </Button>
-        <Button
-          onClick={() =>
-            rpc("panel", { gameId: game.id }).catch((e) => setError(e.message))
-          }
-        >
-          F8 控制面板
-        </Button>
-      </div>
-      {details && (
-        <>
-          <pre>{details}</pre>
-          <Button
-            onClick={() =>
-              rpc("exportDiagnostic", { gameId: game.id, save: true }).catch(
-                (e) => setError(e.message),
-              )
-            }
-          >
-            保存诊断 JSON
-          </Button>
         </>
       )}
       {error && <p className="error">{error}</p>}

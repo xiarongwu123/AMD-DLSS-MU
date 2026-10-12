@@ -1388,6 +1388,8 @@ public sealed partial class MainForm : Form
                 }
             }
             catch (IOException e) { manualWarning = "；" + e.Message; }
+            var removed = GameLibrary.ReadRemoved();
+            list.RemoveAll(g => removed.Contains(Path.GetFullPath(g.ExePath)));
             libraryGames = list;
             telemetryMonitor?.SetGames(libraryGames);
             libraryStateCache.Clear();

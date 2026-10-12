@@ -234,6 +234,14 @@ public sealed partial class MainForm
                 }
                 catch (Exception error) { accountFeedback = AccountError(error); status.Text = accountFeedback; throw; }
                 finally { reactAccountMutation=false; accountRequestBusy=false; ApplyAccountGate(); }
+            case "removeGame":
+                await ReactAuthorize("library.manage");
+                if (busy || reactMutation || !scan.Enabled) throw new IOException("请等待当前操作完成。");
+                var removedExe = ReactGame(args); GameLibrary.Remove(removedExe);
+                libraryGames.RemoveAll(g => g.ExePath.Equals(removedExe, StringComparison.OrdinalIgnoreCase));
+                reactCoverCache.Clear(); libraryStateCache.Clear(); telemetryMonitor?.SetGames(libraryGames);
+                if (selectedGame == removedExe) selectedGame = null;
+                return null;
             case "scan": await ScanGamesAsync(); return null;
             case "addGame":
                 await ReactAuthorize("library.manage"); if (busy || reactMutation) throw new IOException("请等待当前操作完成。");

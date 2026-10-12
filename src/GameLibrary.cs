@@ -28,6 +28,33 @@ public static class GameLibrary
         }
     }
 
+    static string RemovedStore => Store + ".removed.json";
+    public static HashSet<string> ReadRemoved()
+    {
+        lock (Gate)
+        {
+            if (!File.Exists(RemovedStore)) return new(StringComparer.OrdinalIgnoreCase);
+            if (new FileInfo(RemovedStore).Length > 1024 * 1024) throw new IOException("移除游戏列表过大，请检查本地游戏库记录。");
+            try { return new((JsonSerializer.Deserialize<List<string>>(File.ReadAllText(RemovedStore)) ?? new()).Select(Path.GetFullPath), StringComparer.OrdinalIgnoreCase); }
+            catch (Exception e) when (e is JsonException or ArgumentException or NotSupportedException)
+            { throw new IOException("移除游戏列表损坏，请备份后检查本地游戏库记录。", e); }
+        }
+    }
+    static void SaveRemoved(HashSet<string> paths)
+    {
+        System.IO.Directory.CreateDirectory(Path.GetDirectoryName(RemovedStore)!);
+        var temp = RemovedStore + ".tmp";
+        File.WriteAllText(temp, JsonSerializer.Serialize(paths));
+        File.Move(temp, RemovedStore, true);
+    }
+    public static void Remove(string exe)
+    {
+        lock (Gate)
+        {
+            var paths = ReadRemoved(); paths.Add(Path.GetFullPath(exe)); SaveRemoved(paths);
+        }
+    }
+
     public static void AddManual(string exe)
     {
         lock (Gate)
@@ -39,6 +66,8 @@ public static class GameLibrary
             var temp = Store + ".tmp";
             File.WriteAllText(temp, JsonSerializer.Serialize(paths));
             File.Move(temp, Store, true);
+            var removed = ReadRemoved();
+            if (removed.Remove(path)) SaveRemoved(removed);
         }
     }
 

@@ -1613,3 +1613,30 @@ small {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.remove-game {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.game-card:hover .remove-game,
+.game-card:focus-within .remove-game {
+  opacity: 1;
+  pointer-events: auto;
+}
+.remove-game:hover {
+  color: #ff8a69;
+}

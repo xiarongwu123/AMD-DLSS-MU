@@ -22,6 +22,7 @@ import {
   Zap,
   Pause,
   Copy,
+  Trash2,
   Check,
 } from "lucide-react";
 import { rpc, subscribe, emptyState, isDesktop, isPreview } from "./bridge";
@@ -135,7 +136,14 @@ export default function App() {
   const busy =
     state.busy ||
     pending.some((p) =>
-      ["configure", "restore", "scan", "magpie", "update"].includes(p),
+      [
+        "configure",
+        "restore",
+        "scan",
+        "magpie",
+        "update",
+        "removeGame",
+      ].includes(p),
     );
   const gameCard = (game: Game) => (
     <article
@@ -150,6 +158,23 @@ export default function App() {
       }}
     >
       <div className="game-cover">
+        {state.page === "library" && (
+          <button
+            className="remove-game"
+            aria-label={`从游戏库移除 ${game.title}`}
+            title="从游戏库移除"
+            disabled={busy || state.scanning}
+            onClick={(e) => {
+              e.stopPropagation();
+              void run("removeGame", { gameId: game.id }).then((result) => {
+                if (result !== undefined && selected?.id === game.id)
+                  setSelected(null);
+              });
+            }}
+          >
+            <Trash2 size={17} />
+          </button>
+        )}
         {game.cover ? (
           <img
             src={game.cover}
@@ -191,13 +216,6 @@ export default function App() {
               {t("恢复", "Restore")}
             </Button>
           </div>
-          <Button
-            disabled={busy}
-            onClick={() => run("launch", { gameId: game.id })}
-          >
-            <Play size={17} />
-            {t("启动游戏", "Launch")}
-          </Button>
         </div>
       </div>
       <div className="game-caption">
@@ -355,6 +373,16 @@ export default function App() {
         <main
           className="page"
           key={state.page}
+          onWheel={(e) => {
+            if (
+              state.page === "home" &&
+              e.deltaY > 0 &&
+              !dialog &&
+              !prompt &&
+              !pending.includes("navigate")
+            )
+              navigate("library");
+          }}
           onDragOver={(e) => {
             if (state.page === "library" || state.page === "home") {
               e.preventDefault();
@@ -413,20 +441,6 @@ export default function App() {
               >
                 下滑查看全部游戏 ↓
               </button>
-              <section className="home-library">
-                <div className="page-heading">
-                  <h2>游戏库</h2>
-                  <div className="actions">
-                    <Button disabled={busy} onClick={() => run("scan")}>
-                      重新扫描
-                    </Button>
-                    <Button disabled={busy} onClick={() => run("addGame")}>
-                      添加游戏
-                    </Button>
-                  </div>
-                </div>
-                {gameGrid(state.games)}
-              </section>
             </>
           )}
           {state.page === "library" && (
@@ -488,7 +502,7 @@ export default function App() {
               {!visible.length && search ? (
                 <Empty title={t("没有匹配的游戏", "No matching games")} />
               ) : (
-                gameGrid(visible)
+                gameGrid(visible, false)
               )}
             </>
           )}
