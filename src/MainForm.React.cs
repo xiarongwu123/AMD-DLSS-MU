@@ -138,7 +138,7 @@ public sealed partial class MainForm
         downloads = downloadRows.Select(r => new { id = r.Id, r.Title, r.State, r.Percent, r.Size, r.Detail, paused = r.Session.Paused }).ToArray(),
         magpieStatus = magpieStatus.Text
     };
-    string ReactAccountStatus(string text) => accountClient.IsOnline && text == "账户连接暂时波动，正在重试…"
+    string ReactAccountStatus(string text) => accountClient.IsOnline && IsAccountConnectionFeedback(text)
         ? "账户连接已恢复。" : text;
     readonly Dictionary<string, (DateTime Time, string? Data)> reactCoverCache = new();
     string? ReactCover(GameCandidate game)
@@ -312,11 +312,11 @@ public sealed partial class MainForm
                 await ReactAuthorize("configuration.edit");using(var picker=new OpenFileDialog{Filter="PresentMon (*.exe)|*.exe",CheckFileExists=true})if(picker.ShowDialog(this)==DialogResult.OK){presentMonPath=picker.FileName;if(telemetryMonitor!=null)telemetryMonitor.PresentMonPath=presentMonPath;SavePreferences();}return null;
             case "eraseTelemetry": await ReactAuthorize("configuration.edit"); if(telemetryMonitor!=null)await telemetryMonitor.DeleteMyDataAsync(lifetime.Token);return null;
             case "panel": if (busy || reactMutation) throw new IOException("请等待当前操作完成。"); selectedGame=ReactGame(args);await ReactAuthorize("diagnostics.use"); OpenPanel();return null;
-            case "wishes": await accountClient.HeartbeatAsync(lifetime.Token);return await accountClient.GetWishesAsync(Arg(args,"filter","all"),Arg(args,"query"),Arg(args,"sort","newest"),Math.Max(1,Number(args,"page",1)),lifetime.Token);
-            case "wishDetail": await accountClient.HeartbeatAsync(lifetime.Token);return await accountClient.GetWishAsync(Arg(args,"id"),lifetime.Token);
-            case "submitWish": await accountClient.HeartbeatAsync(lifetime.Token);return await accountClient.SubmitWishAsync(new WishSubmission(Guid.TryParse(Arg(args,"submissionId"), out var submissionId) ? submissionId.ToString("N") : throw new IOException("愿望提交标识无效。"),Arg(args,"content"),Arg(args,"imageData") is {Length:>0} data?data:null),lifetime.Token);
-            case "voteWish": await accountClient.HeartbeatAsync(lifetime.Token);return await accountClient.VoteWishAsync(Arg(args,"id"),Flag(args,"voted"),lifetime.Token);
-            case "commentWish": await accountClient.HeartbeatAsync(lifetime.Token);return await accountClient.CommentWishAsync(Arg(args,"id"),Arg(args,"content"),lifetime.Token);
+            case "wishes": return await accountClient.GetWishesAsync(Arg(args,"filter","all"),Arg(args,"query"),Arg(args,"sort","newest"),Math.Max(1,Number(args,"page",1)),lifetime.Token);
+            case "wishDetail": return await accountClient.GetWishAsync(Arg(args,"id"),lifetime.Token);
+            case "submitWish": return await accountClient.SubmitWishAsync(new WishSubmission(Guid.TryParse(Arg(args,"submissionId"), out var submissionId) ? submissionId.ToString("N") : throw new IOException("愿望提交标识无效。"),Arg(args,"content"),Arg(args,"imageData") is {Length:>0} data?data:null),lifetime.Token);
+            case "voteWish": return await accountClient.VoteWishAsync(Arg(args,"id"),Flag(args,"voted"),lifetime.Token);
+            case "commentWish": return await accountClient.CommentWishAsync(Arg(args,"id"),Arg(args,"content"),lifetime.Token);
             case "plans": return await accountClient.GetPurchasePlansAsync(lifetime.Token);
             case "orders": return await accountClient.GetPurchaseOrdersAsync(lifetime.Token);
             case "createOrder": return await accountClient.CreatePurchaseOrderAsync(Arg(args,"planId"),lifetime.Token);

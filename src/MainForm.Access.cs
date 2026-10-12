@@ -6,7 +6,7 @@ namespace AmdNrAssistant;
 public sealed partial class MainForm
 {
     readonly AccountApiClient accountClient = new(new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(30) }, new AccountTokenStore());
-    readonly System.Windows.Forms.Timer accountHeartbeat = new() { Interval = 30000 };
+    readonly System.Windows.Forms.Timer accountHeartbeat = new() { Interval = 300000 };
     CancellationTokenSource? activeHeartbeatRequest;
     RoundedButton? accountHeader;
     bool heartbeatRunning, accountRequestBusy, lastAccountViewAvailable;
@@ -23,6 +23,7 @@ public sealed partial class MainForm
     void UpdateAccountHeartbeatSchedule()
     {
         if (IsDisposed || Disposing) return;
+        accountHeartbeat.Interval = accountClient.IsReconnecting ? 15000 : 300000;
         if (activePage != 6 && accountClient.HasSession && !lifetime.IsCancellationRequested)
             accountHeartbeat.Start();
         else
@@ -56,7 +57,7 @@ public sealed partial class MainForm
 
     async Task RefreshAccountHeartbeatAsync()
     {
-        if (activePage == 6 || heartbeatRunning || accountRequestBusy || !accountClient.HasSession || IsDisposed || Disposing) return;
+        if (activePage == 6 || busy || reactMutation || heartbeatRunning || accountRequestBusy || !accountClient.HasSession || IsDisposed || Disposing) return;
         heartbeatRunning = true;
         using var requestLifetime = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
         activeHeartbeatRequest = requestLifetime;
@@ -90,6 +91,11 @@ public sealed partial class MainForm
     {
         if (IsDisposed || Disposing) return;
         if (InvokeRequired) { BeginInvoke((Action)AccountStateChanged); return; }
+        if (accountClient.IsOnline)
+        {
+            if (IsAccountConnectionFeedback(accountFeedback)) accountFeedback = accountClient.StorageWarning ?? "账户连接已恢复。";
+            if (IsAccountConnectionFeedback(status.Text)) status.Text = "账户连接已恢复。";
+        }
         var lost = lastAccountViewAvailable && !accountClient.CanKeepVerifiedView;
         lastAccountViewAvailable = accountClient.CanKeepVerifiedView;
         if (lost)
@@ -132,6 +138,7 @@ public sealed partial class MainForm
             if (!accountRequestBusy) RenderAccount();
             SwitchPage(6); return false;
         }
+        activeHeartbeatRequest?.Cancel();
         try { return await accountClient.AuthorizeAsync(featureKey, lifetime.Token) && !IsDisposed && !lifetime.IsCancellationRequested; }
         catch (Exception e)
         {
@@ -191,6 +198,12 @@ public sealed partial class MainForm
         Action? finish = finished;
         public void Dispose() { var action = Interlocked.Exchange(ref finish, null); action?.Invoke(); }
     }
+
+    static bool IsAccountConnectionFeedback(string text) => text is
+        "账户连接暂时波动，正在重试…" or
+        "账户请求超时，请稍后重试；持续出现时请检查到服务端的网络连接。" or
+        "无法连接账户服务，请检查网络后重试。" or
+        "账户服务连接中断，联网验证成功后可继续使用。";
 
     static string AccountError(Exception error) => error switch
     {

@@ -11,6 +11,7 @@ public sealed partial class MainForm
         if (!await RequireFeatureAsync("app.update") || checkingUpdate || busy) return;
         checkingUpdate = true;
         bool ownsBusy = false;
+        CancellationToken downloadCancellation = default;
         try
         {
             var release = await AutoUpdate.CheckAsync(lifetime.Token);
@@ -28,6 +29,7 @@ public sealed partial class MainForm
             UpdateButtons();
             automatic = false;
             using var session = BeginDownloadSession("启动器更新 " + release.Tag, () => CheckAppUpdateAsync(false), "app.update");
+            downloadCancellation = session.Token;
             SwitchPage(3);
             var candidate = await AutoUpdate.DownloadAsync(release,
                 new Progress<int>(n => status.Text = n == 100 ? "下载完成，正在校验…" : $"正在下载更新 {n}%"),
@@ -41,10 +43,19 @@ public sealed partial class MainForm
             busy = false;
             Application.Exit();
         }
-        catch (OperationCanceledException) { status.Text = "已取消更新，当前版本保持不变。"; }
+        catch (OperationCanceledException) when (lifetime.IsCancellationRequested || downloadCancellation.IsCancellationRequested)
+        { if (ownsBusy && !IsDisposed) status.Text = "已取消更新，当前版本保持不变。"; }
+        catch (OperationCanceledException)
+        {
+            if (!IsDisposed && !automatic)
+            {
+                status.Text = "更新请求超时，当前版本保持不变。";
+                await UiMessageAsync("官网更新请求超时，请稍后重试。", "更新未完成");
+            }
+        }
         catch (Exception e)
         {
-            if (!IsDisposed) { status.Text = "更新检查/下载失败，可稍后重试。"; if (!automatic) await UiMessageAsync( e.Message, "更新未完成"); }
+            if (!IsDisposed && !automatic) { status.Text = "更新检查/下载失败，可稍后重试。"; await UiMessageAsync( e.Message, "更新未完成"); }
         }
         finally { checkingUpdate = false; if (ownsBusy) busy = false; if (!IsDisposed) { Enabled = true; UpdateButtons(); } }
     }

@@ -2072,8 +2072,9 @@ public sealed partial class MainForm : Form
     {
         if (busy || selectedGame == null) return;
         var target = selectedGame;
+        status.Text = "正在验证恢复权限…";
         if (!await RequireFeatureAsync("game.restore") || busy) return;
-        busy = true; libraryPage.Enabled = false; UpdateButtons();
+        busy = true; libraryPage.Enabled = false; status.Text = "正在准备恢复配置…"; UpdateButtons();
         IDisposable? fileTransaction = null;
         try
         {
@@ -2081,7 +2082,7 @@ public sealed partial class MainForm : Form
             {
                 var files = string.Join("\n", record.Files.Where(f => f.Before != f.After).Select(f => (f.Before.Length == 0 ? "移除：" : "还原：") + f.Name));
                 if (await UiMessageAsync( "将恢复安装前备份，移除本次新增组件。改动过的 INI 配置会先另存备份。\n\n" + files,
-                    "恢复配置", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+                    "恢复配置", MessageBoxButtons.YesNo) != DialogResult.Yes) { status.Text = "已取消恢复配置，游戏文件未改动。"; return; }
                 if (!await RequireFeatureAsync("game.restore")) return;
                 fileTransaction = BeginAccountTransaction();
                 await Task.Run(() => GameManagement.Restore(target, true));
@@ -2093,7 +2094,7 @@ public sealed partial class MainForm : Form
                 if (candidates.Count == 0) { status.Text = "未发现可清理的组件。"; return; }
                 if (await UiMessageAsync( "此游戏没有有效的安装前备份，无法保证还原原始状态。\n以下文件可能属于旧版 DLSS 或其他插件；移出后相关插件可能停止工作。\n\n" +
                     string.Join("\n", candidates.Keys) + "\n\n确认将以上文件从游戏目录移到独立备份目录？如需撤销，可关闭游戏后从备份目录复制回原位置。",
-                    "恢复配置 — 旧组件清理", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+                    "恢复配置 — 旧组件清理", MessageBoxButtons.YesNo) != DialogResult.Yes) { status.Text = "已取消恢复配置，游戏文件未改动。"; return; }
                 if (!await RequireFeatureAsync("game.restore")) return;
                 fileTransaction = BeginAccountTransaction();
                 var archive = await Task.Run(() => GameManagement.QuarantineLegacy(target, candidates));
