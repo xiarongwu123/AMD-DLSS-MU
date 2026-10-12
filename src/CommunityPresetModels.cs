@@ -5,10 +5,10 @@ namespace Mu.Presets;
 public sealed record PresetSetting(string File, string Section, string Key, string Value);
 public sealed record PresetSubmission(string SubmissionId, string GameKey, string GameName,
     int Mode, string Goal, bool Vulkan, string ComponentVersion, string Title, string Description,
-    string? ImageData, PresetSetting[] Settings);
+    string? ImageData, PresetSetting[] Settings, string? ThumbnailData = null);
 public sealed record PresetItem(string Id, string GameKey, string GameName, int Mode, string Goal, bool Vulkan,
     string ComponentVersion, string Title, string Description, string Author, long CreatedAt,
-    bool HasImage, bool IsMine, int SettingCount);
+    bool HasImage, bool IsMine, int SettingCount, string? ThumbnailData = null);
 public sealed record PresetDetail(PresetItem Item, PresetSetting[] Settings, string? ImageData);
 public sealed record PresetList(PresetItem[] Items, int Total);
 

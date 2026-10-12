@@ -30,6 +30,7 @@ export interface CommunityPreset {
   hasImage: boolean;
   isMine: boolean;
   settingCount: number;
+  thumbnailData?: string | null;
 }
 export interface CommunityPresetDetail {
   item: CommunityPreset;

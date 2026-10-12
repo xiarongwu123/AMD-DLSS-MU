@@ -28,7 +28,7 @@ public sealed class CommunityPresetService(AppDbContext db, TimeProvider clock)
         var count = JsonSerializer.Deserialize<PresetSetting[]>(entry.SettingsJson, Json)?.Length ?? 0;
         return new(entry.Id, entry.GameKey, entry.GameName, entry.Mode, entry.Goal, entry.Vulkan,
             entry.ComponentVersion, entry.Title, entry.Description, entry.Author,
-            entry.CreatedAt, entry.ImageData != null, entry.UserId == userId, count);
+            entry.CreatedAt, entry.ImageData != null, entry.UserId == userId, count, entry.ThumbnailData);
     }
 
     public async Task<PresetList> ListAsync(string userId, string? gameKey, CancellationToken ct)
@@ -66,6 +66,7 @@ public sealed class CommunityPresetService(AppDbContext db, TimeProvider clock)
         if (!PresetRules.VulkanCompatible(input.Mode, input.Vulkan, settings))
             throw new ApiException(400, "invalid_preset_settings", "Vulkan 方案不能分享当前帧生成设置。");
         ValidateImage(input.ImageData);
+        ValidateThumbnail(input.ThumbnailData, input.ImageData);
         var previous = await db.CommunityPresets.AsNoTracking().SingleOrDefaultAsync(p => p.UserId == userId && p.SubmissionId == input.SubmissionId, ct);
         if (previous != null)
         {
@@ -73,7 +74,7 @@ public sealed class CommunityPresetService(AppDbContext db, TimeProvider clock)
                 previous.Goal != input.Goal || previous.Vulkan != input.Vulkan ||
                 previous.ComponentVersion != input.ComponentVersion.Trim() || previous.Title != input.Title.Trim() ||
                 previous.Description != input.Description.Trim() || previous.SettingsJson != JsonSerializer.Serialize(settings, Json) ||
-                previous.ImageData != input.ImageData)
+                previous.ImageData != input.ImageData || previous.ThumbnailData != input.ThumbnailData)
                 throw new ApiException(409, "preset_submission_conflict", "这次提交的内容已改变，请重新打开分享窗口再试。");
             return await DetailAsync(userId, previous.Id, ct);
         }
@@ -85,7 +86,8 @@ public sealed class CommunityPresetService(AppDbContext db, TimeProvider clock)
             GameName = input.GameName.Trim(), Mode = input.Mode, Goal = input.Goal, Vulkan = input.Vulkan,
             ComponentVersion = input.ComponentVersion.Trim(), Title = input.Title.Trim(),
             Description = input.Description.Trim(), Author = Author(userId), CreatedAt = Now,
-            SettingsJson = JsonSerializer.Serialize(settings, Json), ImageData = input.ImageData
+            SettingsJson = JsonSerializer.Serialize(settings, Json), ImageData = input.ImageData,
+            ThumbnailData = input.ThumbnailData
         };
         db.CommunityPresets.Add(row);
         await db.SaveChangesAsync(ct);
@@ -105,5 +107,20 @@ public sealed class CommunityPresetService(AppDbContext db, TimeProvider clock)
                 throw new ApiException(400, "invalid_preset_image", "截图格式无效。");
         }
         catch (FormatException) { throw new ApiException(400, "invalid_preset_image", "截图格式无效。"); }
+    }
+
+    static void ValidateThumbnail(string? thumbnail, string? image)
+    {
+        if (thumbnail == null) return;
+        if (image == null || thumbnail.Length > 42000 || !thumbnail.StartsWith("data:image/jpeg;base64,", StringComparison.Ordinal))
+            throw new ApiException(400, "invalid_preset_image", "截图缩略图无效。");
+        try
+        {
+            var bytes = Convert.FromBase64String(thumbnail["data:image/jpeg;base64,".Length..]);
+            if (bytes.Length < 4 || bytes.Length > 30000 || bytes[0] != 0xff || bytes[1] != 0xd8 ||
+                bytes[^2] != 0xff || bytes[^1] != 0xd9)
+                throw new ApiException(400, "invalid_preset_image", "截图缩略图无效。");
+        }
+        catch (FormatException) { throw new ApiException(400, "invalid_preset_image", "截图缩略图无效。"); }
     }
 }

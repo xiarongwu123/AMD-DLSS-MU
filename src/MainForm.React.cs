@@ -287,7 +287,8 @@ public sealed partial class MainForm
                     Arg(args, "submissionId"), ReactPresetGameKey(exe), ReactPresetGameName(exe),
                     record.Mode, goal, CommunityPresetConfig.UsesVulkan(record),
                     record.Version, Arg(args, "title"), Arg(args, "description"),
-                    Arg(args, "imageData") is { Length: > 0 } image ? image : null, settings), lifetime.Token);
+                    Arg(args, "imageData") is { Length: > 0 } image ? image : null, settings,
+                    Arg(args, "thumbnailData") is { Length: > 0 } thumbnail ? thumbnail : null), lifetime.Token);
             }
             case "applyPreset":
             {

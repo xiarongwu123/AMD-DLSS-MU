@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Search,
   Sun,
@@ -24,12 +24,15 @@ import {
   Copy,
   Trash2,
   Check,
+  UsersRound,
+  CircleHelp,
 } from "lucide-react";
 import { rpc, subscribe, emptyState, isDesktop, isPreview } from "./bridge";
 import { Button, Modal, Loading, Empty, Progress } from "./components";
 import { SmartDialog, DiagnosticsDialog, modeName } from "./SmartDialog";
 import { AccountPage } from "./AccountPage";
 import { WishesPage } from "./WishesPage";
+import { FirstUseGuide } from "./FirstUseGuide";
 import type { State, Page, Game, Prompt } from "./types";
 const nav: [Page, string, string][] = [
   ["home", "首页", "Home"],
@@ -47,6 +50,9 @@ export default function App() {
     [filter, setFilter] = useState("All"),
     [selected, setSelected] = useState<Game | null>(null),
     [dialog, setDialog] = useState<"smart" | "diagnostics" | null>(null),
+    [smartTab, setSmartTab] = useState<"recommend" | "community">("recommend"),
+    [guideStep, setGuideStep] = useState<number | null>(null),
+    [guideRequested, setGuideRequested] = useState(false),
     [toast, setToast] = useState(""),
     [prompt, setPrompt] = useState<Prompt | null>(null),
     [notice, setNotice] = useState<{ title: string; text: string } | null>(
@@ -55,6 +61,7 @@ export default function App() {
     [pending, setPending] = useState<string[]>([]),
     [doneTab, setDoneTab] = useState(false),
     [legal, setLegal] = useState(false);
+  const guideChecked = useRef(false);
   const english = state.settings.english;
   const t = (cn: string, en: string) => (english ? en : cn);
   const notify = useCallback((text: string) => setToast(text), []);
@@ -113,9 +120,50 @@ export default function App() {
     [run],
   );
   const closeDialog = useCallback(() => setDialog(null), []);
-  const show = (game: Game, kind: "smart" | "diagnostics") => {
+  const show = (game: Game, kind: "smart" | "community" | "diagnostics") => {
     setSelected(game);
-    setDialog(kind);
+    if (kind === "diagnostics") setDialog("diagnostics");
+    else {
+      setSmartTab(kind === "community" ? "community" : "recommend");
+      setDialog("smart");
+    }
+  };
+  useEffect(() => {
+    if (!ready || !state.viewAvailable || guideChecked.current) return;
+    guideChecked.current = true;
+    try {
+      if (localStorage.getItem("mu-first-use-guide-v1") === "done") return;
+    } catch { /* WebView storage may be unavailable; the guide can still run. */ }
+    setGuideRequested(true);
+  }, [ready, state.viewAvailable]);
+  useEffect(() => {
+    if (!guideRequested || !state.viewAvailable) return;
+    if (state.page !== "library") {
+      void run("navigate", { page: "library" });
+      return;
+    }
+    if (state.scanning) return;
+    setGuideRequested(false);
+    setGuideStep(0);
+  }, [guideRequested, state.viewAvailable, state.page, state.scanning, run]);
+  const startGuide = () => {
+    setDialog(null);
+    setGuideRequested(true);
+  };
+  const finishGuide = () => {
+    setGuideStep(null);
+    try { localStorage.setItem("mu-first-use-guide-v1", "done"); } catch { /* optional */ }
+  };
+  const changeGuideStep = (step: number) => {
+    const game = state.games[0];
+    if (step === 2 || step === 3) {
+      if (game) show(game, "smart");
+      else setDialog(null);
+    } else if (step === 5 || step === 6) {
+      if (game) show(game, "community");
+      else setDialog(null);
+    } else setDialog(null);
+    setGuideStep(step);
   };
   const reply = useCallback(
     (accepted: boolean) => {
@@ -228,6 +276,20 @@ export default function App() {
               : t("未配置", "Not configured")}
           {game.mode != null && <span> · {modeName(game.mode)}</span>}
         </p>
+        {state.page === "library" && <>
+          <div className="game-quick-actions">
+            <Button data-guide="game-smart" disabled={busy} onClick={() => show(game, "smart")}>
+              <Sparkles size={15} />智能推荐
+            </Button>
+            <Button data-guide="game-community" primary disabled={busy} onClick={() => show(game, "community")}>
+              <UsersRound size={15} />玩家方案
+            </Button>
+          </div>
+          <div className="game-support-actions" data-guide="game-support">
+            <button disabled={busy} onClick={() => show(game, "diagnostics")}>一键排查</button>
+            <button disabled={busy} onClick={() => void run("restore", { gameId: game.id })}>恢复配置</button>
+          </div>
+        </>}
       </div>
     </article>
   );
@@ -448,7 +510,7 @@ export default function App() {
               <div className="page-heading">
                 <h1>{t("游戏库", "Game library")}</h1>
                 <div className="actions">
-                  <Button disabled={busy} onClick={() => run("addGame")}>
+                  <Button data-guide="add-game" disabled={busy} onClick={() => run("addGame")}>
                     <Plus size={18} />
                     {t("添加游戏", "Add game")}
                   </Button>
@@ -461,8 +523,19 @@ export default function App() {
                       ? t("扫描中…", "Scanning…")
                       : t("重新扫描", "Rescan")}
                   </Button>
+                  <Button onClick={startGuide} title="重新查看软件使用引导">
+                    <CircleHelp size={17} />新手引导
+                  </Button>
+                  <Button data-guide="community-header" disabled={busy || !state.games.length}
+                    onClick={() => {
+                      if (selected) show(selected, "community");
+                      else notify("请先选择一款游戏，再查看玩家方案。");
+                    }}>
+                    <UsersRound size={17} />玩家方案 <span className="new-badge">NEW</span>
+                  </Button>
                   <Button
                     primary
+                    data-guide="smart-header"
                     disabled={busy || !state.games.length}
                     onClick={() => {
                       if (selected) show(selected, "smart");
@@ -859,8 +932,10 @@ export default function App() {
       )}
       {dialog === "smart" && selected && (
         <SmartDialog
+          key={selected.id}
           game={state.games.find((g) => g.id === selected.id) || selected}
           state={state}
+          initialTab={smartTab}
           onClose={closeDialog}
           onComplete={() => {
             setDialog(null);
@@ -876,6 +951,8 @@ export default function App() {
           onConfigure={() => setDialog("smart")}
         />
       )}
+      {guideStep !== null && <FirstUseGuide step={guideStep} hasGames={state.games.length > 0}
+        onStep={changeGuideStep} onFinish={finishGuide} />}
       {prompt && (
         <Modal
           title={prompt.title}

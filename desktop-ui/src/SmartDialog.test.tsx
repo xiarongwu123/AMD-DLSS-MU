@@ -160,12 +160,24 @@ describe("推荐目标与真实配置命令", () => {
     const complete = vi.fn();
     render(<SmartDialog game={game} state={emptyState} onClose={() => {}} onComplete={complete} />);
     await screen.findByText("AMD RX 7900 XT");
-    fireEvent.click(screen.getByRole("button", { name: /看看朋友们怎么配/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /玩家方案/ }));
     expect(screen.queryByRole("button", { name: "一键配置" })).toBeNull();
     fireEvent.click(await screen.findByRole("button", { name: /我的顺滑配置/ }));
-    fireEvent.click(await screen.findByRole("button", { name: "一键配置这套方案" }));
+    fireEvent.click(await screen.findByRole("button", { name: "一键使用这套方案" }));
     await waitFor(() => expect(rpc).toHaveBeenCalledWith("applyPreset",
       { gameId: "test-game", id: "preset-1" }));
     await waitFor(() => expect(complete).toHaveBeenCalledTimes(1));
+  });
+  it("从游戏卡片直达玩家方案时不先启动硬件检测", async () => {
+    vi.mocked(rpc).mockImplementation(async (command) =>
+      command === "presets" ? { items: [], total: 0 } : undefined,
+    );
+    render(<SmartDialog game={game} state={emptyState} initialTab="community"
+      onClose={() => {}} onComplete={() => {}} />);
+    await screen.findByText(/这款游戏还没有人分享配置/);
+    expect(rpc).toHaveBeenCalledWith("presets", { gameId: "test-game" });
+    expect(rpc).not.toHaveBeenCalledWith("recommend", { gameId: "test-game" });
+    fireEvent.click(screen.getByRole("tab", { name: "智能推荐" }));
+    await waitFor(() => expect(rpc).toHaveBeenCalledWith("recommend", { gameId: "test-game" }));
   });
 });

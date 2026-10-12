@@ -11,6 +11,7 @@ internal static class CommunityPresetTests
     {
         await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await CommunityPresetSchema.InitializeAsync(db);
         var service = new CommunityPresetService(db, TimeProvider.System);
         var submission = new PresetSubmission(Guid.NewGuid().ToString("N"), "steam:12345", "测试游戏", 4,
             "performance", false, "DLSS5 + XeFG 2X (v1.10.3.1/v10.6)", "画面流畅方案", "测试分享与复用",
@@ -40,6 +41,15 @@ internal static class CommunityPresetTests
             throw new Exception("Process path was accepted in a shared preset");
         }
         catch (ApiException e) when (e.Error.Code == "invalid_preset_settings") { }
-        return 5;
+        var tinyJpeg = "data:image/jpeg;base64," + Convert.ToBase64String([0xff, 0xd8, 0xff, 0xd9]);
+        var screenshot = await service.SubmitAsync(userId, submission with
+        {
+            SubmissionId = Guid.NewGuid().ToString("N"), Title = "附带游戏截图的方案",
+            ImageData = tinyJpeg, ThumbnailData = tinyJpeg
+        }, default);
+        if (screenshot.Item.ThumbnailData != tinyJpeg || screenshot.ImageData != tinyJpeg ||
+            (await service.ListAsync(userId, submission.GameKey, default)).Items.All(x => x.ThumbnailData == null))
+            throw new Exception("Community screenshot thumbnail was not preserved in the list");
+        return 6;
     }
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ImagePlus, RefreshCw, UploadCloud } from "lucide-react";
+import { ArrowLeft, ChevronRight, ImagePlus, RefreshCw, UploadCloud } from "lucide-react";
 import { rpc } from "./bridge";
 import { Button, Loading } from "./components";
 import type {
@@ -26,6 +26,7 @@ export function CommunityPanel({ game, onApplied }: { game: Game; onApplied: () 
   const [description, setDescription] = useState("");
   const [goal, setGoal] = useState<Goal>("quality");
   const [image, setImage] = useState<string | null>(null);
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const submissionId = useRef(crypto.randomUUID());
@@ -75,19 +76,27 @@ export function CommunityPanel({ game, onApplied }: { game: Game; onApplied: () 
       canvas.width = Math.round(bitmap.width * scale);
       canvas.height = Math.round(bitmap.height * scale);
       canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const small = document.createElement("canvas");
+      const thumbScale = Math.min(1, 240 / Math.max(bitmap.width, bitmap.height));
+      small.width = Math.max(1, Math.round(bitmap.width * thumbScale));
+      small.height = Math.max(1, Math.round(bitmap.height * thumbScale));
+      small.getContext("2d")!.drawImage(bitmap, 0, 0, small.width, small.height);
       bitmap.close();
       const data = canvas.toDataURL("image/jpeg", 0.65);
       if (data.length > 280000) throw new Error("截图压缩后仍超过 200 KB，请换一张截图。");
+      const thumbnailData = small.toDataURL("image/jpeg", 0.5);
+      if (thumbnailData.length > 42000) throw new Error("截图缩略图仍过大，请换一张截图。");
       setImage(data);
+      setThumbnail(thumbnailData);
     } catch (e) { setError((e as Error).message); }
   }
   async function upload() {
     setError(""); setBusy(true);
     try {
       await rpc("submitPreset", { gameId: game.id, submissionId: submissionId.current,
-        goal, title: title.trim(), description: description.trim(), imageData: image });
+        goal, title: title.trim(), description: description.trim(), imageData: image, thumbnailData: thumbnail });
       submissionId.current = crypto.randomUUID();
-      setView("list"); setTitle(""); setDescription(""); setImage(null);
+      setView("list"); setTitle(""); setDescription(""); setImage(null); setThumbnail(null);
       await refresh();
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
@@ -103,32 +112,50 @@ export function CommunityPanel({ game, onApplied }: { game: Game; onApplied: () 
   }
 
   return <section className="community-panel" aria-label="朋友们的配置">
-    {view === "list" ? <>
+    {view === "list" && <div className="community-game-line">
+      <span className="community-game-mark">MU</span>
+      <div><strong>{game.title}</strong><small>只显示当前游戏的分享设置</small></div>
+      <em>{loading ? "读取中" : `${list.length} 套方案`}</em>
+    </div>}
+    {view === "list" ? selected ? <>
+      <button className="community-back" onClick={() => setSelected(null)}><ArrowLeft size={16} /> 返回方案列表</button>
+      <div className="community-detail">
+        <div className="community-detail-head"><div><h3>{selected.item.title}</h3>
+          <p>{selected.item.description}</p><small>{selected.item.author} · {route(selected.item.mode)} · {selected.item.componentVersion}</small></div></div>
+        <div className="community-detail-layout">
+          <div className="community-detail-main"><div className="community-meta">
+            <div><small>目标</small><strong>{label(selected.item.goal)}</strong></div>
+            <div><small>路线</small><strong>{route(selected.item.mode)}</strong></div>
+            <div><small>接口</small><strong>{selected.item.vulkan ? "Vulkan" : "默认"}</strong></div>
+          </div><h4>将应用的参数</h4>
+          <div className="community-settings">{selected.settings.map((s) =>
+            <div key={`${s.file}/${s.section}/${s.key}`}><span>{s.file} · [{s.section}] {s.key}</span><strong>{s.value}</strong></div>)}</div></div>
+          <div className="community-detail-side">
+            {selected.imageData ? <img src={selected.imageData} alt={`${selected.item.title} 的游戏截图`} />
+              : <div className="community-no-image"><ImagePlus size={23} /><span>分享者未上传截图</span></div>}
+            <p>截图和分享说明仅供参考，效果请以本机游戏实测为准。</p>
+          </div>
+        </div>
+        <div className="community-detail-action"><p className="community-hint">MU 会检查路线与版本，并备份现有配置。</p>
+          <Button primary disabled={busy} onClick={apply}>{busy ? "正在配置…" : "一键使用这套方案"}</Button></div>
+      </div>
+      {error && <p role="alert" className="error">{error}</p>}
+    </> : <>
       <div className="community-toolbar">
-        <div><h3>看看朋友们怎么配</h3><p>只显示这款游戏的分享方案，参数可先查看。</p></div>
+        <div><h3>看看朋友们怎么配</h3><p>先看方案和参数，再决定是否一键使用。</p></div>
         <Button disabled={busy || loading} onClick={refresh} aria-label="刷新方案"><RefreshCw size={16} /></Button>
-        <Button disabled={busy} onClick={prepareUpload}><UploadCloud size={16} /> 分享我的配置</Button>
+        <Button data-guide="share" primary disabled={busy} onClick={prepareUpload}><UploadCloud size={16} /> 分享我的配置</Button>
       </div>
       {loading ? <Loading text="正在读取方案…" /> : list.length === 0
         ? <div className="community-empty">这款游戏还没有人分享配置。你可以先分享自己的方案。</div>
         : <div className="community-list">{list.map((item) =>
-          <button key={item.id} className={`community-card ${selected?.item.id === item.id ? "selected" : ""}`}
-            disabled={busy} onClick={() => detail(item)}>
-            <span className="community-card-top"><strong>{item.title}</strong><em>{label(item.goal)}</em></span>
-            <span>{item.description}</span>
-            <small>{route(item.mode)}{item.vulkan ? " · Vulkan" : ""} · {item.settingCount} 项参数 · {item.author}</small>
-          </button>)}</div>}
-      {selected && <div className="community-detail">
-        <div className="community-detail-head"><div><h3>{selected.item.title}</h3>
-          <p>{selected.item.description}</p><small>{route(selected.item.mode)} · {selected.item.componentVersion}</small></div>
-          <Button primary disabled={busy} onClick={apply}>{busy ? "正在配置…" : "一键配置这套方案"}</Button></div>
-        {selected.imageData && <img src={selected.imageData} alt={`${selected.item.title} 的游戏截图`} />}
-        <details><summary>查看将应用的 {selected.settings.length} 项参数</summary>
-          <div className="community-settings">{selected.settings.map((s) =>
-            <div key={`${s.file}/${s.section}/${s.key}`}><span>{s.file} · [{s.section}] {s.key}</span><strong>{s.value}</strong></div>)}</div>
-        </details>
-        <p className="community-hint">MU 会先检查路线和版本，并备份已有配置；效果请在游戏中确认。</p>
-      </div>}
+          <button key={item.id} className="community-card" disabled={busy} onClick={() => detail(item)}>
+            <span className="community-thumb">{item.thumbnailData
+              ? <img src={item.thumbnailData} alt="" loading="lazy" />
+              : <><ImagePlus size={20} /><small>{item.hasImage ? "查看截图" : "无截图"}</small></>}</span>
+            <span className="community-card-copy"><strong>{item.title}</strong><span>{item.description}</span>
+              <small>{route(item.mode)}{item.vulkan ? " · Vulkan" : ""} · {item.settingCount} 项参数 · {item.author}</small></span>
+            <em>{label(item.goal)}</em><ChevronRight size={18} /></button>)}</div>}
       {error && <p role="alert" className="error">{error}</p>}
     </> : <div className="community-upload-screen"><div className="community-upload" role="dialog" aria-modal="true" aria-label="上传方案">
       <div className="community-toolbar"><div><h3>分享我的配置</h3><p>读取当前游戏的实际设置；只上传可复用参数。</p></div>

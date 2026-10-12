@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   CheckCircle2,
   Cpu,
@@ -24,13 +24,16 @@ export function SmartDialog({
   state,
   onClose,
   onComplete,
+  initialTab = "recommend",
 }: {
   game: Game;
   state: State;
   onClose: () => void;
   onComplete: () => void;
+  initialTab?: "recommend" | "community";
 }) {
-  const [goal, setGoal] = useState<Goal | "community">("quality"),
+  const [tab, setTab] = useState(initialTab),
+    [goal, setGoal] = useState<Goal>("quality"),
     [custom, setCustom] = useState(0),
     [result, setResult] = useState<Recommendation | null>(null),
     [checking, setChecking] = useState(true),
@@ -39,7 +42,8 @@ export function SmartDialog({
     [working, setWorking] = useState(false),
     [vulkan, setVulkan] = useState(false),
     [fgInput, setFgInput] = useState("nofg");
-  const mode = selectedMode(goal === "community" ? "custom" : goal, custom);
+  const detectionStarted = useRef(false);
+  const mode = selectedMode(goal, custom);
   const detect = useCallback(async () => {
     setChecking(true);
     setError("");
@@ -52,15 +56,21 @@ export function SmartDialog({
       setChecking(false);
     }
   }, [game.id]);
+  useEffect(() => setTab(initialTab), [initialTab]);
   useEffect(() => {
-    void detect();
+    if (tab === "recommend" && !detectionStarted.current) {
+      detectionStarted.current = true;
+      void detect();
+    }
+  }, [tab, detect]);
+  useEffect(() => {
     return subscribe((event, data) => {
       if (event === "detection") {
         const phase = data as { gameId: string; stage: string };
         if (phase.gameId === game.id) setStage(phase.stage);
       }
     });
-  }, [detect, game.id]);
+  }, [game.id]);
   const configure = async () => {
     setWorking(true);
     setError("");
@@ -84,7 +94,7 @@ export function SmartDialog({
   return (
     <Modal
       wide
-      title="智能推荐"
+      title="游戏图形方案"
       onClose={close}
       footer={
         <>
@@ -96,8 +106,9 @@ export function SmartDialog({
           <Button disabled={working} onClick={close}>
             返回游戏库
           </Button>
-          {goal !== "community" && <Button
+          {tab === "recommend" && <Button
             primary
+            data-guide="configure"
             disabled={
               checking ||
               working ||
@@ -115,6 +126,14 @@ export function SmartDialog({
         </>
       }
     >
+      <div className="scheme-tabs" role="tablist" aria-label="配置方式">
+        <button type="button" role="tab" aria-selected={tab === "recommend"}
+          className={tab === "recommend" ? "active" : ""} onClick={() => setTab("recommend")}>智能推荐</button>
+        <button type="button" role="tab" aria-selected={tab === "community"}
+          className={tab === "community" ? "active" : ""} data-guide="community-tab"
+          onClick={() => setTab("community")}>玩家方案 <span>NEW</span></button>
+      </div>
+      {tab === "community" ? <CommunityPanel game={game} onApplied={onComplete} /> : <>
       <div className="steps">
         <span className={checking ? "active" : ""}>1 检测</span>
         <i />
@@ -141,13 +160,12 @@ export function SmartDialog({
             <span className="badge">{result ? "检测完成" : "待确认"}</span>
           </div>
           <h4 className="field-heading">你更在意什么？</h4>
-          <div className="goals">
+          <div className="goals" data-guide="goals">
             {(
               [
                 ["quality", "画质优先", "DLSS 5 神经渲染", "更清晰的画面"],
                 ["performance", "帧率优先", "DLSS 5 + XeFG 2X", "更流畅的体验"],
                 ["custom", "自定义", "", "自己选择方案"],
-                ["community", "看看朋友们怎么配", "", "查看和分享游戏配置"],
               ] as const
             ).map(([key, title, route, note]) => (
               <button
@@ -216,8 +234,7 @@ export function SmartDialog({
               )}
             </section>
           )}
-          {goal === "community" && <CommunityPanel game={game} onApplied={onComplete} />}
-          {result && goal !== "community" && (
+          {result && (
             <div className="advice">
               <p>
                 {result.recommendation.availability === 0
@@ -231,9 +248,10 @@ export function SmartDialog({
               )}
             </div>
           )}
-          {!result && goal !== "community" && <Button onClick={detect}>重新检测</Button>}
+          {!result && <Button onClick={detect}>重新检测</Button>}
         </>
       )}
+      </>}
       {working && (
         <div className="operation">
           <p role="status">{state.status || "正在准备组件…"}</p>

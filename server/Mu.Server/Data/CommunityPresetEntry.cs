@@ -17,4 +17,5 @@ public sealed class CommunityPresetEntry
     public long CreatedAt { get; set; }
     public string SettingsJson { get; set; } = "[]";
     public string? ImageData { get; set; }
+    public string? ThumbnailData { get; set; }
 }
