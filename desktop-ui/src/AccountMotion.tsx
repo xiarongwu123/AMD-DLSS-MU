@@ -44,9 +44,10 @@ export function AccountBadge({account, active, onClose, onSettings}: {account:Ac
           finish="matte" size={.68} strapLength={.35} damping={.65} breeze={.12} intro={false} onUnsupported={()=>setUnavailable(true)} />
       </Suspense> : <img className="badge-static" src={front} alt="MU 账户工牌" />}
     </div>
-    <div className="badge-info"><strong>{account.email}</strong><span>{account.membership.tier === "pro" ? "MU PRO" : "普通账户"}</span></div>
+    <div className="badge-controls">
     <p className="badge-hint">{active && !unavailable ? "拖动工牌，松手回摆 · 点击翻面" : "MU 通行证"}</p>
     <div className="actions badge-actions"><Button onClick={onClose}>收起工牌</Button><Button primary onClick={onSettings}>账户设置</Button></div>
+    </div>
   </aside>;
 }
 export function LoginTransition({onComplete}: {onComplete:()=>void}) {
