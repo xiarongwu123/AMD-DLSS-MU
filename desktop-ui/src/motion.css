@@ -112,9 +112,6 @@
 @media(prefers-reduced-motion:reduce) { .hero-orbit i, .hero-orbit img, .first-use-card, .toast { animation: none !important; } .first-use-spotlight { transition: none; } }
 /* Card deck, power-up and shared-element journey. */
 .game-card { border-radius: 22px; border-color: color-mix(in srgb,var(--line) 70%,var(--muted)); }
-.card-rarity { display: flex; gap: 3px; align-items: center; color: var(--muted); font-size: 8px; letter-spacing: 2px; margin: 0 0 10px; }
-.card-rarity i { width: 3px; height: 6px; background: var(--acid); transform: skew(-20deg); }
-.card-rarity i:last-of-type { margin-right: 7px; opacity: .35; }
 .app-shell[data-effects=on] .game-card { animation: mu-card-deal .65s cubic-bezier(.22,1,.36,1) backwards; animation-delay: calc(var(--deal-index,0) * 45ms); }
 .game-card:after { background: linear-gradient(120deg,transparent 20%,#caff7d16 35%,#81d6ee1c 48%,transparent 65%),radial-gradient(250px circle at var(--card-x,50%) var(--card-y,30%),#ffffff1a,transparent 70%); background-position: var(--card-x,50%) var(--card-y,30%); background-size: 160% 160%,100% 100%; mix-blend-mode: screen; }
 .charge-button { overflow: visible; isolation: isolate; }

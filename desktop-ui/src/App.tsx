@@ -314,7 +314,6 @@ export default function App() {
         </div>
       </div>
       <div className="game-caption">
-        <span className="card-rarity" aria-hidden="true"><i /><i /><i /> MU / {game.state === "Configured" ? "ACTIVE" : "READY"}</span>
         <strong title={game.title}>{game.title}</strong>
         <p className={game.state === "Configured" ? "accent" : "muted"}>
           {game.state === "Configured"
