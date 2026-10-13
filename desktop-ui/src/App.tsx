@@ -367,6 +367,7 @@ export default function App() {
     <ClickSpark disabled={!effects.active} sparkColor={state.settings.dark ? ["#adff18", "#89dcff"] : "#3e800f"}
       sparkCount={5} sparkRadius={22} sparkSize={4} duration={400} shape="star" glow={0.1}>
     <div className="app-shell" data-effects={effects.active ? "on" : "off"}>
+      {state.page === "library" && <div className="library-ambient" aria-hidden="true"><i /><i /><i /><i /></div>}
       <header className="app-header">
         <div className="header-first">
           <button className="brand" onClick={() => navigate("home")}>
@@ -515,7 +516,6 @@ export default function App() {
               .catch((e) => notify(e.message));
           }}
         >
-          {state.page === "library" && <div className="library-ambient" aria-hidden="true"><i /><i /><i /><i /></div>}
           {state.page === "home" && <HomeLanding games={state.games} downloads={state.downloads.length}
             active={effects.active} dark={state.settings.dark} busy={busy}
             onLibrary={() => navigate("library")} onMagpie={() => navigate("magpie")}

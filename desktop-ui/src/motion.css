@@ -1,5 +1,6 @@
 /* MU interaction theme. React Bits effects share the existing MU color tokens. */
 .app-shell {
+  isolation: isolate;
   --glow: color-mix(in srgb, var(--acid) 18%, transparent);
   --cool: #74c8e8;
   background: radial-gradient(ellipse at 80% 0%, var(--glow), transparent 38%),
@@ -325,8 +326,7 @@
 @media(prefers-reduced-motion:reduce) { .share-scheme-button { animation: none !important; } }
 
 /* Persistent library atmosphere; soft colored light breathes behind the cards. */
-.library-page { position: relative; isolation: isolate; }
-.library-ambient { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.library-ambient { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
 .library-ambient i { position: absolute; width: 76%; height: 115%; border-radius: 50%; opacity: .8; background: radial-gradient(ellipse,var(--ambient-color),transparent 70%); }
 .library-ambient i:nth-child(1) { --ambient-color: #a5f32455; right: -16%; top: -38%; }
 .library-ambient i:nth-child(2) { --ambient-color: #4789ff50; left: -25%; bottom: -33%; }
