@@ -156,13 +156,23 @@ async function preview(
   }
   if (command === "checks")
     return [
-      {
-        title: "显卡",
-        detail: "预览示例，不代表本机检测结果。",
-        problem: false,
-        unknown: true,
-      },
-    ];
+      ["显卡", "示例：已识别 AMD Radeon RX 7900 XT。", false],
+      ["驱动", "示例：已读到驱动版本，需在 AMD 软件中核对。", true],
+      ["安装记录", "示例：已找到这款游戏的安装记录。", false],
+      ["安装文件完整性", "示例：MU 安装的文件与记录一致。", false],
+      ["帧率方案加载组件", "示例：已找到加载文件。", false],
+      ["方案设置", "示例：已找到 OptiScaler 设置。", false],
+      ["XeFG 组件", "示例：已找到帧生成组件。", false],
+      ["AMD HIP", "示例：已找到 HIP 运行组件。", false],
+      ["神经渲染模型组件", "示例：已找到模型组件。", false],
+      ["神经渲染运行组件 1", "示例：已找到运行组件。", false],
+      ["神经渲染运行组件 2", "示例：已找到运行组件。", false],
+      ["神经渲染运行组件 3", "示例：已找到运行组件。", false],
+      ["模型数据", "示例：已找到模型数据。", false],
+      ["神经渲染模型版本", "示例：组件版本符合安装要求。", false],
+      ["游戏加载组件", "示例：是否被游戏加载，需启动后验证。", true],
+      ["游戏图形接口", "示例：实际游戏接口需启动后验证。", true],
+    ].map(([title, detail, unknown]) => ({ title, detail, unknown, problem: false }));
   if (command === "wishes")
     return { items: [], total: 0, page: 1, pageSize: 20, counts: {} };
   if (command === "presets")
