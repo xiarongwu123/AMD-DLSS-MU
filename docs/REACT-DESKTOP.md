@@ -1,6 +1,6 @@
 # Windows React 客户端
 
-开发分支：`feature/react-desktop`。当前发布版本：`v2.2.0-react-preview.4`。这是独立测试版本，没有修改服务端、官网或正式版发布。
+当前主干测试版本：`v2.2.0-react-preview.5`，Windows 文件版本为 `2.2.0.5`。玩家方案的列表、详情和上传接口已部署到 VPS，见 [部署记录](COMMUNITY-PRESETS-DELIVERY.md)。本版为独立测试包，未替换官网正式版；玩家方案上传与一键应用的实机验收见 [测试说明](../RELEASE-v2.2.0-react-preview.5.md)。
 
 ## 架构
 
