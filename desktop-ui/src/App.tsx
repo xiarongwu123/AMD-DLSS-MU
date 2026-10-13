@@ -488,7 +488,7 @@ export default function App() {
         <Loading text={t("正在启动 MU…", "Starting MU…")} />
       ) : (
         <main
-          className={`page ${state.page === "home" ? "home-page" : ""}`}
+          className={`page ${state.page === "home" ? "home-page" : state.page === "library" ? "library-page" : ""}`}
           key={state.page}
           onWheel={(e) => {
             if (
@@ -515,6 +515,7 @@ export default function App() {
               .catch((e) => notify(e.message));
           }}
         >
+          {state.page === "library" && <div className="library-ambient" aria-hidden="true" />}
           {state.page === "home" && <HomeLanding games={state.games} downloads={state.downloads.length}
             active={effects.active} dark={state.settings.dark} busy={busy}
             onLibrary={() => navigate("library")} onMagpie={() => navigate("magpie")}

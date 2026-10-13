@@ -323,3 +323,14 @@
 .hub-game-copy .share-scheme-button { margin-top: 12px; min-height: 42px; background: #355619ee; color: #e0ffad; border-color: #adff18; font-size: 14px; }
 @keyframes mu-share-pulse { 0%,100% { transform: scale(1); box-shadow: 0 0 10px #adff1826; } 50% { transform: scale(1.06); box-shadow: 0 0 22px #adff1860, inset 0 0 12px #adff181a; } }
 @media(prefers-reduced-motion:reduce) { .share-scheme-button { animation: none !important; } }
+
+/* Quiet, diffused light behind library content. Only opacity/transform animate. */
+.library-page { position: relative; isolation: isolate; }
+.library-ambient { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.library-ambient:before, .library-ambient:after { content: ""; position: absolute; width: 85%; height: 95%; border-radius: 50%; opacity: .6; }
+.library-ambient:before { right: -20%; top: -25%; background: radial-gradient(ellipse, color-mix(in srgb,var(--acid) 18%,transparent),transparent 66%); }
+.library-ambient:after { left: -15%; bottom: -30%; background: radial-gradient(ellipse, color-mix(in srgb,var(--cool) 12%,transparent),transparent 68%); }
+.app-shell[data-effects=on] .library-ambient:before { animation: mu-ambient-breathe 9s ease-in-out infinite alternate; }
+.app-shell[data-effects=on] .library-ambient:after { animation: mu-ambient-breathe 12s -5s ease-in-out infinite alternate-reverse; }
+@keyframes mu-ambient-breathe { from { opacity: .35; transform: translate3d(-2%,2%,0) scale(.9); } to { opacity: 1; transform: translate3d(3%,-3%,0) scale(1.12); } }
+@media(prefers-reduced-motion:reduce) { .app-shell[data-effects=on] .library-ambient:before,.app-shell[data-effects=on] .library-ambient:after { animation: none; } }

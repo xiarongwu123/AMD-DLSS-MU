@@ -36,7 +36,9 @@ export function AccountBadge({account, active, onClose, onSettings}: {account:Ac
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
   }, [onClose]);
-  return <aside className={`account-badge-drop${active ? " animated" : ""}`} aria-label="我的账户工牌">
+  return <>
+    <button className={`account-badge-mask${active ? " animated" : ""}`} aria-label="收起账户工牌" onClick={onClose} />
+    <aside className={`account-badge-drop${active ? " animated" : ""}`} aria-label="我的账户工牌">
     <button className="badge-close" aria-label="收起工牌" onClick={onClose}>×</button>
     <div className="badge-stage" aria-label="可拖拽的 MU 账户工牌">
       {active && !unavailable ? <Suspense fallback={<img className="badge-static" src={front} alt="MU 账户工牌" />}>
@@ -48,7 +50,7 @@ export function AccountBadge({account, active, onClose, onSettings}: {account:Ac
     <p className="badge-hint">{active && !unavailable ? "拖动工牌，松手回摆 · 点击翻面" : "MU 通行证"}</p>
     <div className="actions badge-actions"><Button onClick={onClose}>收起工牌</Button><Button primary onClick={onSettings}>账户设置</Button></div>
     </div>
-  </aside>;
+  </aside></>;
 }
 export function LoginTransition({onComplete}: {onComplete:()=>void}) {
   useEffect(()=>{const timer=setTimeout(onComplete,1500);return()=>clearTimeout(timer);},[onComplete]);

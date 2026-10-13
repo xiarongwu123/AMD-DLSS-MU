@@ -53,13 +53,15 @@ it('失败的登录尝试不会在后续账户更新中错误播放动画', asyn
   publish({account});
   expect(screen.queryByRole('status', {name: '登录成功，正在进入 MU'})).toBeNull();
 });
-it('静态降级工牌无弹窗遮罩，支持 Esc 收起和账户设置', () => {
+it('工牌保持独立悬挂，遮罩和 Esc 均可收起，账户设置保留', () => {
   const onClose = vi.fn(), onSettings = vi.fn();
   render(<AccountBadge account={account} active={false} onClose={onClose} onSettings={onSettings} />);
   expect(screen.getByRole('img', {name: 'MU 账户工牌'})).toBeTruthy();
   expect(document.querySelector('.scrim')).toBeNull();
-  fireEvent.keyDown(window, {key: 'Escape'});
+  fireEvent.click(screen.getByRole('button', {name: '收起账户工牌'}));
   expect(onClose).toHaveBeenCalledOnce();
+  fireEvent.keyDown(window, {key: 'Escape'});
+  expect(onClose).toHaveBeenCalledTimes(2);
   fireEvent.click(screen.getByRole('button', {name: '账户设置'}));
   expect(onSettings).toHaveBeenCalledOnce();
 });
