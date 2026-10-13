@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Button } from "./components";
+import { Settings } from "lucide-react";
 import type { Account } from "./types";
 import "./account-motion.css";
 const Lanyard = lazy(() => import("./reactbits/Lanyard"));
@@ -39,16 +39,13 @@ export function AccountBadge({account, active, onClose, onSettings}: {account:Ac
   return <>
     <button className={`account-badge-mask${active ? " animated" : ""}`} aria-label="收起账户工牌" onClick={onClose} />
     <aside className={`account-badge-drop${active ? " animated" : ""}`} aria-label="我的账户工牌">
+    <button className="badge-settings" aria-label="账户设置" onClick={onSettings}><Settings size={17} /></button>
     <button className="badge-close" aria-label="收起工牌" onClick={onClose}>×</button>
     <div className="badge-stage" aria-label="可拖拽的 MU 账户工牌">
       {active && !unavailable ? <Suspense fallback={<img className="badge-static" src={front} alt="MU 账户工牌" />}>
         <Lanyard frontImage={front} backImage={back} cardColor="#182723" strapColor="#638a33" metal="graphite"
           finish="matte" size={.68} strapLength={.35} damping={.65} breeze={.12} intro={false} onUnsupported={()=>setUnavailable(true)} />
       </Suspense> : <img className="badge-static" src={front} alt="MU 账户工牌" />}
-    </div>
-    <div className="badge-controls">
-    <p className="badge-hint">{active && !unavailable ? "拖动工牌，松手回摆 · 点击翻面" : "MU 通行证"}</p>
-    <div className="actions badge-actions"><Button onClick={onClose}>收起工牌</Button><Button primary onClick={onSettings}>账户设置</Button></div>
     </div>
   </aside></>;
 }

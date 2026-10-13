@@ -515,7 +515,7 @@ export default function App() {
               .catch((e) => notify(e.message));
           }}
         >
-          {state.page === "library" && <div className="library-ambient" aria-hidden="true" />}
+          {state.page === "library" && <div className="library-ambient" aria-hidden="true"><i /><i /><i /><i /></div>}
           {state.page === "home" && <HomeLanding games={state.games} downloads={state.downloads.length}
             active={effects.active} dark={state.settings.dark} busy={busy}
             onLibrary={() => navigate("library")} onMagpie={() => navigate("magpie")}

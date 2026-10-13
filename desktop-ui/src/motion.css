@@ -324,13 +324,17 @@
 @keyframes mu-share-pulse { 0%,100% { transform: scale(1); box-shadow: 0 0 10px #adff1826; } 50% { transform: scale(1.06); box-shadow: 0 0 22px #adff1860, inset 0 0 12px #adff181a; } }
 @media(prefers-reduced-motion:reduce) { .share-scheme-button { animation: none !important; } }
 
-/* Quiet, diffused light behind library content. Only opacity/transform animate. */
+/* Persistent library atmosphere; soft colored light breathes behind the cards. */
 .library-page { position: relative; isolation: isolate; }
 .library-ambient { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
-.library-ambient:before, .library-ambient:after { content: ""; position: absolute; width: 85%; height: 95%; border-radius: 50%; opacity: .6; }
-.library-ambient:before { right: -20%; top: -25%; background: radial-gradient(ellipse, color-mix(in srgb,var(--acid) 18%,transparent),transparent 66%); }
-.library-ambient:after { left: -15%; bottom: -30%; background: radial-gradient(ellipse, color-mix(in srgb,var(--cool) 12%,transparent),transparent 68%); }
-.app-shell[data-effects=on] .library-ambient:before { animation: mu-ambient-breathe 9s ease-in-out infinite alternate; }
-.app-shell[data-effects=on] .library-ambient:after { animation: mu-ambient-breathe 12s -5s ease-in-out infinite alternate-reverse; }
-@keyframes mu-ambient-breathe { from { opacity: .35; transform: translate3d(-2%,2%,0) scale(.9); } to { opacity: 1; transform: translate3d(3%,-3%,0) scale(1.12); } }
-@media(prefers-reduced-motion:reduce) { .app-shell[data-effects=on] .library-ambient:before,.app-shell[data-effects=on] .library-ambient:after { animation: none; } }
+.library-ambient i { position: absolute; width: 76%; height: 115%; border-radius: 50%; opacity: .8; background: radial-gradient(ellipse,var(--ambient-color),transparent 70%); }
+.library-ambient i:nth-child(1) { --ambient-color: #a5f32455; right: -16%; top: -38%; }
+.library-ambient i:nth-child(2) { --ambient-color: #4789ff50; left: -25%; bottom: -33%; }
+.library-ambient i:nth-child(3) { --ambient-color: #23e0b448; left: 7%; top: -32%; width: 65%; height: 90%; }
+.library-ambient i:nth-child(4) { --ambient-color: #9570f34d; right: -16%; bottom: -38%; width: 68%; height: 105%; }
+.app-shell[data-effects=on] .library-ambient i { animation: mu-ambient-breathe 8s ease-in-out infinite alternate; }
+.app-shell[data-effects=on] .library-ambient i:nth-child(2) { animation-duration: 11s; animation-delay: -4s; animation-direction: alternate-reverse; }
+.app-shell[data-effects=on] .library-ambient i:nth-child(3) { animation-duration: 9s; animation-delay: -2s; }
+.app-shell[data-effects=on] .library-ambient i:nth-child(4) { animation-duration: 12s; animation-delay: -6s; animation-direction: alternate-reverse; }
+@keyframes mu-ambient-breathe { from { opacity: .55; transform: translate3d(-4%,3%,0) scale(.85); } to { opacity: 1; transform: translate3d(6%,-5%,0) scale(1.2); } }
+@media(prefers-reduced-motion:reduce) { .app-shell[data-effects=on] .library-ambient i { animation: none; } }
