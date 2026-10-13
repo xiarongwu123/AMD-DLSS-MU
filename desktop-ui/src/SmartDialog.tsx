@@ -26,6 +26,7 @@ export function SmartDialog({
   onClose,
   onComplete,
   initialTab = "recommend",
+  initialUpload = false,
   cardOrigin,
 }: {
   game: Game;
@@ -33,6 +34,7 @@ export function SmartDialog({
   onClose: () => void;
   onComplete: () => void;
   initialTab?: "recommend" | "community";
+  initialUpload?: boolean;
   cardOrigin?: CardOrigin | null;
 }) {
   const [tab, setTab] = useState(initialTab),
@@ -148,7 +150,7 @@ export function SmartDialog({
           onClick={() => setTab("community")}><UsersRound size={21} />玩家方案 <span>NEW</span></button>
       </div>
       <div className={`mode-scene scene-${visualMode}`}>
-      {tab === "community" ? <CommunityPanel game={game} onApplied={onComplete} /> : <>
+      {tab === "community" ? <CommunityPanel game={game} onApplied={onComplete} initialUpload={initialUpload} /> : <>
       {checking ? (
         <Loading text={stage} />
       ) : (

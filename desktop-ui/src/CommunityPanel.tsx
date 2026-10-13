@@ -16,7 +16,7 @@ const route = (mode: number) =>
 const label = (goal: Goal) =>
   goal === "quality" ? "画质优先" : goal === "performance" ? "帧率优先" : "自定义";
 
-export function CommunityPanel({ game, onApplied }: { game: Game; onApplied: () => void }) {
+export function CommunityPanel({ game, onApplied, initialUpload = false }: { game: Game; onApplied: () => void; initialUpload?: boolean }) {
   const [list, setList] = useState<CommunityPreset[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<CommunityPresetDetail | null>(null);
@@ -43,7 +43,14 @@ export function CommunityPanel({ game, onApplied }: { game: Game; onApplied: () 
       setLoading(false);
     }
   }, [game.id]);
-  useEffect(() => { setSelected(null); setList([]); void refresh(); }, [refresh]);
+  const preparedGame = useRef<string | null>(null);
+  useEffect(() => {
+    setSelected(null); setList([]);
+    if (initialUpload) {
+      setLoading(false);
+      if (preparedGame.current !== game.id) { preparedGame.current = game.id; void prepareUpload(); }
+    } else void refresh();
+  }, [refresh, initialUpload, game.id]);
 
   async function detail(item: CommunityPreset) {
     setError("");
@@ -146,7 +153,7 @@ export function CommunityPanel({ game, onApplied }: { game: Game; onApplied: () 
         <Button disabled={busy || loading} onClick={refresh} aria-label="刷新方案"><RefreshCw size={16} /></Button>
         <Button data-guide="share" primary disabled={busy} onClick={prepareUpload}><UploadCloud size={16} /> 分享我的配置</Button>
       </div>
-      {loading ? <Loading text="正在读取方案…" /> : list.length === 0
+      {(loading || (initialUpload && busy && !snapshot)) ? <Loading text={initialUpload && busy ? "正在读取当前配置…" : "正在读取方案…"} /> : list.length === 0
         ? <div className="community-empty">这款游戏还没有人分享配置。你可以先分享自己的方案。</div>
         : <div className="community-list">{list.map((item) =>
           <button key={item.id} className="community-card" disabled={busy} onClick={() => detail(item)}>
@@ -159,7 +166,7 @@ export function CommunityPanel({ game, onApplied }: { game: Game; onApplied: () 
       {error && <p role="alert" className="error">{error}</p>}
     </> : <div className="community-upload-screen"><div className="community-upload" role="dialog" aria-modal="true" aria-label="上传方案">
       <div className="community-toolbar"><div><h3>分享我的配置</h3><p>读取当前游戏的实际设置；只上传可复用参数。</p></div>
-        <Button disabled={busy} onClick={() => setView("list")}>返回列表</Button></div>
+        <Button disabled={busy} onClick={() => { setView("list"); void refresh(); }}>返回列表</Button></div>
       {snapshot && <div className="community-summary"><strong>{route(snapshot.mode)}</strong>
         <span>{snapshot.componentVersion}{snapshot.vulkan ? " · Vulkan" : ""} · 已读取 {snapshot.settings.length} 项参数</span></div>}
       <label>方案类型<select value={goal} onChange={(e) => setGoal(e.target.value as Goal)}>

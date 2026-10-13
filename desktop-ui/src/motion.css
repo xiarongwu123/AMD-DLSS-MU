@@ -319,3 +319,10 @@
 .immersive-scheme .scheme-tabs button.community-entry span { color: var(--on-accent); background: #10180018; font-size: 10px; }
 .immersive-scheme .scheme-tabs button.community-entry.active { box-shadow: inset 0 0 0 2px #10180045; }
 .immersive-scheme .scheme-tabs button.community-entry:after { display: none; }
+
+.share-scheme-button { border: 1px solid #adff1880; background: #203417; color: #d5ff94; font-weight: 750; }
+.app-shell[data-effects=on] .share-scheme-button:not(:disabled) { animation: mu-share-hop 2.6s ease-in-out infinite; }
+.share-scheme-button:hover, .share-scheme-button:focus-visible { animation-play-state: paused !important; background: #304d1c; border-color: #adff18; }
+.hub-game-copy .share-scheme-button { margin-top: 12px; min-height: 42px; background: #162715ee; color: #d5ff94; border-color: #adff1880; font-size: 14px; }
+@keyframes mu-share-hop { 0%,65%,100% { transform: translateY(0); } 74% { transform: translateY(-5px); } 82% { transform: translateY(0); } 88% { transform: translateY(-2px); } }
+@media(prefers-reduced-motion:reduce) { .share-scheme-button { animation: none !important; } }

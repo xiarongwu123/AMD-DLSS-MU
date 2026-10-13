@@ -82,3 +82,5 @@
   .hub-game-copy .button { min-height: 54px; font-size: 16px; }
 }
 @media(max-width:760px) { .hub-pitch h1 { font-size: 36px; } .hub-deck { max-width: 350px; } }
+
+.hub-game-copy .share-scheme-button { margin-top: 12px; min-height: 42px; background: #162715ee; color: #d5ff94; border-color: #adff1880; font-size: 14px; }

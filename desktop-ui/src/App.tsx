@@ -53,6 +53,7 @@ export default function App() {
     [filter, setFilter] = useState("All"),
     [selected, setSelected] = useState<Game | null>(null),
     [dialog, setDialog] = useState<"smart" | "diagnostics" | null>(null),
+    [shareRequested, setShareRequested] = useState(false),
     [smartTab, setSmartTab] = useState<"recommend" | "community">("recommend"),
     [guideStep, setGuideStep] = useState<number | null>(null),
     [guideRequested, setGuideRequested] = useState(false),
@@ -139,7 +140,7 @@ export default function App() {
       { duration: 380, easing: "cubic-bezier(.65,0,.35,1)", fill: "forwards" })
       .finished.catch(() => {}).finally(() => { closing.current = false; setDialog(null); });
   }, [cardOrigin, effects.active]);
-  const show = (game: Game, kind: "smart" | "community" | "diagnostics") => {
+  const show = (game: Game, kind: "smart" | "community" | "diagnostics" | "share") => {
     const card = Array.from(document.querySelectorAll<HTMLElement>("[data-game-id]"))
       .find(element => element.dataset.gameId === game.id);
     const bounds = card?.getBoundingClientRect();
@@ -147,9 +148,10 @@ export default function App() {
       ? { left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height, cover: game.cover, title: game.title }
       : null);
     setSelected(game);
+    setShareRequested(kind === "share");
     if (kind === "diagnostics") setDialog("diagnostics");
     else {
-      setSmartTab(kind === "community" ? "community" : "recommend");
+      setSmartTab((kind === "community" || kind === "share") ? "community" : "recommend");
       setDialog("smart");
     }
   };
@@ -294,6 +296,8 @@ export default function App() {
               ? t("启动游戏", "Launch game")
               : t("开启 DLSS 5", "Enable DLSS 5")}
           </Button>
+          {game.state === "Configured" && <Button className="share-scheme-button" disabled={busy}
+            onClick={() => show(game, "share")}><UsersRound size={17} />{t("分享方案", "Share preset")}</Button>}
           <div className="actions" data-guide="game-support">
             <Button disabled={busy} onClick={() => show(game, "diagnostics")}>
               <ScanLine size={17} />
@@ -497,6 +501,7 @@ export default function App() {
             active={effects.active} dark={state.settings.dark} busy={busy}
             onLibrary={() => navigate("library")} onMagpie={() => navigate("magpie")}
             onCommunity={() => state.games[0] ? show(state.games[0], "community") : navigate("library")}
+            onShare={game => show(game, "share")}
             onGame={game => game.state === "Configured" ? void run("launch", {gameId: game.id}) : show(game, "smart")} />}
           {state.page === "library" && (
             <>
@@ -936,6 +941,7 @@ export default function App() {
           state={state}
           cardOrigin={cardOrigin}
           initialTab={smartTab}
+          initialUpload={shareRequested}
           onClose={closeDialog}
           onComplete={() => {
             closeDialog();

@@ -81,6 +81,8 @@ describe("游戏库原交互", () => {
       1,
     );
     expect(before.queryByRole("button", { name: /启动游戏/ })).toBeNull();
+    expect(before.queryByRole("button", { name: "分享方案" })).toBeNull();
+    expect(ready.getByRole("button", { name: "分享方案" })).toBeTruthy();
     expect(ready.getAllByRole("button", { name: "启动游戏" })).toHaveLength(1);
     expect(ready.queryByRole("button", { name: /开启 DLSS/ })).toBeNull();
     expect(document.querySelector(".add-game-card")).toBeNull();
@@ -91,6 +93,31 @@ describe("游戏库原交互", () => {
       expect(screen.queryByRole("article", { name: "未配置游戏" })).toBeNull(),
     );
     expect(rpc).toHaveBeenCalledWith("removeGame", { gameId: "new" });
+  });
+  it("已配置游戏直接读取当前配置并打开上传弹窗，不经过方案列表", async () => {
+    setup("library");
+    await screen.findByRole("heading", { name: "游戏库" });
+    const original = vi.mocked(rpc).getMockImplementation()!;
+    vi.mocked(rpc).mockImplementation(async (command, args) => command === "presetSnapshot"
+      ? { mode: 0, componentVersion: "0.6.0", vulkan: false, gameName: "已配置游戏", settings: [] } as never
+      : original(command, args));
+    fireEvent.click(within(screen.getByRole("article", {name: "已配置游戏"})).getByRole("button", {name: "分享方案"}));
+    await screen.findByRole("dialog", {name: "上传方案"});
+    expect(rpc).toHaveBeenCalledWith("presetSnapshot", {gameId: "ready"});
+    expect(vi.mocked(rpc).mock.calls.some(([command]) => command === "presets" || command === "launch" || command === "uploadPreset")).toBe(false);
+    expect(screen.getByRole("button", {name: "一键上传方案"}).hasAttribute("disabled")).toBe(true);
+  });
+  it("配置读取失败显示原因，不打开空上传表单", async () => {
+    setup("library");
+    await screen.findByRole("heading", { name: "游戏库" });
+    const original = vi.mocked(rpc).getMockImplementation()!;
+    vi.mocked(rpc).mockImplementation(async (command, args) => {
+      if (command === "presetSnapshot") throw new Error("当前游戏配置文件不存在");
+      return original(command, args);
+    });
+    fireEvent.click(within(screen.getByRole("article", {name: "已配置游戏"})).getByRole("button", {name: "分享方案"}));
+    expect(await screen.findByRole("alert")).toHaveProperty("textContent", "当前游戏配置文件不存在");
+    expect(screen.queryByRole("dialog", {name: "上传方案"})).toBeNull();
   });
   it("一键排查仅保留关闭和继续配置的原路径", async () => {
     vi.mocked(rpc).mockResolvedValue([

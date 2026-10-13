@@ -5,9 +5,9 @@ import { Button } from "./components";
 import { InteractiveSurface, Shine } from "./VisualEffects";
 import type { Game } from "./types";
 
-export function HomeLanding({games, downloads, active, dark, busy, onLibrary, onMagpie, onGame, onCommunity}: {
+export function HomeLanding({games, downloads, active, dark, busy, onLibrary, onMagpie, onGame, onCommunity, onShare}: {
   games: Game[]; downloads: number; active: boolean; dark: boolean; busy: boolean;
-  onLibrary: () => void; onMagpie: () => void; onGame: (game: Game) => void; onCommunity: () => void;
+  onLibrary: () => void; onMagpie: () => void; onGame: (game: Game) => void; onCommunity: () => void; onShare: (game: Game) => void;
 }) {
   const [index, setIndex] = useState(0);
   const cards = [
@@ -19,6 +19,8 @@ export function HomeLanding({games, downloads, active, dark, busy, onLibrary, on
         <Button primary charge disabled={busy} onClick={() => onGame(game)}>
           <Zap size={18} />{game.state === "Configured" ? "启动游戏" : "开启 DLSS 5"}
         </Button>
+        {game.state === "Configured" && <Button className="share-scheme-button" disabled={busy}
+          onClick={() => onShare(game)}><UsersRound size={17} />分享方案</Button>}
       </div>
     </article>),
     <article key="community" className="hub-tool-card hub-tool-community">
