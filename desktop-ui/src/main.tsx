@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import { Component, type ReactNode } from "react";
 import App from "./App";
 import "./style.css";
+import "./motion.css";
 class ErrorBoundary extends Component<
   { children: ReactNode },
   { error: string }
@@ -27,3 +28,5 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </ErrorBoundary>,
 );
+
+import "./home.css";

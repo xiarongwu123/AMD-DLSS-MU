@@ -28,11 +28,14 @@ import {
   CircleHelp,
 } from "lucide-react";
 import { rpc, subscribe, emptyState, isDesktop, isPreview } from "./bridge";
-import { Button, Modal, Loading, Empty, Progress } from "./components";
+import { Button, Modal, Loading, Empty, Progress, type CardOrigin } from "./components";
 import { SmartDialog, DiagnosticsDialog, modeName } from "./SmartDialog";
 import { AccountPage } from "./AccountPage";
 import { WishesPage } from "./WishesPage";
 import { FirstUseGuide } from "./FirstUseGuide";
+import { HomeLanding } from "./HomeLanding";
+import ClickSpark from "./reactbits/ClickSpark";
+import { useVisualEffects, InteractiveSurface } from "./VisualEffects";
 import type { State, Page, Game, Prompt } from "./types";
 const nav: [Page, string, string][] = [
   ["home", "首页", "Home"],
@@ -61,6 +64,10 @@ export default function App() {
     [pending, setPending] = useState<string[]>([]),
     [doneTab, setDoneTab] = useState(false),
     [legal, setLegal] = useState(false);
+  const effects = useVisualEffects();
+  const [cardOrigin, setCardOrigin] = useState<CardOrigin | null>(null);
+  const [celebrated, setCelebrated] = useState<string | null>(null);
+  const closing = useRef(false);
   const guideChecked = useRef(false);
   const english = state.settings.english;
   const t = (cn: string, en: string) => (english ? en : cn);
@@ -119,8 +126,26 @@ export default function App() {
     },
     [run],
   );
-  const closeDialog = useCallback(() => setDialog(null), []);
+  const closeDialog = useCallback(() => {
+    const root = document.querySelector<HTMLElement>('[data-card-morph="true"]');
+    if (!cardOrigin || !root?.animate || !effects.active) { setDialog(null); return; }
+    if (closing.current) return;
+    closing.current = true;
+    const end = root.getBoundingClientRect();
+    const x = cardOrigin.left + cardOrigin.width / 2 - end.left - end.width / 2;
+    const y = cardOrigin.top + cardOrigin.height / 2 - end.top - end.height / 2;
+    root.animate([{ transform: "none", opacity: 1 },
+      { transform: `translate(${x}px, ${y}px) scale(${cardOrigin.width / end.width}, ${cardOrigin.height / end.height})`, opacity: 0.15 }],
+      { duration: 380, easing: "cubic-bezier(.65,0,.35,1)", fill: "forwards" })
+      .finished.catch(() => {}).finally(() => { closing.current = false; setDialog(null); });
+  }, [cardOrigin, effects.active]);
   const show = (game: Game, kind: "smart" | "community" | "diagnostics") => {
+    const card = Array.from(document.querySelectorAll<HTMLElement>("[data-game-id]"))
+      .find(element => element.dataset.gameId === game.id);
+    const bounds = card?.getBoundingClientRect();
+    setCardOrigin(effects.active && kind !== "diagnostics" && bounds
+      ? { left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height, cover: game.cover, title: game.title }
+      : null);
     setSelected(game);
     if (kind === "diagnostics") setDialog("diagnostics");
     else {
@@ -193,13 +218,29 @@ export default function App() {
         "removeGame",
       ].includes(p),
     );
-  const gameCard = (game: Game) => (
+  const gameCard = (game: Game, index = 0) => (
     <article
-      key={game.id}
-      className={`game-card ${selected?.id === game.id ? "chosen" : ""} ${state.page === "library" && state.games[0]?.id === game.id && (guideStep === 1 || guideStep === 4) ? "guide-active" : ""}`}
+      key={`${filter}-${game.id}`}
+      className={`game-card ${selected?.id === game.id ? "chosen" : ""} ${celebrated === game.id ? "card-victory" : ""} ${state.page === "library" && state.games[0]?.id === game.id && (guideStep === 1 || guideStep === 4) ? "guide-active" : ""}`}
+      data-game-id={game.id}
+      style={{ "--deal-index": Math.min(index, 10) } as React.CSSProperties}
       tabIndex={0}
       aria-label={game.title}
       data-guide="game-smart"
+      onPointerMove={(e) => {
+        if (!effects.active || e.pointerType === "touch") return;
+        const box = e.currentTarget.getBoundingClientRect();
+        const x = (e.clientX - box.left) / box.width;
+        const y = (e.clientY - box.top) / box.height;
+        e.currentTarget.style.setProperty("--card-x", `${x * 100}%`);
+        e.currentTarget.style.setProperty("--card-y", `${y * 100}%`);
+        e.currentTarget.style.setProperty("--tilt-x", `${(0.5 - y) * 3}deg`);
+        e.currentTarget.style.setProperty("--tilt-y", `${(x - 0.5) * 3}deg`);
+      }}
+      onPointerLeave={(e) => {
+        e.currentTarget.style.setProperty("--tilt-x", "0deg");
+        e.currentTarget.style.setProperty("--tilt-y", "0deg");
+      }}
       onClick={() => setSelected(game)}
       onKeyDown={(e) => {
         if (e.key === "Enter" && e.target === e.currentTarget)
@@ -240,6 +281,7 @@ export default function App() {
         <div className="game-overlay">
           <Button
             primary
+            charge
             disabled={busy}
             onClick={() =>
               game.state === "Configured"
@@ -268,6 +310,7 @@ export default function App() {
         </div>
       </div>
       <div className="game-caption">
+        <span className="card-rarity" aria-hidden="true"><i /><i /><i /> MU / {game.state === "Configured" ? "ACTIVE" : "READY"}</span>
         <strong title={game.title}>{game.title}</strong>
         <p className={game.state === "Configured" ? "accent" : "muted"}>
           {game.state === "Configured"
@@ -278,6 +321,7 @@ export default function App() {
           {game.mode != null && <span> · {modeName(game.mode)}</span>}
         </p>
       </div>
+      <div className="card-victory-burst" aria-hidden="true">{Array.from({ length: 12 }, (_, i) => <i key={i} style={{ "--particle": i } as React.CSSProperties} />)}</div>
     </article>
   );
   const gameGrid = (items: Game[], add = true) => (
@@ -298,7 +342,9 @@ export default function App() {
   );
   const external = (url: string) => run("openLink", { url });
   return (
-    <div className="app-shell">
+    <ClickSpark disabled={!effects.active} sparkColor={state.settings.dark ? ["#adff18", "#89dcff"] : "#3e800f"}
+      sparkCount={5} sparkRadius={22} sparkSize={4} duration={400} shape="star" glow={0.1}>
+    <div className="app-shell" data-effects={effects.active ? "on" : "off"}>
       <header className="app-header">
         <div className="header-first">
           <button className="brand" onClick={() => navigate("home")}>
@@ -420,11 +466,12 @@ export default function App() {
         <Loading text={t("正在启动 MU…", "Starting MU…")} />
       ) : (
         <main
-          className="page"
+          className={`page ${state.page === "home" ? "home-page" : ""}`}
           key={state.page}
           onWheel={(e) => {
             if (
               state.page === "home" &&
+              !e.defaultPrevented &&
               e.deltaY > 0 &&
               !dialog &&
               !prompt &&
@@ -446,52 +493,11 @@ export default function App() {
               .catch((e) => notify(e.message));
           }}
         >
-          {state.page === "home" && (
-            <>
-              <section className="home-hero">
-                <div>
-                  <span className="eyebrow">AMD DLSS MU</span>
-                  <h1>
-                    一键配置 AMD <span>DLSS5</span>
-                  </h1>
-                  <div className="actions">
-                    <Button primary onClick={() => navigate("library")}>
-                      <Sparkles size={19} />
-                      智能推荐
-                    </Button>
-                    <Button onClick={() => navigate("magpie")}>
-                      开启大力喜鹊
-                      <ArrowUpRight size={17} />
-                    </Button>
-                  </div>
-                </div>
-              </section>
-              <div className="page-heading">
-                <div>
-                  <h2>{t("我的游戏", "My games")}</h2>
-                  <p>
-                    {t(
-                      "已扫描到的本地游戏，选择并一键配置。",
-                      "Choose a local game and configure it in one click.",
-                    )}
-                  </p>
-                </div>
-                <Button onClick={() => navigate("library")}>
-                  {t("查看全部", "View all")}
-                  <ArrowUpRight size={17} />
-                </Button>
-              </div>
-              <div className="home-games">
-                {gameGrid(state.games.slice(0, 3))}
-              </div>
-              <button
-                className="scroll-library text-button"
-                onClick={() => navigate("library")}
-              >
-                下滑查看全部游戏 ↓
-              </button>
-            </>
-          )}
+          {state.page === "home" && <HomeLanding games={state.games} downloads={state.downloads.length}
+            active={effects.active} dark={state.settings.dark} busy={busy}
+            onLibrary={() => navigate("library")} onMagpie={() => navigate("magpie")}
+            onCommunity={() => state.games[0] ? show(state.games[0], "community") : navigate("library")}
+            onGame={game => game.state === "Configured" ? void run("launch", {gameId: game.id}) : show(game, "smart")} />}
           {state.page === "library" && (
             <>
               <div className="page-heading">
@@ -582,6 +588,7 @@ export default function App() {
                   </h2>
                   <Button
                     primary
+                    charge
                     className="large"
                     disabled={busy}
                     onClick={() => run("magpie")}
@@ -609,10 +616,10 @@ export default function App() {
                     ].map(([Icon, text], i) => {
                       const I = Icon as typeof Download;
                       return (
-                        <div className="feature" key={i}>
+                        <InteractiveSurface className="feature" key={i} active={effects.active} dark={state.settings.dark}>
                           <I />
                           <strong>{String(text)}</strong>
-                        </div>
+                        </InteractiveSurface>
                       );
                     })}
                   </div>
@@ -763,6 +770,11 @@ export default function App() {
                       日间模式
                     </button>
                   </div>
+                </div>
+                <div>
+                  <div><h3>动态效果</h3><p>卡片光影、点击火花与页面动效</p></div>
+                  <input type="checkbox" aria-label="动态效果" checked={effects.enabled}
+                    onChange={(e) => effects.change(e.target.checked)} />
                 </div>
                 <div>
                   <h3>语言</h3>
@@ -922,10 +934,14 @@ export default function App() {
           key={selected.id}
           game={state.games.find((g) => g.id === selected.id) || selected}
           state={state}
+          cardOrigin={cardOrigin}
           initialTab={smartTab}
           onClose={closeDialog}
           onComplete={() => {
-            setDialog(null);
+            closeDialog();
+            const gameId = selected.id;
+            setTimeout(() => setCelebrated(gameId), 380);
+            setTimeout(() => setCelebrated(null), 2200);
             notify("配置完成，可以启动游戏");
             void run("state");
           }}
@@ -1024,5 +1040,6 @@ export default function App() {
         </div>
       )}
     </div>
+    </ClickSpark>
   );
 }

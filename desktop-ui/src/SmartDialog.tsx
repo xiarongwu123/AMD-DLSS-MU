@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   CheckCircle2,
   Cpu,
+  UsersRound,
   ChevronDown,
   ChevronUp,
   SlidersHorizontal,
 } from "lucide-react";
 import { rpc, subscribe } from "./bridge";
-import { Button, Modal, Loading, Progress } from "./components";
+import { Button, Modal, Loading, Progress, type CardOrigin } from "./components";
 import type { Game, Goal, Recommendation, Check, State } from "./types";
 import { CommunityPanel } from "./CommunityPanel";
 export const modeName = (mode: number) =>
@@ -25,12 +26,14 @@ export function SmartDialog({
   onClose,
   onComplete,
   initialTab = "recommend",
+  cardOrigin,
 }: {
   game: Game;
   state: State;
   onClose: () => void;
   onComplete: () => void;
   initialTab?: "recommend" | "community";
+  cardOrigin?: CardOrigin | null;
 }) {
   const [tab, setTab] = useState(initialTab),
     [goal, setGoal] = useState<Goal>("quality"),
@@ -44,6 +47,7 @@ export function SmartDialog({
     [fgInput, setFgInput] = useState("nofg");
   const detectionStarted = useRef(false);
   const mode = selectedMode(goal, custom);
+  const visualMode = tab === "community" ? "community" : goal;
   const detect = useCallback(async () => {
     setChecking(true);
     setError("");
@@ -95,6 +99,15 @@ export function SmartDialog({
     <Modal
       wide
       title="游戏图形方案"
+      cardOrigin={cardOrigin}
+      className={`scheme-modal immersive-scheme scheme-${visualMode}`}
+      backdrop={<div className="immersive-backdrop" aria-hidden="true">
+        {game.cover && <>
+          <img className="world-cover" src={game.cover} alt="" />
+          <img className="world-focus" src={game.cover} alt="" />
+        </>}
+        <div className="world-shade" />
+      </div>}
       onClose={close}
       footer={
         <>
@@ -108,6 +121,7 @@ export function SmartDialog({
           </Button>
           {tab === "recommend" && <Button
             primary
+            charge
             data-guide="configure"
             disabled={
               checking ||
@@ -130,19 +144,11 @@ export function SmartDialog({
         <button type="button" role="tab" aria-selected={tab === "recommend"}
           className={tab === "recommend" ? "active" : ""} onClick={() => setTab("recommend")}>智能推荐</button>
         <button type="button" role="tab" aria-selected={tab === "community"}
-          className={tab === "community" ? "active" : ""} data-guide="community-tab"
-          onClick={() => setTab("community")}>玩家方案 <span>NEW</span></button>
+          className={`community-entry ${tab === "community" ? "active" : ""}`} data-guide="community-tab"
+          onClick={() => setTab("community")}><UsersRound size={21} />玩家方案 <span>NEW</span></button>
       </div>
+      <div className={`mode-scene scene-${visualMode}`}>
       {tab === "community" ? <CommunityPanel game={game} onApplied={onComplete} /> : <>
-      <div className="steps">
-        <span className={checking ? "active" : ""}>1 检测</span>
-        <i />
-        <span className={!checking && !working ? "active" : ""}>
-          2 选择目标
-        </span>
-        <i />
-        <span className={working ? "active" : ""}>3 一键配置</span>
-      </div>
       {checking ? (
         <Loading text={stage} />
       ) : (
@@ -174,6 +180,7 @@ export function SmartDialog({
                 aria-pressed={goal === key}
                 onClick={() => setGoal(key)}
               >
+                <span className={`goal-art goal-art-${key}`} aria-hidden="true"><i /><i /><i /><b /></span>
                 <strong>{title}</strong>
                 <span>{note}</span>
                 {route && <small>{route}</small>}
@@ -252,6 +259,7 @@ export function SmartDialog({
         </>
       )}
       </>}
+      </div>
       {working && (
         <div className="operation">
           <p role="status">{state.status || "正在准备组件…"}</p>
