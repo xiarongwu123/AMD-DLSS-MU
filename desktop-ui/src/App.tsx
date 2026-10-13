@@ -31,6 +31,7 @@ import { rpc, subscribe, emptyState, isDesktop, isPreview } from "./bridge";
 import { Button, Modal, Loading, Empty, Progress, type CardOrigin } from "./components";
 import { SmartDialog, DiagnosticsDialog, modeName } from "./SmartDialog";
 import { AccountPage } from "./AccountPage";
+import { AccountBadge, LoginTransition, prepareLoginMotion } from "./AccountMotion";
 import { WishesPage } from "./WishesPage";
 import { FirstUseGuide } from "./FirstUseGuide";
 import { HomeLanding } from "./HomeLanding";
@@ -68,6 +69,24 @@ export default function App() {
   const effects = useVisualEffects();
   const [cardOrigin, setCardOrigin] = useState<CardOrigin | null>(null);
   const [celebrated, setCelebrated] = useState<string | null>(null);
+  const [badgeOpen, setBadgeOpen] = useState(false);
+  const [loginWarp, setLoginWarp] = useState(false);
+  const loginAttempt = useRef(false);
+  const finishLoginWarp = useCallback(() => setLoginWarp(false), []);
+  useEffect(() => {
+    const attempt = () => { loginAttempt.current = true; prepareLoginMotion(); };
+    const cancel = () => { loginAttempt.current = false; setLoginWarp(false); };
+    window.addEventListener("mu-login-attempt", attempt);
+    window.addEventListener("mu-login-cancel", cancel);
+    return () => { window.removeEventListener("mu-login-attempt", attempt); window.removeEventListener("mu-login-cancel", cancel); };
+  }, []);
+  useEffect(() => {
+    if (loginAttempt.current && state.account && state.online && state.viewAvailable) {
+      loginAttempt.current = false;
+      if (effects.active) setLoginWarp(true);
+    }
+    if (!state.account) setBadgeOpen(false);
+  }, [state.account, state.online, state.viewAvailable, effects.active]);
   const closing = useRef(false);
   const guideChecked = useRef(false);
   const english = state.settings.english;
@@ -384,7 +403,7 @@ export default function App() {
             </button>
             <button
               className="account-shortcut"
-              onClick={() => navigate("account")}
+              onClick={() => state.account ? setBadgeOpen(true) : navigate("account")}
             >
               <UserRound size={17} />
               {state.account ? t("我的账户", "Account") : t("登录", "Sign in")}
@@ -933,6 +952,9 @@ export default function App() {
           {state.status}
         </div>
       )}
+      {loginWarp && <LoginTransition onComplete={finishLoginWarp} />}
+      {badgeOpen && state.account && <AccountBadge account={state.account} active={effects.active}
+        onClose={() => setBadgeOpen(false)} onSettings={() => { setBadgeOpen(false); void navigate("account"); }} />}
       {dialog === "smart" && selected && (
         <SmartDialog
           key={selected.id}

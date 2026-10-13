@@ -33,6 +33,7 @@ export function AccountPage({
     setBusy(true);
     setError("");
     try {
+      if (command === "login") window.dispatchEvent(new Event("mu-login-attempt"));
       const result = await rpc<{ retryAfterSeconds: number }>(command, args);
       if (command === "sendCode") {
         setCooldown(result.retryAfterSeconds);
@@ -44,6 +45,7 @@ export function AccountPage({
         notify("密码已更新");
       }
     } catch (e) {
+      if (command === "login") window.dispatchEvent(new Event("mu-login-cancel"));
       setError((e as Error).message);
     } finally {
       setBusy(false);
