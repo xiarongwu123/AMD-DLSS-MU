@@ -121,6 +121,15 @@ public static class GameManagement
         if (!Tracked(name)) throw new IOException("记录包含非法路径。");
         var p = Path.Combine(Path.GetDirectoryName(exe)!, name); Core.RejectLinks(p); return p;
     }
+    // Enumerate real directories before cleanup; never follow a junction into another mod/game.
+    internal static IEnumerable<string> ComponentDirectories(string folder)
+    {
+        Core.RejectLinks(folder);
+        if (!Directory.Exists(folder)) yield break;
+        yield return folder;
+        foreach (var child in Directory.EnumerateDirectories(folder))
+            foreach (var directory in ComponentDirectories(child)) yield return directory;
+    }
     public static void Restore(string exe, bool preserveChangedSettings = false)
     {
         EnsureClosed(exe);
@@ -144,6 +153,15 @@ public static class GameManagement
                 if (!File.Exists(backup) || Core.Hash(backup) != f.Before) throw new IOException("备份损坏，未执行恢复：" + f.Name);
             }
         }
+        // Only consider trees containing components added by this recorded installation.
+        // Preflight directories too, and keep any untracked files rather than deleting recursively.
+        var gameDirectory = Path.GetDirectoryName(exe)!;
+        var directories = r.Files.Where(f => f.Before.Length == 0 && f.After.Length > 0)
+            .Select(f => f.Name.Replace('\\', '/').Split('/'))
+            .Where(parts => parts.Length > 1)
+            .Select(parts => Path.Combine(gameDirectory, parts[0]))
+            .Distinct(StringComparer.OrdinalIgnoreCase).SelectMany(ComponentDirectories)
+            .OrderByDescending(path => path.Length).ToArray();
         if (changedSettings.Count > 0)
         {
             var archive = Path.Combine(State(exe), "settings-" + Guid.NewGuid().ToString("N"));
@@ -159,6 +177,12 @@ public static class GameManagement
             var p = Target(exe, f.Name);
             if (f.Before.Length > 0) { Directory.CreateDirectory(Path.GetDirectoryName(p)!); File.Copy(Path.Combine(State(exe), f.Name + ".backup"), p, true); }
             else if (File.Exists(p)) File.Delete(p);
+        }
+        foreach (var directory in directories)
+        {
+            Core.RejectLinks(directory);
+            if (Directory.Exists(directory) && !Directory.EnumerateFileSystemEntries(directory).Any())
+                Directory.Delete(directory, false);
         }
         Save(r with { Phase = "restored" });
     }

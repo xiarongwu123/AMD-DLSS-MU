@@ -52,6 +52,27 @@ if (args is ["verify-combined-install", var sourcePackage, var gameDirectory])
         File.Exists(Path.Combine(gameDirectory, "OptiScaler", "libxess_fg.dll")) ||
         File.Exists(Path.Combine(gameDirectory, Core.DllName)))
         throw new Exception("Combined restore did not remove installed files");
+    if (Directory.Exists(Path.Combine(gameDirectory, "OptiScaler")))
+        throw new Exception("Combined restore left the OptiScaler folder behind");
+    for (var cycle = 0; cycle < 2; cycle++)
+    {
+        // Reproduce old versions: files are gone but nested empty folders remain.
+        Directory.CreateDirectory(Path.Combine(gameDirectory, "OptiScaler", "empty-cache"));
+        CombinedRenderInstaller.Install(gameExe, sourcePackage);
+        GameManagement.Restore(gameExe);
+        if (GameManagement.Read(gameExe)?.Phase != "restored" ||
+            File.Exists(Path.Combine(gameDirectory, "dxgi.dll")))
+            throw new Exception("Install/restore/reinstall cycle failed");
+    }
+    var conflict = Path.Combine(gameDirectory, "OptiScaler", "other-mod.txt");
+    Directory.CreateDirectory(Path.GetDirectoryName(conflict)!);
+    File.WriteAllText(conflict, "keep another mod");
+    var blocked = false;
+    try { CombinedRenderInstaller.Install(gameExe, sourcePackage); }
+    catch (IOException) { blocked = true; }
+    if (!blocked || File.ReadAllText(conflict) != "keep another mod" || File.Exists(Path.Combine(gameDirectory, "dxgi.dll")))
+        throw new Exception("Real component-folder conflict was overwritten");
+    File.Delete(conflict);
     var existingDirectory = gameDirectory + "-existing";
     Directory.CreateDirectory(existingDirectory);
     var existingExe = Path.Combine(existingDirectory, "fixture.exe");
@@ -354,6 +375,54 @@ GameManagement.Finish(eGame, true);
 var addon = Path.Combine(ed, "AMD-DLSS-MU.addon64"); File.WriteAllText(addon, "overlay"); GameManagement.RegisterAddon(eGame, "AMD-DLSS-MU.addon64");
 Assert(GameManagement.Read(eGame)!.Files.Any(f => f.Name.EndsWith("D3D12Core.dll")), "adding overlay preserves existing manifest");
 GameManagement.Restore(eGame); Assert(!File.Exists(nested) && !File.Exists(addon), "restore removes nested payload and addon");
+Assert(!Directory.Exists(Path.Combine(ed, "D3D12_Optiscaler")), "restore removes emptied component directories");
+var cleanupGame = Game("cleanup" + Guid.NewGuid().ToString("N"));
+var cleanupRoot = Path.GetDirectoryName(cleanupGame)!;
+GameManagement.Begin(cleanupGame, 4);
+var cleanupFolder = Path.Combine(cleanupRoot, "OptiScaler", "plugins");
+Directory.CreateDirectory(cleanupFolder);
+File.WriteAllText(Path.Combine(cleanupFolder, "owned.dll"), "owned");
+GameManagement.Finish(cleanupGame, true);
+var unrelated = Path.Combine(cleanupFolder, "other-mod.txt");
+File.WriteAllText(unrelated, "keep another mod");
+GameManagement.Restore(cleanupGame);
+Assert(File.ReadAllText(unrelated) == "keep another mod" && !File.Exists(Path.Combine(cleanupFolder, "owned.dll")),
+    "restore preserves untracked files in component folders");
+File.Delete(unrelated);
+GameManagement.Restore(cleanupGame);
+Assert(!Directory.Exists(Path.Combine(cleanupRoot, "OptiScaler")) && File.Exists(cleanupGame),
+    "repeat restore prunes empty nested directories without removing game root");
+var originalGame = Game("original-folder" + Guid.NewGuid().ToString("N"));
+var originalFolder = Path.Combine(Path.GetDirectoryName(originalGame)!, "OptiScaler");
+Directory.CreateDirectory(originalFolder);
+var originalComponent = Path.Combine(originalFolder, "original.dll");
+File.WriteAllText(originalComponent, "original component");
+GameManagement.Begin(originalGame, 2);
+File.WriteAllText(originalComponent, "temporarily changed");
+File.WriteAllText(Path.Combine(originalFolder, "added.dll"), "new component");
+GameManagement.Finish(originalGame, true);
+GameManagement.Restore(originalGame);
+Assert(File.ReadAllText(originalComponent) == "original component" && !File.Exists(Path.Combine(originalFolder, "added.dll")),
+    "directory cleanup preserves restored originals and their parent folder");
+if (!OperatingSystem.IsWindows())
+{
+    var linkGame = Game("directory-link" + Guid.NewGuid().ToString("N"));
+    GameManagement.Begin(linkGame, 4);
+    var linkFolder = Path.Combine(Path.GetDirectoryName(linkGame)!, "OptiScaler");
+    Directory.CreateDirectory(linkFolder);
+    var ownedComponent = Path.Combine(linkFolder, "owned.dll");
+    File.WriteAllText(ownedComponent, "owned");
+    GameManagement.Finish(linkGame, true);
+    var externalFolder = Path.Combine(root, "external-mod");
+    Directory.CreateDirectory(externalFolder);
+    var link = Path.Combine(linkFolder, "other-mod");
+    Directory.CreateSymbolicLink(link, externalFolder);
+    Reject(() => GameManagement.Restore(linkGame), "linked subtree rejected before cleanup");
+    Assert(File.Exists(ownedComponent) && Directory.Exists(externalFolder) && GameManagement.Read(linkGame)?.Phase == "installed",
+        "directory preflight prevents partial restore and leaves external folder untouched");
+    Directory.Delete(link);
+    GameManagement.Restore(linkGame);
+}
 Assert(!GameManagement.IsTracked("Licenses/../../outside.txt") && !GameManagement.IsTracked("Licenses\\..\\outside.txt"), "nested manifest traversal rejected on both separators");
 var before = "; keep\r\n[Menu]\r\nScale=auto\r\n[Other]\r\nScale=2\r\n";
 var after = OptiInstaller.SetIni(before, "Menu", "Scale", "1.2");

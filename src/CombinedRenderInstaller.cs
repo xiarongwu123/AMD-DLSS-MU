@@ -156,7 +156,10 @@ public static class CombinedRenderInstaller
                 throw new IOException("游戏目录已有不同的 nvngx_dlssnr.dll；请先备份并移出冲突文件，MU 不会覆盖它。");
         }
         else sources.Add((neuralDll, Core.DllName));
-        if (Directory.Exists(Path.Combine(root, "OptiScaler"))) throw new IOException("游戏已有 OptiScaler 文件夹，请先恢复或卸载旧方案。");
+        // Older MU restores removed files but left empty directories. Those are reusable.
+        var existingDirectories = GameManagement.ComponentDirectories(Path.Combine(root, "OptiScaler")).ToArray();
+        if (existingDirectories.Any(directory => Directory.EnumerateFiles(directory).Any()))
+            throw new IOException("游戏的 OptiScaler 文件夹仍有文件，请先恢复或卸载旧方案；MU 不会覆盖其他插件。");
         if (sources.Select(f => f.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() != sources.Count)
             throw new IOException("帧率优先安装包包含重复的目标文件。");
         foreach (var (source, name) in sources)
