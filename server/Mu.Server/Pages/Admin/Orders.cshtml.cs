@@ -12,6 +12,7 @@ public sealed class OrdersModel(AppDbContext db, ManualOrderService manualOrders
     [BindProperty] public string? PaymentReference { get; set; }
     [BindProperty] public string? Reason { get; set; }
     [BindProperty] public bool ReceiptVerified { get; set; }
+    [BindProperty] public int ExpectedUsed { get; set; }
     public List<Order> Items { get; private set; } = [];
     public Dictionary<string, string> Emails { get; private set; } = [];
     public async Task OnGetAsync()
@@ -33,7 +34,17 @@ public sealed class OrdersModel(AppDbContext db, ManualOrderService manualOrders
         if (!ValidateReason(Reason) || !ModelState.IsValid) { await OnGetAsync(); return Page(); }
         try { await manualOrders.ConfirmAsync(OrderId!, PaymentReference, Reason, Actor); }
         catch (ApiException e) { ModelState.AddModelError("", e.Message); await OnGetAsync(); return Page(); }
-        TempData["Notice"] = "订单已确认，会员有效期已更新。";
+        TempData["Notice"] = "订单已确认，对应会员或远程指导权益已发放。";
         return RedirectToPage(new { Search = OrderId });
     }
+    public async Task<IActionResult> OnPostCompleteConfigurationAsync()
+    {
+        if (string.IsNullOrWhiteSpace(OrderId)) ModelState.AddModelError("", "订单编号不能为空。");
+        if (!ValidateReason(Reason) || !ModelState.IsValid) { await OnGetAsync(); return Page(); }
+        try { await manualOrders.CompleteConfigurationAsync(OrderId!, Reason, Actor, ExpectedUsed); }
+        catch (ApiException e) { ModelState.AddModelError("", e.Message); await OnGetAsync(); return Page(); }
+        TempData["Notice"] = "已核销1次远程指导，剩余次数已更新。";
+        return RedirectToPage(new { Search = OrderId });
+    }
+
 }

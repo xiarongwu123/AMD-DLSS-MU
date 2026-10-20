@@ -79,7 +79,7 @@ public static class OptiInstaller
     }
     public static void Install(string exe, string package, bool vulkan, string fgInput = "nofg")
     {
-        Core.ValidateGame(exe); GameManagement.EnsureClosed(exe);
+        Core.ValidateGame(exe); Core.CheckPe(exe, false); GameManagement.EnsureClosed(exe);
         var dir = Path.GetDirectoryName(exe)!;
         var plan = Payload.Select(n => (Source: Path.Combine(package, n), Name: n == "OptiScaler.dll" ? (vulkan ? "winmm.dll" : "dxgi.dll") : n.Replace('/', Path.DirectorySeparatorChar))).ToArray();
         foreach (var f in plan)

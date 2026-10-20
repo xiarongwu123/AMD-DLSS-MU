@@ -105,9 +105,9 @@ describe("游戏库原交互", () => {
     await screen.findByRole("dialog", {name: "上传方案"});
     expect(rpc).toHaveBeenCalledWith("presetSnapshot", {gameId: "ready"});
     expect(vi.mocked(rpc).mock.calls.some(([command]) => command === "presets" || command === "launch" || command === "uploadPreset")).toBe(false);
-    expect(screen.getByRole("button", {name: "一键上传方案"}).hasAttribute("disabled")).toBe(true);
+    expect(screen.getByRole("button", {name: "发布分享"}).hasAttribute("disabled")).toBe(true);
   });
-  it("配置读取失败显示原因，不打开空上传表单", async () => {
+  it("配置读取失败保留原因，仍可在分享表单添加附件或网盘", async () => {
     setup("library");
     await screen.findByRole("heading", { name: "游戏库" });
     const original = vi.mocked(rpc).getMockImplementation()!;
@@ -117,7 +117,9 @@ describe("游戏库原交互", () => {
     });
     fireEvent.click(within(screen.getByRole("article", {name: "已配置游戏"})).getByRole("button", {name: "分享方案"}));
     expect(await screen.findByRole("alert")).toHaveProperty("textContent", "当前游戏配置文件不存在");
-    expect(screen.queryByRole("dialog", {name: "上传方案"})).toBeNull();
+    expect(screen.getByRole("dialog", {name: "上传方案"})).toBeTruthy();
+    expect(screen.getByLabelText("网盘链接（可选）")).toBeTruthy();
+    expect(screen.getByLabelText("分享附件")).toBeTruthy();
   });
   it("一键排查仅保留关闭和继续配置的原路径", async () => {
     vi.mocked(rpc).mockResolvedValue([

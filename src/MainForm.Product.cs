@@ -150,7 +150,11 @@ public sealed partial class MainForm
     void ShowConfigurationComplete(string exe, bool opti)
     {
         SwitchPage(1);
-        status.Text = GameManagement.Read(exe)?.Mode == 4
+        status.Text = GameManagement.Read(exe)?.Neural is { } neural
+            ? $"DLSS 5 神经渲染已启用 · {neural.Backend} · {neural.Passes} Pass · {neural.Proxy}。实际效果需进入游戏验证。"
+            : GameManagement.Read(exe)?.Mode == 5
+            ? "32位桥接已部署 · 游戏内 Home 打开面板，Ctrl+End 切换神经渲染；实际效果待验证。"
+            : GameManagement.Read(exe)?.Mode == 4
             ? "配置完成 · DLSS 5 + XeFG 2X 已部署。进入游戏后按 Insert 检查实际生效状态。"
             : opti
             ? "开启成功 · OptiScaler 组件已部署。进入游戏后按 Insert 验证实际效果。"

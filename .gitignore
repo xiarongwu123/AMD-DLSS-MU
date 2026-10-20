@@ -30,3 +30,6 @@ output/playwright/
 desktop-ui/node_modules/
 desktop-ui/dist/
 desktop-ui/*.tsbuildinfo
+
+# Paid supported-game catalog is supplied privately during server deployment.
+server/private/

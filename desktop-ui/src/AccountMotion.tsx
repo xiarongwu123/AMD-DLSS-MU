@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Settings } from "lucide-react";
 import type { Account } from "./types";
+import { membershipName } from "./membership";
 import "./account-motion.css";
 const Lanyard = lazy(() => import("./reactbits/Lanyard"));
 const loadGridScan = () => import("./reactbits/GridScan");
@@ -9,7 +10,7 @@ export const prepareLoginMotion = () => { void loadGridScan().catch(() => {}); }
 const escape = (s: string) => s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c]!));
 function badgeImage(account: Account, back = false) {
   const email = escape(account.email);
-  const tier = account.membership.tier === "pro" ? "MU 会员" : "MU 玩家";
+  const tier = account.membership.tier === "pro" ? membershipName(account) : "MU 玩家";
   const identity = escape(account.id.slice(0, 16));
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
     <defs><linearGradient id="bg" x2=".9" y2="1"><stop stop-color="#263b35"/><stop offset="1" stop-color="#111c22"/></linearGradient><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#adff18" opacity=".1"/></pattern></defs>

@@ -53,7 +53,9 @@ public static class Core
         }
     }
 
-    public static void CheckPe(string path, bool dll)
+    public static void CheckPe(string path, bool dll) => CheckPeMachine(path, dll);
+    public static bool IsX86(string exe) => CheckPeMachine(exe, false, true) == 0x14c;
+    public static ushort CheckPeMachine(string path, bool dll, bool allowX86 = false)
     {
         using var f = File.OpenRead(path);
         using var r = new BinaryReader(f);
@@ -62,9 +64,12 @@ public static class Core
         var offset = r.ReadInt32();
         if (offset < 64 || offset > f.Length - 24) throw new IOException("PE 文件头无效。");
         f.Position = offset;
-        if (r.ReadUInt32() != 0x4550 || r.ReadUInt16() != 0x8664) throw new IOException("需要 x64 游戏程序或 x64 DLL。");
+        if (r.ReadUInt32() != 0x4550) throw new IOException("PE 文件头无效。");
+        var machine=r.ReadUInt16();
+        if (machine != 0x8664 && !(allowX86 && machine == 0x14c)) throw new IOException("需要匹配的 Windows x64 或 x86 程序。");
         f.Position = offset + 22;
         if (((r.ReadUInt16() & 0x2000) != 0) != dll) throw new IOException("文件类型与所选 EXE / DLL 不符。");
+        return machine;
     }
 
     public static string ExtractBundledDll(string destination)
@@ -97,10 +102,11 @@ public static class Core
     public static void ValidateGame(string exe)
     {
         if (!string.Equals(Path.GetExtension(exe), ".exe", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(Path.GetFileName(exe), InstallerName, StringComparison.OrdinalIgnoreCase))
+            (string.Equals(Path.GetFileName(exe), InstallerName, StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(Path.GetFileName(exe), "amd-nr-host64.exe", StringComparison.OrdinalIgnoreCase)))
             throw new IOException("请选择游戏本体 EXE，不要选择安装器。");
         RejectLinks(exe);
-        CheckPe(exe, false);
+        CheckPeMachine(exe, false, true);
         if (Path.GetDirectoryName(Path.GetFullPath(exe)) == Path.GetPathRoot(Path.GetFullPath(exe)))
             throw new IOException("请使用独立游戏文件夹，不能直接安装到磁盘根目录。");
     }

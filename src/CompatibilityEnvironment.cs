@@ -152,7 +152,7 @@ public sealed class CompatibilityEnvironmentReader
                 CleanText(device.Element("CardName")?.Value, 160),
                 Vendor(device.Element("Manufacturer")?.Value, device.Element("VendorID")?.Value),
                 ParseMemoryMb(device.Element("DedicatedMemory")?.Value), Unknown,
-                CleanVersion(device.Element("DriverVersion")?.Value)))
+                CleanVersion(device.Element("DriverVersion")?.Value), CleanText(device.Element("DeviceID")?.Value, 100)))
             .Where(gpu => gpu.Name != Unknown)
             .Distinct().ToArray();
         return new(CleanText(information?.Element("OperatingSystem")?.Value),

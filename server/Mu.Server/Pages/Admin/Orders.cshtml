@@ -9,7 +9,7 @@
 @foreach (var order in Model.Items)
 {
     <tr><td><code>@order.Id</code></td><td>@Model.Emails.GetValueOrDefault(order.UserId, order.UserId)<br /><small>@order.UserId</small></td>
-    <td>@order.PlanName<br /><small>@order.DurationDays 天</small></td><td>@order.Currency @((order.AmountMinor / 100m).ToString("0.00"))</td><td>@order.Status</td>
+    <td>@order.PlanName<br /><small>@(!order.GrantsMembership ? "仅远程指导，不含会员" : order.DurationDays == 0 ? "终身有效" : $"{order.DurationDays} 天")</small></td><td>@order.Currency @((order.AmountMinor / 100m).ToString("0.00"))</td><td>@order.Status</td>
     <td><small>创建：@Mu.Server.Pages.Admin.AdminPageModel.FormatTime(order.CreatedAt)<br />确认：@Mu.Server.Pages.Admin.AdminPageModel.FormatTime(order.PaidAt)</small></td>
     <td>
     @if ((order.Status is "pending" or "review_requested") && order.Provider == "manual")
@@ -23,6 +23,19 @@
         </form>
     }
     else if (order.ProviderTransactionId is not null) { <code>@order.ProviderTransactionId</code> }
+    @if (order.ConfigurationSessions > 0)
+    {
+        <p>远程指导 @order.ConfigurationSessions 次 · 已用 @order.ConfigurationSessionsUsed 次 · 剩余 @(order.ConfigurationSessions - order.ConfigurationSessionsUsed) 次；@(order.Status == "paid" ? "可按剩余次数预约" : "到账后可预约")</p>
+        @if (order.Status == "paid" && order.ConfigurationServiceStatus == "pending")
+        {
+            <form method="post" asp-page-handler="CompleteConfiguration">
+                <input type="hidden" name="OrderId" value="@order.Id" />
+                <input type="hidden" name="ExpectedUsed" value="@order.ConfigurationSessionsUsed" />
+                <label>完成说明<input name="Reason" required minlength="3" maxlength="500" /></label>
+                <button type="submit">确认完成并核销1次指导</button>
+            </form>
+        }
+    }
     </td></tr>
 }
 </tbody></table></div>

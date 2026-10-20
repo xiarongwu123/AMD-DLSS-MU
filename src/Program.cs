@@ -79,7 +79,8 @@ public static class GameScanner
         "updater",
         "patcher",
         "configurator",
-        "vcredist"
+        "vcredist",
+        "amd-nr-host64"
     ];
 
     static readonly HashSet<string> ignoredDirectories =
@@ -1280,7 +1281,10 @@ public sealed partial class MainForm : Form
         Official = 0,
         // Persisted IDs are stable: 1 is the retired Pre-SR mode, 2 is OptiScaler.
         OptiScalerStandard = 2,
-        Dlss5XeFg = 4
+        Dlss5XeFg = 4,
+        X86Bridge = 5,
+        NeuralRendering = 6,
+        LegacyBridge = 8
     }
 
     readonly ComboBox installMode = new()
@@ -1352,7 +1356,7 @@ public sealed partial class MainForm : Form
     string? transactionState;
 
     InstallMode SelectedInstallMode =>
-        installMode.SelectedIndex switch { 1 => InstallMode.OptiScalerStandard, 2 => InstallMode.Dlss5XeFg, _ => InstallMode.Official };
+        installMode.SelectedIndex switch { 1 => InstallMode.OptiScalerStandard, 2 => InstallMode.Dlss5XeFg, 3 => InstallMode.X86Bridge, 4 => InstallMode.NeuralRendering, 5 => InstallMode.LegacyBridge, _ => InstallMode.Official };
 
     RoundedPanel? selectedCard;
 
@@ -1721,14 +1725,16 @@ public sealed partial class MainForm : Form
         if (busy) return;
         var targetExe = selectedGame;
         var chosenMode = SelectedInstallMode;
+        var chosenX86Api=x86GraphicsApi;
+        var chosenNeuralOptions = neuralOptions;
         var chosenVulkan = optiVulkan;
         var chosenFgInput = optiFgInput;
-        var featureKey = chosenMode == InstallMode.OptiScalerStandard ? "optiscaler.configure" : "dlss.configure";
+        var featureKey = RenderSchemes.PremiumMode((int)chosenMode) ? "schemes.premium.configure" : chosenMode == InstallMode.OptiScalerStandard ? "optiscaler.configure" : "dlss.configure";
         if (!await RequireFeatureAsync(featureKey) || busy) return;
-        using var downloadSession = BeginDownloadSession(Path.GetFileNameWithoutExtension(targetExe) + " · " + (chosenMode == InstallMode.Official ? "模式一组件" : "OptiScaler"), async () =>
+        using var downloadSession = BeginDownloadSession(Path.GetFileNameWithoutExtension(targetExe) + " · " + (chosenMode == InstallMode.X86Bridge ? "32位神经渲染桥接" : chosenMode == InstallMode.Official ? "模式一组件" : "OptiScaler"), async () =>
         {
-            selectedGame = targetExe; installMode.SelectedIndex = chosenMode switch { InstallMode.Official => 0, InstallMode.Dlss5XeFg => 2, _ => 1 };
-            optiVulkan = chosenVulkan; optiFgInput = chosenFgInput;
+            selectedGame = targetExe; installMode.SelectedIndex = chosenMode switch { InstallMode.Official => 0, InstallMode.Dlss5XeFg => 2, InstallMode.X86Bridge => 3, InstallMode.NeuralRendering => 4, InstallMode.LegacyBridge => 5, _ => 1 };
+            optiVulkan = chosenVulkan; optiFgInput = chosenFgInput; x86GraphicsApi=chosenX86Api; neuralOptions=chosenNeuralOptions;
             selected.Text = Path.GetFileNameWithoutExtension(targetExe); await InstallAsync();
         }, featureKey);
         Diagnostics.Record(targetExe, "install", "start", chosenMode.ToString());
@@ -1744,22 +1750,43 @@ public sealed partial class MainForm : Form
         try
         {
             var compatibility = await Task.Run(() => GameManagement.Check(targetExe, true,
-                chosenMode != InstallMode.OptiScalerStandard, (int)chosenMode));
+                chosenMode is not (InstallMode.OptiScalerStandard or InstallMode.NeuralRendering), (int)chosenMode));
+            if(smartPreflightExe!=targetExe)
+            {
+                var scope=chosenMode switch {InstallMode.OptiScalerStandard=>"standard",InstallMode.Dlss5XeFg=>"fps",InstallMode.X86Bridge or InstallMode.LegacyBridge=>"legacy",_=>"compat"};
+                await ManualSmartPreflightAsync(targetExe,scope,System.Text.Json.JsonSerializer.SerializeToElement(new{mode=(int)chosenMode,
+                    neural=chosenNeuralOptions,confirmedApi=chosenX86Api!="auto"?chosenX86Api:chosenNeuralOptions.GraphicsApi!="auto"?chosenNeuralOptions.GraphicsApi:""}));
+            }
             if (compatibility.Blocked)
             {
-                status.Text = "安装检查未通过，请查看提示；旧组件冲突可点击“恢复配置”处理。";
+                status.Text = "安装检查未通过：" + string.Join("；", compatibility.BlockingReasons);
                 Diagnostics.Record(targetExe, "compatibility", "blocked", string.Join("; ", compatibility.Details));
                 await UiMessageAsync( string.Join("\n", compatibility.Details), "安装检查", MessageBoxButtons.OK);
                 return;
             }
             if (GameManagement.Read(targetExe) is { Phase: not "restored" })
                 throw new IOException("请先恢复此游戏，再安装或切换模式。");
-            if (chosenMode is InstallMode.Official or InstallMode.Dlss5XeFg)
+            if (compatibility.AntiCheatComponents.Length > 0)
+            {
+                var risk = "检测到反作弊组件：" + string.Join("、", compatibility.AntiCheatComponents) +
+                    "。\n\n配置图形插件可能导致游戏拒绝启动、被踢出或账号处罚。MU 不会关闭或绕过反作弊，离线模式也不保证没有风险。\n\n是否已知悉上述风险，并继续本次配置？";
+                if (await UiMessageAsync(risk, "反作弊风险确认", MessageBoxButtons.YesNo, "已知悉风险，继续配置", MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+                {
+                    status.Text = "已取消配置，游戏文件未改动。";
+                    Diagnostics.Record(targetExe, "anti-cheat", "declined", string.Join("、", compatibility.AntiCheatComponents));
+                    return;
+                }
+                Diagnostics.Record(targetExe, "anti-cheat", "acknowledged", string.Join("、", compatibility.AntiCheatComponents));
+            }
+            if (chosenMode is InstallMode.Official or InstallMode.Dlss5XeFg or InstallMode.X86Bridge)
             {
                 if (!await EnsureHip72ForRx6000Async(targetExe)) return;
                 if (!SmartRenderDiagnostics.HasHipRuntime())
                     throw new MissingAmdHipRuntimeException();
             }
+            if(chosenMode==InstallMode.X86Bridge) { await InstallX86BridgeAsync(targetExe); return; }
+            if(chosenMode==InstallMode.LegacyBridge) { await InstallLegacyBridgeAsync(targetExe); return; }
+            if(chosenMode==InstallMode.NeuralRendering) { await InstallNeuralRenderAsync(targetExe); return; }
             if (chosenMode == InstallMode.OptiScalerStandard)
             {
                 await InstallOptiScalerStandardAsync(targetExe, chosenVulkan); return;
@@ -1890,6 +1917,7 @@ public sealed partial class MainForm : Form
             status.Text = "正在准备游戏目录…";
 
             if (!await RequireFeatureAsync(featureKey)) return;
+            Core.CheckPe(targetExe, false); // This payload contains x64 DLLs; validate before any file writes.
             fileTransaction = BeginAccountTransaction();
             GameManagement.Begin(targetExe, 0);
             Diagnostics.Record(targetExe, "game-files", "staging");
@@ -2045,11 +2073,12 @@ public sealed partial class MainForm : Form
         {
             try
             {
-                if (GameManagement.Read(targetExe) is { Phase: "installing" })
+                if (GameManagement.Read(targetExe) is { Phase: "installing", Neural: null })
                     GameManagement.Finish(targetExe, completed);
             }
             catch (Exception e) { completed = false; status.Text = "安装记录未完成，请保留现场：" + e.Message; }
             busy = false;
+            smartPreflightExe=null;smartPreflightBackend=null;
             libraryPage.Enabled = true;
             // Finish must persist the terminal phase before invalidating cached
             // library state, badges, counts and hover actions.

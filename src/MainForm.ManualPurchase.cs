@@ -41,13 +41,13 @@ public sealed partial class MainForm
             ForeColor = Ink, FlatStyle = FlatStyle.Flat, Font = new Font(Font.FontFamily, 11)
         };
         foreach (var plan in plans.Items)
-            selector.Items.Add($"{plan.Name} · {plan.DurationDays} 天 · ¥{plan.PriceMinor / 100m:0.00}");
+            selector.Items.Add($"{plan.Name} · {(!plan.GrantsMembership ? "单次指导，不含会员" : plan.DurationDays==0 ? "终身" : plan.DurationDays+" 天")} · ¥{plan.PriceMinor / 100m:0.00}");
         selector.SelectedIndex = 0;
         var amount = Label("", Ink, 12, true);
         void UpdateAmount()
         {
             var plan = plans.Items[selector.SelectedIndex];
-            amount.Text = $"应付 ¥{plan.PriceMinor / 100m:0.00}  ·  {plan.DurationDays} 天";
+            amount.Text = $"应付 ¥{plan.PriceMinor / 100m:0.00} · {(!plan.GrantsMembership ? "仅服务" : plan.DurationDays==0 ? "终身会员" : plan.DurationDays+" 天会员")} · 指导{plan.ConfigurationSessions}次";
         }
         selector.SelectedIndexChanged += (_, _) => UpdateAmount();
         UpdateAmount();
@@ -96,7 +96,8 @@ public sealed partial class MainForm
             current = order;
             var planIndex = Array.FindIndex(plans.Items, x => x.Id == order.PlanId);
             if (planIndex >= 0) selector.SelectedIndex = planIndex;
-            amount.Text = $"本单应付 ¥{order.AmountMinor / 100m:0.00}  ·  {order.DurationDays} 天";
+            var used = order.ConfigurationSessionsUsed ?? (order.ConfigurationServiceStatus=="completed" ? order.ConfigurationSessions : 0);
+            amount.Text = $"本单 ¥{order.AmountMinor / 100m:0.00} · {(!order.GrantsMembership ? "仅服务" : order.DurationDays==0 ? "终身会员" : order.DurationDays+" 天会员")} · 指导剩余{order.ConfigurationSessions-used}次";
             orderId.Text = order.Id;
             selector.Enabled = order.Status is not ("pending" or "review_requested");
             create.Enabled = order.Status != "review_requested";
@@ -112,7 +113,7 @@ public sealed partial class MainForm
             var payment = order.Payment;
             instructions.Text = order.Status is "pending" or "review_requested"
                 ? $"待核对 · 应付 ¥{order.AmountMinor / 100m:0.00}\n{payment?.Instructions ?? "收款信息暂不可用，请联系管理员。"}"
-                : order.Status == "paid" ? "已确认到账，Pro 已开通。" : "订单已结束。";
+                : order.Status == "paid" ? "已确认到账，订单对应的会员/指导权益已发放。" : "订单已结束。";
             state.Text = order.Status == "pending" ? "付款后点击“我已付款”；管理员核对到账后再刷新。"
                 : order.Status == "review_requested" ? "已提交核对；尚未开通，请保留付款凭证。"
                 : order.Status == "paid" ? "已开通，可关闭窗口并刷新账户状态。" : "可重新选择套餐提交申请。";

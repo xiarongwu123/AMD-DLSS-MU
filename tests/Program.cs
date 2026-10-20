@@ -4,12 +4,43 @@ using Mu.Presets;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+if(args is ["verify-legacy-reshade",var reshadeArchive,var reshadeTarget])
+{
+    LegacyBridge.ExtractReShade(reshadeArchive,reshadeTarget);
+    if(Core.Hash(reshadeTarget)!=LegacyBridge.ReShadeHash)throw new Exception("Real ReShade64 extraction failed");
+    Console.WriteLine("Real ReShade64 SFX extraction and SHA256 passed.");return;
+}
+
+if (args is ["verify-neural", var nrPackage, var nrDestination])
+{
+    NeuralRenderTests.Run(); NeuralRenderTests.RealPackage(nrPackage, nrDestination); return;
+}
+NeuralRenderTests.Run();
+RenderSchemeTests.Run();
+await RecommendationTests.RunAsync();
+
 if (args.Length == 2 && args[0] == "--live-magpie")
 {
     await DownloadResumeTests.RunLive(args[1]);
     return;
 }
 
+if(args is ["verify-x86",var package,var x86Destination])
+{
+    X86Bridge.ValidatePackage(package);
+    Directory.CreateDirectory(x86Destination);GameManagement.StorageOverride=Path.Combine(x86Destination,"records");
+    var exe=Path.Combine(x86Destination,"fixture.exe");var bytes=new byte[512];bytes[0]=0x4d;bytes[1]=0x5a;BitConverter.GetBytes(0x80).CopyTo(bytes,0x3c);bytes[0x80]=0x50;bytes[0x81]=0x45;BitConverter.GetBytes((ushort)0x14c).CopyTo(bytes,0x84);File.WriteAllBytes(exe,bytes);
+    if(GameManagement.Read(exe) is {Phase:"installed"})GameManagement.Restore(exe);
+    foreach(var api in new[]{"dx8","dx9","dx11","opengl"})
+    {
+        X86Bridge.Install(exe,package,api);
+        if(GameManagement.Read(exe) is not {Mode:5,Phase:"installed"} || !File.Exists(Path.Combine(x86Destination,"amd-nr-host64.exe")))throw new Exception("Bridge installation failed");
+        if(SmartRenderDiagnostics.Check(exe).Any(x=>x.Problem && !x.Title.Contains("HIP") && x.Title!="显卡"))throw new Exception("Bridge diagnostics missed components");
+        GameManagement.Restore(exe);
+        if(Directory.EnumerateFiles(x86Destination).Any(p=>p!=exe))throw new Exception("Bridge restore left files behind");
+    }
+    Console.WriteLine("PASS real pinned x86 payload: DX8, DX9, DX10/11, OpenGL install/diagnostics/restore cycles; game execution not tested.");return;
+}
 if (args is ["verify-combined", var baseArchive, var overlayArchive, var destination])
 {
     CombinedRenderInstaller.ExtractVerified(baseArchive, overlayArchive, destination);
@@ -150,6 +181,13 @@ Assert(GameManagement.ResolveGameExecutable(assettoLauncher) == assettoGame,
 File.Delete(assettoLauncher);
 Assert(GameManagement.ResolveGameExecutable(assettoLauncher) == assettoLauncher,
     "unrelated folders containing acs.exe do not become Assetto Corsa games");
+var x86Fixture=Path.Combine(root,"x86-game.exe");
+var x86Bytes=(byte[])assettoPe.Clone();BitConverter.GetBytes((ushort)0x14c).CopyTo(x86Bytes,0x84);File.WriteAllBytes(x86Fixture,x86Bytes);
+Core.ValidateGame(x86Fixture);Assert(Core.IsX86(x86Fixture),"x86 game accepted by library without weakening x64 DLL validation");
+try{Core.CheckPe(x86Fixture,false);throw new Exception("x64 validation accepted x86");}catch(IOException){Assert(true,"x64 payload validation still refuses x86");}
+Assert(X86Bridge.ApiFromImports(["D3D9.DLL"])=="dx9" && X86Bridge.ApiFromImports(["d3d10.dll"])=="dx11","x86 API matching handles legacy renderer and case");
+Assert(X86Bridge.ApiFromImports(["d3d9.dll","d3d11.dll"])=="unknown","ambiguous x86 API never guessed");
+Assert(GameManagement.IsTracked("amd-nr-host64.exe") && GameManagement.IsTracked("amd-nr.addon32") && GameManagement.IsTracked("ReShade.ini"),"bridge runtime/configuration files participate in restore");
 var invalidGame = Game("invalid-game");
 var invalidCheck = GameManagement.Check(invalidGame, true, false, 2);
 Assert(invalidCheck.Blocked && invalidCheck.BlockingReasons.Any(reason => reason.Contains("Windows 程序")),
@@ -157,8 +195,20 @@ Assert(invalidCheck.Blocked && invalidCheck.BlockingReasons.Any(reason => reason
 File.WriteAllText(Path.Combine(Path.GetDirectoryName(invalidGame)!, "dxgi.dll"), "existing mod");
 var conflictCheck = GameManagement.Check(invalidGame, true, false, 2);
 Assert(conflictCheck.BlockingReasons.Length == 2 &&
-    conflictCheck.BlockingReasons.Any(reason => reason.Contains("旧安装或其他插件")),
+    conflictCheck.BlockingReasons.Any(reason => reason.Contains("旧安装或其他插件") && reason.Contains("dxgi.dll")),
     "smart check preserves multiple exact blocking reasons");
+var antiGame = Game("anti-cheat-risk");
+File.WriteAllBytes(antiGame, assettoPe);
+Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(antiGame)!, "EasyAntiCheat"));
+var antiCheck = GameManagement.Check(antiGame, true, false, 2);
+Assert(!antiCheck.Blocked && antiCheck.AntiCheatComponents.Contains("EasyAntiCheat") &&
+    antiCheck.Details.Any(reason => reason.Contains("须明确确认风险")),
+    "anti-cheat detection requires acknowledgement instead of hard blocking");
+File.WriteAllText(Path.Combine(Path.GetDirectoryName(antiGame)!, "dxgi.dll"), "other plugin");
+var antiConflict = GameManagement.Check(antiGame, true, false, 2);
+Assert(antiConflict.Blocked && antiConflict.AntiCheatComponents.Length == 1 &&
+    antiConflict.BlockingReasons.Any(reason => reason.Contains("dxgi.dll")),
+    "anti-cheat acknowledgement cannot waive real plugin conflicts");
 var capableGpu = new CompatibilityGpu("AMD Radeon RX 9070 XT", "AMD", 16 * 1024, "RDNA4", "known");
 Assert(SmartRenderAdvisor.Recommend(capableGpu, true).QualityMode == 0,
     "tested GPU family with enough VRAM can receive tentative neural quality recommendation");

@@ -149,7 +149,7 @@ public static class SmartRenderDiagnostics
             return items.ToArray();
         }
         items.Add(new("安装记录", "已找到这款游戏的安装记录。", false));
-        if (record.Mode is 2 or 4)
+        if (record.Mode is 2 or 4 or 6)
         {
             var changed = new List<string>();
             foreach (var file in record.Files.Where(f => f.Before != f.After))
@@ -166,6 +166,25 @@ public static class SmartRenderDiagnostics
             }
             items.Add(new("安装文件完整性", changed.Count == 0 ? "MU 安装的文件与记录一致。" :
                 "以下文件缺失或已变化：" + string.Join("、", changed.Take(3)) + (changed.Count > 3 ? $" 等 {changed.Count} 个文件" : ""), changed.Count > 0));
+        }
+        if (record.Neural is { } neural)
+        {
+            items.Add(new("神经渲染后端", $"{neural.Backend} · {neural.Passes} Pass · {Mu.Neural.NeuralRules.StatusLabel(neural.Verification)}。文件部署成功不代表效果稳定。", false, true));
+            items.Add(new("游戏图形接口", neural.GraphicsApi + " · 代理 " + neural.Proxy + "；实际加载需进游戏确认。", false, true));
+            items.Add(new("兼容规则", "本次安装使用规则版本：" + neural.RuleRevision, false, neural.RuleRevision == "fallback"));
+            if (neural.Backend != "mochizuki") items.Add(new("AMD HIP", HasHipRuntime() ? "已找到 HIP 运行组件。" : "未找到 HIP 运行组件。", !HasHipRuntime()));
+            else items.Add(new("Mochizuki 模型", "模型已按固定 SHA256 校验；首次启动可能编译数分钟。", false));
+            items.Add(new("运行效果", "请在游戏中按 Insert 查看依赖与编译状态，再验证神经渲染效果。", false, true));
+            return items.ToArray();
+        }
+        if(record.Mode==5)
+        {
+            foreach(var (name,label) in new[]{("amd-nr.addon32","32位游戏内组件"),("amd-nr-host64.exe","64位神经渲染桥接程序"),("dlssnr_amd_pass1.dll","神经渲染运行组件"),("dlssnr_on_amd_weights.bin","模型数据"),("amd-nr.ini","桥接方案设置")})
+                items.Add(new(label,File.Exists(Path.Combine(directory,name)) ? "已找到。" : "缺失，请恢复后重新配置。",!File.Exists(Path.Combine(directory,name))));
+            items.Add(new("AMD HIP",HasHipRuntime() ? "已找到HIP运行组件。" : "未找到HIP运行组件。",!HasHipRuntime()));
+            items.Add(new("32位游戏加载组件",X86Bridge.Proxies.Any(n=>File.Exists(Path.Combine(directory,n))) ? "已找到；是否加载需进游戏验证。" : "缺少加载组件。",!X86Bridge.Proxies.Any(n=>File.Exists(Path.Combine(directory,n)))));
+            items.Add(new("运行效果","实验性桥接，需进入游戏验证；当前未提供XeFG帧生成。",false,true));
+            return items.ToArray();
         }
         if (record.Mode == 0)
         {

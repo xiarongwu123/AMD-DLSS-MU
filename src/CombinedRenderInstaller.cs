@@ -135,7 +135,7 @@ public static class CombinedRenderInstaller
 
     public static void Install(string exe, string package)
     {
-        Core.ValidateGame(exe); GameManagement.EnsureClosed(exe);
+        Core.ValidateGame(exe); Core.CheckPe(exe, false); GameManagement.EnsureClosed(exe);
         var root = Path.GetDirectoryName(exe)!;
         var sources = Directory.EnumerateFiles(package, "*", SearchOption.AllDirectories)
             .Select(p => (Source: p, Name: Path.GetRelativePath(package, p).Replace('\\', '/')))

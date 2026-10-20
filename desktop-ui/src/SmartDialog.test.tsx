@@ -41,6 +41,27 @@ afterEach(() => {
   vi.resetAllMocks();
 });
 describe("推荐目标与真实配置命令", () => {
+  it("免费 Daniel 0.8 打开官方流程，不冒报游戏配置完成", async () => {
+    vi.mocked(rpc).mockImplementation(async command => command === "recommend" ? recommendation : command === "daniel08" ? true : undefined);
+    const complete = vi.fn();
+    render(<SmartDialog game={game} state={emptyState} onClose={() => {}} onComplete={complete}/>);
+    await screen.findByText("AMD RX 7900 XT");
+    fireEvent.click(screen.getByRole("button", {name:"打开 Daniel 0.8 官方版"}));
+    await waitFor(() => expect(rpc).toHaveBeenCalledWith("daniel08",{gameId:game.id}));
+    await screen.findByText(/已打开 Daniel 0.8 官方安装器/);
+    expect(rpc).not.toHaveBeenCalledWith("configure", expect.anything());
+    expect(complete).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog", {name:"开通高级会员"})).toBeNull();
+  });
+  it("平铺的高帧率方案不要求会员，继续调用原有模式4", async () => {
+    vi.mocked(rpc).mockImplementation(async command => command === "recommend" ? recommendation : undefined);
+    render(<SmartDialog game={game} state={emptyState} onClose={() => {}} onComplete={() => {}}/>);
+    await screen.findByText("AMD RX 7900 XT");
+    fireEvent.click(screen.getByRole("button", {name:/高帧率版/}));
+    fireEvent.click(screen.getByRole("button", {name:"一键配置"}));
+    await waitFor(() => expect(rpc).toHaveBeenCalledWith("configure", {gameId:game.id,confirmedApi:"",confirmedInput:"",windowed:"",mode:4,scheme:"fps",vulkan:false,fgInput:"nofg"}));
+    expect(screen.queryByRole("dialog", {name:"开通高级会员"})).toBeNull();
+  });
   it("检测时显示动态进度，检测结束后不因显存未确认禁用选择", async () => {
     let resolve!: (v: unknown) => void;
     vi.mocked(rpc).mockImplementation(
@@ -60,17 +81,17 @@ describe("推荐目标与真实配置命令", () => {
     expect(screen.getByRole("status").textContent).toContain("正在读取");
     expect(document.querySelector(".indeterminate")).not.toBeNull();
     expect(
-      (screen.getByRole("button", { name: "一键配置" }) as HTMLButtonElement)
+      (screen.getByRole("button", { name: "打开 Daniel 0.8 官方版" }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
     resolve(recommendation);
     await screen.findByText("AMD RX 7900 XT");
     expect(
-      (screen.getByRole("button", { name: "一键配置" }) as HTMLButtonElement)
+      (screen.getByRole("button", { name: "打开 Daniel 0.8 官方版" }) as HTMLButtonElement)
         .disabled,
     ).toBe(false);
   });
-  it("画质直接配置模式一，帧率直接配置 XeFG，只有自定义显示清单", async () => {
+  it("画质和帧率保留原路线，新增方案只追加到自定义清单", async () => {
     vi.mocked(rpc).mockImplementation(async (command) =>
       command === "recommend" ? recommendation : undefined,
     );
@@ -84,11 +105,14 @@ describe("推荐目标与真实配置命令", () => {
       />,
     );
     await screen.findByText("AMD RX 7900 XT");
+    fireEvent.click(screen.getByText("原有目标与自定义设置"));
+    fireEvent.click(screen.getByRole("button", { name: /画质优先/ }));
     expect(screen.queryAllByRole("radio")).toHaveLength(0);
     fireEvent.click(screen.getByRole("button", { name: "一键配置" }));
     await waitFor(() =>
       expect(rpc).toHaveBeenCalledWith("configure", {
         gameId: "test-game",
+        confirmedApi: "",confirmedInput:"",windowed:"",
         mode: 0,
         vulkan: false,
         fgInput: "nofg",
@@ -100,6 +124,7 @@ describe("推荐目标与真实配置命令", () => {
     await waitFor(() =>
       expect(rpc).toHaveBeenCalledWith("configure", {
         gameId: "test-game",
+        confirmedApi: "",confirmedInput:"",windowed:"",
         mode: 4,
         vulkan: false,
         fgInput: "nofg",
@@ -107,16 +132,17 @@ describe("推荐目标与真实配置命令", () => {
     );
     await waitFor(() => expect(complete).toHaveBeenCalledTimes(2));
     fireEvent.click(screen.getByRole("button", { name: /自定义/ }));
-    expect(screen.getAllByRole("radio")).toHaveLength(3);
+    expect(screen.getAllByRole("radio")).toHaveLength(5);
     fireEvent.click(screen.getByRole("radio", { name: /标准 OptiScaler/ }));
     fireEvent.click(screen.getByLabelText("Vulkan 接口"));
-    fireEvent.change(screen.getByRole("combobox"), {
+    fireEvent.change(screen.getByRole("combobox",{name:"帧生成入口"}), {
       target: { value: "fsrfg" },
     });
     fireEvent.click(screen.getByRole("button", { name: "一键配置" }));
     await waitFor(() =>
       expect(rpc).toHaveBeenCalledWith("configure", {
         gameId: "test-game",
+        confirmedApi: "vulkan",confirmedInput:"",windowed:"",
         mode: 2,
         vulkan: true,
         fgInput: "fsrfg",
@@ -138,6 +164,8 @@ describe("推荐目标与真实配置命令", () => {
       />,
     );
     await screen.findByText("AMD RX 7900 XT");
+    fireEvent.click(screen.getByText("原有目标与自定义设置"));
+    fireEvent.click(screen.getByRole("button", { name: /画质优先/ }));
     fireEvent.click(screen.getByRole("button", { name: "一键配置" }));
     expect(await screen.findByRole("alert")).toHaveProperty(
       "textContent",
@@ -145,7 +173,7 @@ describe("推荐目标与真实配置命令", () => {
     );
     expect(complete).not.toHaveBeenCalled();
   });
-  it("社区入口按游戏列方案，选中后才应用对应分享", async () => {
+  it("社区入口列出全部分享，选中后才应用到目标游戏", async () => {
     const item = { id: "preset-1", gameKey: "steam:123", gameName: "游戏",
       mode: 4, goal: "performance", vulkan: false, componentVersion: "v1",
       title: "我的顺滑配置", description: "XeFG 设置", author: "玩家 A",
@@ -174,10 +202,31 @@ describe("推荐目标与真实配置命令", () => {
     );
     render(<SmartDialog game={game} state={emptyState} initialTab="community"
       onClose={() => {}} onComplete={() => {}} />);
-    await screen.findByText(/这款游戏还没有人分享配置/);
-    expect(rpc).toHaveBeenCalledWith("presets", { gameId: "test-game" });
+    await screen.findByText(/还没有玩家分享内容/);
+    expect(rpc).toHaveBeenCalledWith("presets", { page: 1 });
     expect(rpc).not.toHaveBeenCalledWith("recommend", { gameId: "test-game" });
     fireEvent.click(screen.getByRole("tab", { name: "智能推荐" }));
     await waitFor(() => expect(rpc).toHaveBeenCalledWith("recommend", { gameId: "test-game" }));
   });
+  it("32位不再禁用帧率或强制替换模式，仍可单独选择老游戏桥接",async()=>{
+    vi.mocked(rpc).mockImplementation(async command=>command==="recommend" ? {...recommendation,is32Bit:true,graphicsApi:"dx9"} : undefined);
+    render(<SmartDialog game={game} state={{...emptyState,account:{id:"a",email:"a@test",membership:{tier:"pro",expiresAt:null},paymentsEnabled:true,features:[{key:"schemes.premium.configure",allowed:true}]}}} onClose={()=>{}} onComplete={()=>{}}/>);
+    await screen.findByText("AMD RX 7900 XT");
+    fireEvent.click(screen.getByText("原有目标与自定义设置"));
+    fireEvent.click(screen.getByRole("button",{name:/画质优先/}));
+    fireEvent.click(screen.getByRole("button",{name:"一键配置"}));
+    await waitFor(()=>expect(rpc).toHaveBeenCalledWith("configure",{gameId:game.id,confirmedApi:"",confirmedInput:"",windowed:"",mode:0,vulkan:false,fgInput:"nofg"}));
+    fireEvent.click(screen.getByRole("button",{name:/帧率优先/}));
+    expect((screen.getByRole("button",{name:"一键配置"}) as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(screen.getByRole("button",{name:"一键配置"}));
+    await waitFor(()=>expect(rpc).toHaveBeenCalledWith("configure",expect.objectContaining({mode:4})));
+    fireEvent.click(screen.getByRole("button",{name:/自定义/}));
+    expect(screen.getAllByRole("radio")).toHaveLength(5);
+    expect(screen.getByRole("radio",{name:/标准 OptiScaler/})).toBeTruthy();
+    fireEvent.click(screen.getByRole("button",{name:/老游戏专用版/}));
+    fireEvent.change(screen.getByRole("combobox",{name:"32位游戏图形接口"}),{target:{value:"opengl"}});
+    fireEvent.click(screen.getByRole("button",{name:"一键配置"}));
+    await waitFor(()=>expect(rpc).toHaveBeenCalledWith("configure",{gameId:game.id,confirmedApi:"opengl",confirmedInput:"",windowed:"",mode:5,scheme:"legacy",x86Api:"opengl",vulkan:false,fgInput:"nofg"}));
+  });
+
 });

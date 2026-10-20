@@ -11,7 +11,7 @@ vi.mock('./bridge', () => ({
   isDesktop: true, isPreview: false,
   emptyState: { settings: { dark: true }, games: [], downloads: [] },
 }));
-vi.mock('./VisualEffects', () => ({ useVisualEffects: () => ({ active: true, enabled: true, change: vi.fn() }), InteractiveSurface: ({ children }: {children: React.ReactNode}) => children }));
+vi.mock('./VisualEffects', () => ({ useVisualEffects: () => ({ active: true, enabled: true, change: vi.fn() }), InteractiveSurface: ({ children }: {children: React.ReactNode}) => children, Shine: ({ children }: {children: React.ReactNode}) => children }));
 vi.mock('./reactbits/ClickSpark', () => ({ default: ({children}: {children: React.ReactNode}) => children }));
 vi.mock('./reactbits/Lanyard', () => ({ default: () => <div data-testid="lanyard" /> }));
 vi.mock('./reactbits/GridScan', () => ({ default: () => <div data-testid="grid-scan" /> }));
@@ -64,4 +64,17 @@ it('工牌保持独立悬挂，遮罩和 Esc 均可收起，账户设置保留',
   expect(onClose).toHaveBeenCalledTimes(2);
   fireEvent.click(screen.getByRole('button', {name: '账户设置'}));
   expect(onSettings).toHaveBeenCalledOnce();
+});
+it('反作弊提示必须明确确认；取消与继续分别返回不同结果', async () => {
+  const { rpc } = await import('./bridge');
+  await setup(true);
+  vi.mocked(rpc).mockClear();
+  const risk={id:'anti-test',title:'反作弊风险确认',text:'配置可能导致拒绝启动、踢出或账号处罚。',confirm:true,confirmLabel:'已知悉风险，继续配置'};
+  act(()=>bridge.listener?.('prompt',risk));
+  expect(rpc).not.toHaveBeenCalledWith('promptReply',expect.anything());
+  fireEvent.click(screen.getByRole('button',{name:'取消'}));
+  expect(rpc).toHaveBeenCalledWith('promptReply',{promptId:'anti-test',accepted:false});
+  act(()=>bridge.listener?.('prompt',{...risk,id:'anti-test-2'}));
+  fireEvent.click(screen.getByRole('button',{name:'已知悉风险，继续配置'}));
+  expect(rpc).toHaveBeenCalledWith('promptReply',{promptId:'anti-test-2',accepted:true});
 });

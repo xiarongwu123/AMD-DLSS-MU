@@ -54,7 +54,7 @@ public sealed class AccountTokenStore : IAccountTokenStore
     [DllImport("kernel32.dll")]
     static extern IntPtr LocalFree(IntPtr memory);
 
-    static byte[] Transform(byte[] data, bool protect)
+    internal static byte[] Transform(byte[] data, bool protect)
     {
         if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("保持登录需要 Windows 用户凭据保护。");
         var input = new Blob { Length = data.Length, Data = Marshal.AllocHGlobal(data.Length) };

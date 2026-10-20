@@ -8,10 +8,14 @@ namespace AmdNrAssistant;
 
 public record ManagedFile(string Name, string Before, string After);
 public record GameRecord(string Exe, int Mode, string Version, DateTime InstalledUtc,
-    string Phase, List<ManagedFile> Files);
+    string Phase, List<ManagedFile> Files)
+{
+    public NeuralInstallManifest? Neural { get; init; }
+}
 public record Compatibility(bool Blocked, string Summary, string[] Details)
 {
     public string[] BlockingReasons { get; init; } = [];
+    public string[] AntiCheatComponents { get; init; } = [];
 }
 
 public static class GameManagement
@@ -35,6 +39,9 @@ public static class GameManagement
         2 => "模式二 / Mode 2 · OptiScaler",
         3 => "F8 实时面板 / Live panel",
         4 => "帧率优先 · DLSS 5 + XeFG 2X",
+        5 => "32位游戏 · DLSS 5 神经渲染桥接（实验性）",
+        6 => "DLSS 5 神经渲染",
+        8 => "老游戏专用 · ReShade64 神经渲染",
         _ => "未知模式 / Unknown"
     };
     internal static string? StorageOverride { get; set; }
@@ -49,7 +56,7 @@ public static class GameManagement
         if (!string.Equals(Path.GetFullPath(r.Exe), Path.GetFullPath(exe), StringComparison.OrdinalIgnoreCase)) throw new IOException("安装记录与游戏不匹配。");
         return r;
     }
-    static void Save(GameRecord r)
+    internal static void Save(GameRecord r)
     {
         var folder = State(r.Exe); Core.RejectLinks(folder); Directory.CreateDirectory(folder);
         var temp = Path.Combine(folder, "record.tmp");
@@ -58,7 +65,7 @@ public static class GameManagement
     }
     public static readonly string[] Loaders = Core.ProxyNames.Concat(new[] { "d3d11.dll", "d3d12.dll", "nvngx.dll", "OptiScaler.dll", "dlss5-neural.addon64" }).Distinct().ToArray();
     public static bool IsTracked(string name) => Tracked(name);
-    static bool Tracked(string name) => SafeRelative(name) && (name.Replace('\\', '/').StartsWith("Licenses/", StringComparison.OrdinalIgnoreCase) && new[] { ".txt", ".md" }.Contains(Path.GetExtension(name).ToLowerInvariant()) ||
+    static bool Tracked(string name) => SafeRelative(name) && (NeuralRenderInstaller.ManagedPath(name) || LegacyBridge.Managed.Contains(name,StringComparer.OrdinalIgnoreCase) || X86Bridge.Managed.Contains(name,StringComparer.OrdinalIgnoreCase) || name.Replace('\\', '/').StartsWith("Licenses/", StringComparison.OrdinalIgnoreCase) && new[] { ".txt", ".md" }.Contains(Path.GetExtension(name).ToLowerInvariant()) ||
         name.Replace('\\', '/').StartsWith("OptiScaler/", StringComparison.OrdinalIgnoreCase) &&
         new[] { ".dll", ".ini", ".asi" }.Contains(Path.GetExtension(name).ToLowerInvariant()) ||
         name.Replace('\\', '/').Equals("D3D12_Optiscaler/D3D12Core.dll", StringComparison.OrdinalIgnoreCase) ||
@@ -134,6 +141,7 @@ public static class GameManagement
     {
         EnsureClosed(exe);
         var r = Read(exe) ?? throw new IOException("没有可恢复记录；旧版安装请使用原安装器卸载。");
+        if (r.Neural != null) { NeuralRenderInstaller.Restore(exe, r, preserveChangedSettings); return; }
         if (r.Phase == "installing") throw new IOException("检测到安装意外中断。无法确认外部安装器修改范围，请使用原安装器恢复并保留诊断记录。");
         var changedSettings = new List<string>();
         // Check all files and all backups before the first mutation; a second attempt is safe.
@@ -266,16 +274,19 @@ public static class GameManagement
         var rxSeries = hardware.Select(h => Regex.Match(h, @"Radeon.*?RX\s*(\d{4})", RegexOptions.IgnoreCase))
             .Where(m => m.Success).Select(m => int.Parse(m.Groups[1].Value)).ToArray();
         if (rxSeries.Length == 0) return null;
-        if ((neuralMode == 0 || neuralMode == 4) && rxSeries.All(series => series < 6000))
+        if ((neuralMode == 0 || neuralMode == 4 || neuralMode == 5) && rxSeries.All(series => series < 6000))
             return "DLSS-NR 0.6.0 的 RX 系列支持从 RX 6000 开始；这块显卡不在支持范围内。";
         return null;
     }
+
+    public static string[] DetectAntiCheat(string exe) => Directory.EnumerateFileSystemEntries(Path.GetDirectoryName(exe)!)
+        .Select(Path.GetFileName).Where(n => n != null && Regex.IsMatch(n, "easyanticheat|battleye|(^|_)eac|bedaisy|beclient", RegexOptions.IgnoreCase)).Select(n=>n!).ToArray();
 
     public static Compatibility Check(string exe, bool checkConflicts = true, bool amdNeural = true, int neuralMode = 4)
     {
         var details = new List<string>();
         var blockingReasons = new List<string>();
-        try { Core.ValidateGame(exe); details.Add("EXE：Windows x64"); }
+        try { Core.ValidateGame(exe); details.Add(Core.IsX86(exe) ? "EXE：Windows x86（32位桥接）" : "EXE：Windows x64"); }
         catch (Exception e) { details.Add(e.Message); blockingReasons.Add(e.Message); }
         var hardware = Hardware(); details.AddRange(hardware);
         if (amdNeural && NeuralGpuBlockReason(hardware, neuralMode) is { } gpuReason)
@@ -287,25 +298,28 @@ public static class GameManagement
         details.Add("驱动显示的是 Windows 驱动版本；未自动等同 Adrenalin 版本，最低要求需人工核对。");
         var dir = Path.GetDirectoryName(exe)!;
         var names = Directory.EnumerateFileSystemEntries(dir).Select(Path.GetFileName).ToArray();
-        if (names.Any(n => Regex.IsMatch(n ?? "", "easyanticheat|battleye|(^|_)eac|bedaisy|beclient", RegexOptions.IgnoreCase)))
-        { details.Add("发现反作弊组件；不支持安装。"); blockingReasons.Add("发现反作弊组件；不支持安装。"); }
-        var proxy = Loaders.Where(n => File.Exists(Path.Combine(dir, n))).ToArray();
+        var antiCheat = DetectAntiCheat(exe);
+        if (antiCheat.Length > 0)
+            details.Add("发现反作弊组件：" + string.Join("、", antiCheat) + "。配置可能导致游戏拒绝启动、踢出或账号处罚；继续前须明确确认风险。");
+        var bridgeTarget=false;try{bridgeTarget=Core.IsX86(exe);}catch(IOException){}
+        var proxy = (bridgeTarget ? Loaders.Concat(X86Bridge.Proxies).Concat(new[]{"amd-nr.addon32"}) : Loaders).Distinct().Where(n => File.Exists(Path.Combine(dir, n))).ToArray();
         var record = Read(exe);
         if (proxy.Length > 0) details.Add("发现插件/代理：" + string.Join(", ", proxy));
         if (checkConflicts && proxy.Length > 0 && (record == null || record.Phase == "restored"))
         {
-            const string reason = "检测到旧安装或其他插件。点击“恢复配置”查看并备份移出候选文件后重试；未知组件请使用原安装器卸载。";
+            var reason = "检测到旧安装或其他插件：" + string.Join("、", proxy) + "。恢复会保留安装前已有文件；如仍冲突，请再次打开“恢复配置”确认旧组件清理，或用对应插件的原安装器卸载。";
             details.Add(reason); blockingReasons.Add(reason);
         }
         if (record is { Phase: not "restored" }) details.Add($"已记录：{ModeName(record.Mode)}，状态 {record.Phase}；切换前请恢复。");
         var evidence = names.Where(n => Regex.IsMatch(n ?? "", "d3d12|fidelityfx|fsr", RegexOptions.IgnoreCase)).ToArray();
         details.Add(evidence.Length > 0 ? "目录中发现 DX12/FSR 相关文件（不证明正在使用）：" + string.Join(", ", evidence) : "未找到 DX12/FSR 文件证据；可能静态链接或位于子目录。");
-        details.Add(!amdNeural ? "OptiScaler 标准版：需要兼容的 DLSS/FSR/XeSS 输入；不代表 DLSS 5 神经渲染支持。" :
+        if(bridgeTarget) details.Add("32位游戏使用实验性ReShade桥接，仅提供神经渲染；不提供XeFG帧生成，效果需进入游戏验证。");
+        details.Add(bridgeTarget ? "32位桥接通过ReShade运行，需要HIP 7；游戏内 Home 打开面板、Ctrl+End 切换，不要求游戏内置FSR。" : !amdNeural ? "OptiScaler 标准版：需要兼容的 DLSS/FSR/XeSS 输入；不代表 DLSS 5 神经渲染支持。" :
             neuralMode == 4 ? "组合方案使用 DLSS-NR 0.6.0；RX 6000 已开放但须安装 AMD HIP 7.2。游戏接口与实际效果仍需验证。" :
             "模式一使用 DLSS-NR 0.6.0；RX 6000 已开放但须安装 AMD HIP 7.2。请在 DX12 游戏中开启 FSR 并验证。");
         var blocked = blockingReasons.Count > 0;
         return new(blocked, blocked ? "不支持当前安装条件" : "未验证：基础检查通过", details.ToArray())
-        { BlockingReasons = blockingReasons.ToArray() };
+        { BlockingReasons = blockingReasons.ToArray(), AntiCheatComponents = antiCheat };
     }
     // Only lines observed after monitoring starts in this process session are eligible evidence.
     static readonly Dictionary<string, (DateTime Start, long Offset)> Watch = new(StringComparer.OrdinalIgnoreCase);
@@ -327,7 +341,7 @@ public static class GameManagement
         var log = Path.Combine(Path.GetDirectoryName(exe)!, "dlssnr_on_amd.log");
         var addonLog = Path.Combine(Path.GetDirectoryName(exe)!, "dlss5-neural.log");
         if (Read(exe)?.Mode != 0 && !File.Exists(log) && File.Exists(addonLog)) log = addonLog;
-        if (Read(exe)?.Mode is 2 or 4) log = Path.Combine(Path.GetDirectoryName(exe)!, "OptiScaler.log");
+        if (Read(exe)?.Mode is 2 or 4 or 6) log = Path.Combine(Path.GetDirectoryName(exe)!, "OptiScaler.log");
         Core.RejectLinks(log);
         long length = File.Exists(log) ? new FileInfo(log).Length : 0;
         if (!Watch.TryGetValue(exe, out var watch) || watch.Start != since || length < watch.Offset)

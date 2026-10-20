@@ -26,15 +26,21 @@ import {
   Check,
   UsersRound,
   CircleHelp,
+  Crown,
 } from "lucide-react";
 import { rpc, subscribe, emptyState, isDesktop, isPreview } from "./bridge";
 import { Button, Modal, Loading, Empty, Progress, type CardOrigin } from "./components";
+import { CommunityPanel } from "./CommunityPanel";
 import { SmartDialog, DiagnosticsDialog, modeName } from "./SmartDialog";
 import { AccountPage } from "./AccountPage";
+import { canUseMemberFeature } from "./membership";
 import { AccountBadge, LoginTransition, prepareLoginMotion } from "./AccountMotion";
 import { WishesPage } from "./WishesPage";
 import { FirstUseGuide } from "./FirstUseGuide";
 import { HomeLanding } from "./HomeLanding";
+import { ContactFloat } from "./ContactFloat";
+import { SupportedGames } from "./SupportedGames";
+import { LibraryEntrances } from "./LibraryEntrances";
 import ClickSpark from "./reactbits/ClickSpark";
 import { useVisualEffects, InteractiveSurface } from "./VisualEffects";
 import type { State, Page, Game, Prompt } from "./types";
@@ -52,8 +58,11 @@ export default function App() {
     [fatal, setFatal] = useState(""),
     [search, setSearch] = useState(""),
     [filter, setFilter] = useState("All"),
+    [supportedView, setSupportedView] = useState(false),
+    [purchaseRequested, setPurchaseRequested] = useState(false),
+    [purchasePlanRequested, setPurchasePlanRequested] = useState(""),
     [selected, setSelected] = useState<Game | null>(null),
-    [dialog, setDialog] = useState<"smart" | "diagnostics" | null>(null),
+    [dialog, setDialog] = useState<"smart" | "diagnostics" | "community" | null>(null),
     [shareRequested, setShareRequested] = useState(false),
     [smartTab, setSmartTab] = useState<"recommend" | "community">("recommend"),
     [guideStep, setGuideStep] = useState<number | null>(null),
@@ -160,6 +169,7 @@ export default function App() {
       .finished.catch(() => {}).finally(() => { closing.current = false; setDialog(null); });
   }, [cardOrigin, effects.active]);
   const show = (game: Game, kind: "smart" | "community" | "diagnostics" | "share") => {
+    if (kind === "community") { setSelected(game); setCardOrigin(null); setShareRequested(false); setDialog("community"); return; }
     const card = Array.from(document.querySelectorAll<HTMLElement>("[data-game-id]"))
       .find(element => element.dataset.gameId === game.id);
     const bounds = card?.getBoundingClientRect();
@@ -170,7 +180,7 @@ export default function App() {
     setShareRequested(kind === "share");
     if (kind === "diagnostics") setDialog("diagnostics");
     else {
-      setSmartTab((kind === "community" || kind === "share") ? "community" : "recommend");
+      setSmartTab(kind === "share" ? "community" : "recommend");
       setDialog("smart");
     }
   };
@@ -235,6 +245,8 @@ export default function App() {
         "restore",
         "scan",
         "magpie",
+        "amdMagpie",
+        "daniel08",
         "update",
         "removeGame",
       ].includes(p),
@@ -519,11 +531,14 @@ export default function App() {
           {state.page === "home" && <HomeLanding games={state.games} downloads={state.downloads.length}
             active={effects.active} dark={state.settings.dark} busy={busy}
             onLibrary={() => navigate("library")} onMagpie={() => navigate("magpie")}
-            onCommunity={() => state.games[0] ? show(state.games[0], "community") : navigate("library")}
+            onCommunity={() => { setCardOrigin(null); setShareRequested(false); setDialog("community"); }}
             onShare={game => show(game, "share")}
             onGame={game => game.state === "Configured" ? void run("launch", {gameId: game.id}) : show(game, "smart")} />}
           {state.page === "library" && (
             <>
+              <LibraryEntrances state={state} supported={supportedView} onSupported={setSupportedView}
+                onUpgrade={planId=>{setPurchasePlanRequested(planId || "");setPurchaseRequested(true);navigate("account");}} />
+              {supportedView ? <SupportedGames state={state} onUpgrade={()=>{setPurchaseRequested(true);navigate("account");}} /> : <>
               <div className="page-heading">
                 <h1>{t("游戏库", "Game library")}</h1>
                 <div className="actions">
@@ -543,11 +558,8 @@ export default function App() {
                   <Button onClick={startGuide} title="重新查看软件使用引导">
                     <CircleHelp size={17} />新手引导
                   </Button>
-                  <Button data-guide="community-header" disabled={busy || !state.games.length}
-                    onClick={() => {
-                      if (selected) show(selected, "community");
-                      else notify("请先选择一款游戏，再查看玩家方案。");
-                    }}>
+                  <Button data-guide="community-header" disabled={busy}
+                    onClick={() => { setCardOrigin(null); setShareRequested(false); setDialog("community"); }}>
                     <UsersRound size={17} />玩家方案 <span className="new-badge">NEW</span>
                   </Button>
                   <Button
@@ -594,6 +606,7 @@ export default function App() {
               ) : (
                 gameGrid(visible, false)
               )}
+              </>}
             </>
           )}
           {state.page === "magpie" && (
@@ -610,22 +623,25 @@ export default function App() {
                     <Zap size={26} />
                     一键开启大力喜鹊
                   </h2>
-                  <Button
-                    primary
-                    charge
-                    className="large"
-                    disabled={busy}
-                    onClick={() => run("magpie")}
-                  >
-                    {pending.includes("magpie")
-                      ? "正在准备组件…"
-                      : "开启大力喜鹊"}
-                  </Button>
+                  <div className="magpie-launch-options">
+                    <Button primary charge className="magpie-launch-option" disabled={busy} onClick={() => run("magpie")}>
+                      <Monitor size={27}/><span><strong>{pending.includes("magpie") ? "正在准备 N卡组件…" : "N卡专用"}</strong><small>NVIDIA · 免费开启</small></span>
+                      <span className="magpie-launch-access">免费</span>
+                    </Button>
+                    <Button charge className="magpie-launch-option magpie-launch-amd" disabled={busy} onClick={() => {
+                      if (!canUseMemberFeature(state, "schemes.premium.configure")) {
+                        setPurchaseRequested(true); navigate("account");
+                      } else void run("amdMagpie");
+                    }}>
+                      <Monitor size={27}/><span><strong>{pending.includes("amdMagpie") ? "正在准备 A卡组件…" : "A卡专用"}</strong><small>AMD · 高级会员开启</small></span>
+                      <span className="magpie-launch-access"><Crown size={13}/>高级会员</span>
+                    </Button>
+                  </div>
                   <p role="status" className="muted">
                     {state.magpieStatus ||
-                      "首次开启自动下载完整包，后续校验后直接启动。"}
+                      "按显卡品牌选择：N卡版免费，A卡版为高级会员专享。两版独立准备组件与配置。"}
                   </p>
-                  {pending.includes("magpie") && (
+                  {(pending.includes("magpie") || pending.includes("amdMagpie")) && (
                     <Progress
                       percent={state.downloads[0]?.percent || 0}
                       unknown={!state.downloads[0]}
@@ -861,7 +877,8 @@ export default function App() {
             </>
           )}
           {state.page === "account" && (
-            <AccountPage state={state} notify={notify} />
+            <AccountPage state={state} notify={notify} requestPurchase={purchaseRequested} requestPlan={purchasePlanRequested}
+              onPurchaseHandled={()=>{setPurchaseRequested(false);setPurchasePlanRequested("");}} />
           )}
           {state.page === "help" && (
             <>
@@ -947,6 +964,7 @@ export default function App() {
           )}
         </main>
       )}
+      {ready && <ContactFloat />}
       {state.status && (
         <div className="status-bar" role="status">
           {state.busy && <span className="status-dot" />}
@@ -956,6 +974,9 @@ export default function App() {
       {loginWarp && <LoginTransition onComplete={finishLoginWarp} />}
       {badgeOpen && state.account && <AccountBadge account={state.account} active={effects.active}
         onClose={() => setBadgeOpen(false)} onSettings={() => { setBadgeOpen(false); void navigate("account"); }} />}
+      {dialog === "community" && <Modal title="玩家方案" wide onClose={closeDialog}>
+        <CommunityPanel game={selected ?? undefined} games={state.games} onApplied={() => { notify("已应用玩家方案，效果请在游戏中确认"); void run("state"); }} />
+      </Modal>}
       {dialog === "smart" && selected && (
         <SmartDialog
           key={selected.id}
@@ -994,7 +1015,7 @@ export default function App() {
                 <Button onClick={() => reply(false)}>取消</Button>
               )}
               <Button primary onClick={() => reply(true)}>
-                {prompt.confirm ? "确认" : "知道了"}
+                {prompt.confirm ? prompt.confirmLabel ?? "确认" : "知道了"}
               </Button>
             </>
           }

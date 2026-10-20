@@ -36,6 +36,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
 }).AddRoles<IdentityRole>().AddEntityFrameworkStores<AppDbContext>().AddDefaultTokenProviders();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<NeuralRuleStore>();
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<AccountManagementService>();
 builder.Services.AddScoped<ManualOrderService>();
@@ -134,7 +135,7 @@ app.Use(async (context, next) =>
         || context.Request.Path == "/api/v1/presets" || context.Request.Path == "/api/v1/presets/")
     {
         var limit = context.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpMaxRequestBodySizeFeature>();
-        if (limit is { IsReadOnly: false }) limit.MaxRequestBodySize = 384 * 1024;
+        if (limit is { IsReadOnly: false }) limit.MaxRequestBodySize = context.Request.Path.StartsWithSegments("/api/v1/presets") ? 15 * 1024 * 1024 : 384 * 1024;
     }
     context.Response.Headers.XContentTypeOptions = "nosniff";
     context.Response.Headers.XFrameOptions = "DENY";

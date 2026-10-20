@@ -1,0 +1,78 @@
+.purchase-modal { max-width: 1180px; }
+.plan-wall-heading { text-align: center; margin: 0 0 24px; }
+.plan-wall-heading > span { display: inline-flex; align-items: center; gap: 7px; color: var(--acid); font-size: 12px; }
+.plan-wall-heading h2 { font-size: 27px; margin: 10px 0; }
+.plan-wall-heading p,.purchase-manual-note { color: var(--muted); font-size: 13px; line-height: 1.7; }
+.plan-options { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; }
+.plan-option { position: relative; display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 12px; padding: 23px 20px 17px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--ink); transition: border-color .2s,background .2s,box-shadow .2s; }
+.plan-option:hover { border-color: color-mix(in srgb,var(--acid) 60%,var(--line)); background: var(--selected); }
+.plan-option.selected { border-color: var(--acid); box-shadow: inset 0 0 0 1px var(--acid),0 10px 35px #adff1812; background: linear-gradient(160deg,color-mix(in srgb,var(--acid) 10%,var(--surface)),var(--surface)); }
+.plan-option:focus-visible { outline: 2px solid var(--acid); outline-offset: 4px; }
+.plan-option.lifetime .plan-type { color: #e9c476; }
+.plan-type { display: flex; align-items: center; gap: 9px; color: var(--acid); font-size: 12px; }
+.plan-name { font-size: 18px; min-height: 48px; line-height: 1.4; }
+.plan-price { display: flex; align-items: baseline; gap: 4px; font-size: 43px; font-weight: 750; letter-spacing: -1px; white-space: nowrap; }
+.plan-price small { font-size: 19px; }.plan-price em { font-size: 12px; color: var(--muted); font-style: normal; font-weight: 400; letter-spacing: 0; }
+.plan-duration { color: var(--muted); font-size: 12px; min-height: 30px; }
+.plan-service { display: flex; align-items: center; gap: 7px; font-size: 12px; line-height: 1.5; }.plan-service svg,.plan-service.highlight { color: var(--acid); }.plan-dash { width: 15px; }
+.plan-select { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 10px; padding: 12px 0 0; border-top: 1px solid var(--line); width: 100%; font-size: 13px; }.selected .plan-select { color: var(--acid); }
+.plan-permissions { margin-top: 23px; }.plan-permissions h3 { font-size: 14px; }.plan-permission-list { display: flex; flex-wrap: wrap; gap: 12px 25px; font-size: 12px; }.plan-permission-list span { display: inline-flex; align-items: center; gap: 7px; }.plan-permission-list svg { color: var(--acid); }.plan-permissions details { margin-top: 18px; color: var(--muted); font-size: 12px; }.plan-permissions summary { cursor: pointer; margin-bottom: 12px; }.purchase-manual-note { text-align: center; margin: 21px 0; }
+.purchase-service { padding: 16px 0; border-top: 1px solid var(--line); margin-top: 15px; }.purchase-service strong { color: var(--acid); }.purchase-service p { font-size: 13px; }
+@media(max-width:1000px) { .plan-options { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media(max-width:650px) { .plan-options { grid-template-columns: 1fr; }.plan-name { min-height: 0; }.plan-price { font-size: 34px; }.plan-option { gap: 9px; } }
+
+/* The lifetime pass carries a distinct gold atmosphere, without shifting controls. */
+.plan-wall { position: relative; isolation: isolate; }
+.plan-wall-aura { position: absolute; inset: -25px -15px 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.plan-wall-aura i { position: absolute; width: 60%; height: 65%; left: 20%; top: 15%; background: radial-gradient(ellipse,#d5a95425,transparent 68%); }
+.plan-wall-aura i:nth-child(2) { left: -30%; top: 35%; background: radial-gradient(ellipse,#adff1812,transparent 68%); }
+.plan-wall-aura i:nth-child(3) { left: 72%; background: radial-gradient(ellipse,#40cab815,transparent 68%); }
+.plan-visual,.plan-visual.spotlight-card { padding: 0; border-radius: 18px; background: var(--surface); box-shadow: none; overflow: hidden; }
+.plan-visual .plan-option { width: 100%; height: 100%; background: transparent; }
+.plan-visual .plan-option.selected { background: linear-gradient(160deg,#adff1812,transparent 70%); }
+.plan-visual.featured { background: linear-gradient(150deg,color-mix(in srgb,var(--surface) 92%,#e3ba73),var(--surface)); box-shadow: 0 12px 40px #e3ba7312; }
+.plan-visual.featured .plan-option { border-color: #bd955e80; background: radial-gradient(ellipse at 100% 0%,#e3ba7322,transparent 60%); }
+.plan-visual.featured .plan-option::before { content: ""; position: absolute; width: 150px; height: 150px; top: -60px; right: -65px; border-radius: 50%; background: radial-gradient(circle,#eac88144,transparent 68%); pointer-events: none; }
+.plan-visual.featured .plan-option.selected { border-color: #f4d29b; box-shadow: inset 0 0 0 1px #f4d29b,0 0 25px #e3ba7315; }
+.plan-visual.featured .plan-name,.plan-visual.featured .plan-price,.plan-visual.featured .plan-select,.plan-visual.featured .plan-service svg { color: #f4d29b; }
+.plan-exclusive-label { position: absolute; top: 19px; right: 16px; color: #f4d29b; font-size: 10px; padding: 5px 7px; border-radius: 6px; background: #e3ba7318; }
+.plan-visual.featured .plan-name { padding-right: 0; }
+.plan-option .plan-select { margin-top: auto; padding-top: 16px; }
+.lifetime-benefit { color: #f4d29b; }
+.plan-wall[data-motion="on"] .plan-wall-aura i { animation: plan-aura 7s ease-in-out infinite alternate; }
+.plan-wall[data-motion="on"] .plan-wall-aura i:nth-child(2) { animation-delay: -4s; }
+.plan-wall[data-motion="on"] .plan-visual.featured .plan-option::before { animation: plan-aura 5s ease-in-out infinite alternate; }
+@keyframes plan-aura { from { opacity: .45; transform: scale(.9) translateY(0); } to { opacity: 1; transform: scale(1.2) translateY(8px); } }
+@media(prefers-reduced-motion:reduce) { .plan-wall * { animation: none !important; transition: none !important; } }
+
+.plan-crown-watermark { position: absolute; right: -18px; top: 77px; transform: rotate(-18deg); color: #e3ba73; opacity: .075; pointer-events: none; }
+.plan-visual.featured .plan-option::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: linear-gradient(110deg,transparent 30%,#f4d29b0c 43%,#f4d29b17 48%,transparent 65%); background-size: 300% 100%; background-position: 100% 0; opacity: 0; }
+.plan-wall[data-motion="on"] .plan-visual.featured .plan-option::after { animation: plan-gold-sweep 9s ease-in-out infinite; }
+@keyframes plan-gold-sweep { 0%,55% { background-position: 100% 0; opacity: 0; } 60% { opacity: .7; } 85% { background-position: 0 0; opacity: .7; } 100% { background-position: 0 0; opacity: 0; } }
+
+.plan-wall-heading { margin-bottom: 16px; }
+.plan-route-story { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px; padding: 5px 0 12px; }
+.plan-route-story > div { display: flex; align-items: center; gap: 10px; }.plan-route-story svg { color: var(--acid); flex-shrink: 0; }.plan-route-story strong { display: block; font-size: 13px; }.plan-route-story small { display: block; font-size: 11px; color: var(--muted); margin-top: 4px; }
+.plan-route-note { margin: 0 0 16px; font-size: 10px; color: var(--muted); text-align: center; }
+.plan-option { gap: 8px; padding-top: 20px; }
+.plan-name { min-height: 40px; font-size: 17px; }.plan-price { font-size: 40px; }.plan-duration { min-height: 0; margin-bottom: 6px; }
+.plan-pitch { font-size: 12px; color: var(--muted); order: 0; }.featured .plan-pitch { color: #f4d29b; }
+.plan-benefits { display: grid; gap: 8px; padding: 4px 0; }
+.plan-delivery { color: var(--muted); font-size: 10px; line-height: 1.6; margin-top: 4px; margin-bottom: 14px; }
+@media(max-width:650px) { .plan-route-story { grid-template-columns: 1fr; gap: 12px; }.plan-name { min-height: 0; } }
+
+@media(min-width:651px) and (max-height:850px) {
+  .purchase-modal .modal-header { padding: 14px 24px; }
+  .purchase-modal .modal-body { padding-top: 16px; }
+  .plan-wall-heading h2 { font-size: 24px; margin-top: 0; }
+  .plan-wall-heading { margin-bottom: 12px; }
+  .plan-option { gap: 6px; padding-top: 18px; }
+  .plan-name { min-height: 32px; }
+  .plan-benefits { gap: 6px; }
+  .plan-delivery { margin-bottom: 8px; }
+  .plan-route-story { padding-bottom: 8px; }
+}
+
+.payment-methods { display:flex;gap:10px;margin:18px 0; }.payment-methods button { padding:10px 22px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--muted); }.payment-methods button.active.wechat { color:#55e494;border-color:#55e494;background:#55e49115; }.payment-methods button.active.alipay { color:#69b2ff;border-color:#69b2ff;background:#69b2ff15; }.payment-methods button.active { color:var(--acid);border-color:var(--acid); }
+.payment-code-content { display:grid;grid-template-columns:320px minmax(0,1fr);gap:28px;align-items:start; }.payment-code-image { background:white;border-radius:14px;overflow:hidden; }.payment-code-image img { width:100%;height:auto;display:block; }.payment-code-image > p { padding:20px;color:#222; }.payment-code-guide h3 { font-size:24px; }.payment-code-guide ol { padding-left:20px;color:var(--muted);line-height:1.8; }.payment-code-guide li { margin-bottom:14px; }.payment-code-guide > p { display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px; }
+@media(max-width:650px) { .payment-code-content { grid-template-columns:1fr; }.payment-code-image { max-width:320px;margin:auto; } }

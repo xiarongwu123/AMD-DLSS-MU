@@ -6,7 +6,7 @@ namespace Mu.Server.Data;
 
 public static class DatabaseSetup
 {
-    public const int CurrentVersion = 4;
+    public const int CurrentVersion = 6;
     public static async Task InitializeAsync(AppDbContext db)
     {
         await db.Database.OpenConnectionAsync();
@@ -19,6 +19,7 @@ public static class DatabaseSetup
         {
             await using var transaction = await db.Database.BeginTransactionAsync();
             await db.Database.ExecuteSqlRawAsync(db.Database.GenerateCreateScript());
+            await MembershipPlans.InstallAsync(db);
             db.DatabaseSchemas.Add(new() { Id = 1, Version = CurrentVersion });
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -29,7 +30,7 @@ public static class DatabaseSetup
             if (Convert.ToInt64(await tables.ExecuteScalarAsync()) != 1)
                 throw new InvalidOperationException("Unrecognized database. Use a separate empty account database; never point this service at the website database.");
             var schema = await db.DatabaseSchemas.AsNoTracking().SingleOrDefaultAsync(x => x.Id == 1);
-            if (schema?.Version is 1 or 2 or 3) await UpgradeAsync(db);
+            if (schema?.Version is 1 or 2 or 3 or 4 or 5) await UpgradeAsync(db);
             else if (schema?.Version != CurrentVersion)
                 throw new InvalidOperationException($"Unsupported account database schema {schema?.Version}; this server requires {CurrentVersion}. Back up and run the versioned upgrade before starting.");
         }
@@ -37,7 +38,9 @@ public static class DatabaseSetup
         await CommunityPresetSchema.InitializeAsync(db);
         var present = await db.FeatureDefinitions.Select(x => x.Key).ToListAsync();
         foreach (var key in AccountService.InitialFeatures.Except(present))
-            db.FeatureDefinitions.Add(new() { Key = key, Enabled = true, MinimumTier = "standard", UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds() });
+            db.FeatureDefinitions.Add(new() { Key = key, Enabled = true, MinimumTier = key is "games.supported.view" or "schemes.premium.configure" or "schemes.game.view" or "services.remote" ? "pro" : "standard", UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds() });
+        var assistedPlan = await db.Plans.SingleOrDefaultAsync(x => x.Id == "mu-pro-assisted");
+        if (assistedPlan?.Name == "高级会员 + 一对一配置服务") assistedPlan.Name = "高级 Plus 会员";
         await CompatibilityCatalog.SeedAsync(db);
         await db.SaveChangesAsync();
         await db.Database.CloseConnectionAsync();
@@ -61,6 +64,26 @@ public static class DatabaseSetup
         {
             await db.Database.ExecuteSqlRawAsync(TelemetrySchemaSql);
             schema.Version = 4;
+        }
+        if (schema.Version == 4)
+        {
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Plans ADD COLUMN ConfigurationSessions INTEGER NOT NULL DEFAULT 0;");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Orders ADD COLUMN ConfigurationSessions INTEGER NOT NULL DEFAULT 0;");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Orders ADD COLUMN ConfigurationServiceStatus TEXT NOT NULL DEFAULT 'none';");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Plans ADD COLUMN GrantsMembership INTEGER NOT NULL DEFAULT 1;");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Orders ADD COLUMN GrantsMembership INTEGER NOT NULL DEFAULT 1;");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Orders ADD COLUMN ConfigurationSessionsUsed INTEGER NOT NULL DEFAULT 0;");
+            await MembershipPlans.InstallAsync(db);
+            schema.Version = 6;
+        }
+        if (schema.Version == 5)
+        {
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Plans ADD COLUMN GrantsMembership INTEGER NOT NULL DEFAULT 1;");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Orders ADD COLUMN GrantsMembership INTEGER NOT NULL DEFAULT 1;");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE Orders ADD COLUMN ConfigurationSessionsUsed INTEGER NOT NULL DEFAULT 0;");
+            await db.Database.ExecuteSqlRawAsync("UPDATE Orders SET ConfigurationSessionsUsed=ConfigurationSessions WHERE ConfigurationServiceStatus='completed';");
+            await MembershipPlans.UpgradeRemoteGuidanceAsync(db);
+            schema.Version = 6;
         }
         if (schema.Version != CurrentVersion)
             throw new InvalidOperationException($"Unsupported account database schema {schema.Version}; this server requires {CurrentVersion}.");

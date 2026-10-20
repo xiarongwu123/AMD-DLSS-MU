@@ -8,7 +8,7 @@ public sealed record ResetPasswordRequest(string Email, string Code, string NewP
 public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 public sealed record AuthorizeRequest(string FeatureKey);
 public sealed record CreateOrderRequest(string PlanId);
-public sealed record MembershipSnapshot(string Tier, DateTimeOffset? ExpiresAt);
+public sealed record MembershipSnapshot(string Tier, DateTimeOffset? ExpiresAt, string Kind = "standard", DateTimeOffset? PlusExpiresAt = null, int RemoteSessionsRemaining = 0);
 public sealed record FeatureSnapshot(string Key, bool Enabled, string MinimumTier, bool Allowed, long Version);
 public sealed record AccountSnapshot(string Id, string Email, MembershipSnapshot Membership, IReadOnlyList<FeatureSnapshot> Features, bool PaymentsEnabled = false);
 public sealed record SessionResponse(string AccessToken, string RefreshToken, DateTimeOffset AccessTokenExpiresAt, AccountSnapshot Account);

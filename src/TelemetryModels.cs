@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 namespace Mu.Telemetry;
 
 // A session is an observation, not a claim that the game or a graphics feature worked.
@@ -8,6 +9,6 @@ public sealed record GameTelemetryUpload(
     DateTimeOffset StartedAt, DateTimeOffset EndedAt, string? PresentRuntime,
     int FrameCount, double? AverageFps, double? OnePercentLowFps,
     double? AverageGpuBusyMs, double? AverageCpuBusyMs, string? FpsSource,
-    string CaptureStatus);
+    string CaptureStatus, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Mu.Recommendation.RecommendationObservation? Recommendation = null);
 
 public sealed record GameTelemetryReceipt(string SessionId, bool Stored);

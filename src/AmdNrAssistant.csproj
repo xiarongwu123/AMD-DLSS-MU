@@ -7,10 +7,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>AMD-DLSS-MU</AssemblyName>
-    <Version>2.2.1</Version>
-    <AssemblyVersion>2.2.1.0</AssemblyVersion>
-    <FileVersion>2.2.1.0</FileVersion>
-    <InformationalVersion>2.2.1</InformationalVersion>
+    <Version>2.2.2</Version>
+    <AssemblyVersion>2.2.2.0</AssemblyVersion>
+    <FileVersion>2.2.2.0</FileVersion>
+    <InformationalVersion>2.2.2</InformationalVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>../assets/amd-dlss-mu.ico</ApplicationIcon>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
@@ -54,4 +54,6 @@
   <Target Name="RemoveUnusedWebViewWpf" BeforeTargets="ResolveAssemblyReferences">
     <ItemGroup><Reference Remove="@(Reference)" Condition="'%(Reference.Filename)' == 'Microsoft.Web.WebView2.Wpf'" /></ItemGroup>
   </Target>
-</Project>
+  <ItemGroup><EmbeddedResource Include="../assets/x86-bridge-pins.json" LogicalName="Mu.X86Bridge.Pins" /></ItemGroup>
+  <ItemGroup><EmbeddedResource Include="../assets/x86-bridge-LICENSE.txt" LogicalName="Licenses.X86Bridge" /></ItemGroup>
+<ItemGroup><EmbeddedResource Include="../assets/neural-rendering-1.12.1.json" LogicalName="Mu.NeuralRendering.Pins" /></ItemGroup></Project>

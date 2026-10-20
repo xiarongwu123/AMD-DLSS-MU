@@ -18,4 +18,16 @@ public sealed class CommunityPresetEntry
     public string SettingsJson { get; set; } = "[]";
     public string? ImageData { get; set; }
     public string? ThumbnailData { get; set; }
+    public string Scope { get; set; } = "game";
+    public string? ResourceUrl { get; set; }
+    public string? ResourceCode { get; set; }
+    public string? AttachmentName { get; set; }
+    public int AttachmentSize { get; set; }
+    public string? AttachmentSha256 { get; set; }
+}
+
+public sealed class CommunityPresetAttachment
+{
+    public string PresetId { get; set; } = "";
+    public byte[] Content { get; set; } = [];
 }

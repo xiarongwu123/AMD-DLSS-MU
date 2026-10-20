@@ -2,13 +2,23 @@ import { useState, useEffect } from "react";
 import { Eye, EyeOff, Mail, LockKeyhole, Check } from "lucide-react";
 import { Button, Modal, Loading } from "./components";
 import { rpc } from "./bridge";
+import { PaymentCodes } from "./PaymentCodes";
+import { PlanWall } from "./PlanWall";
+import { membershipName } from "./membership";
+import "./purchase.css";
 import type { State, Plan, Order } from "./types";
 export function AccountPage({
   state,
   notify,
+  requestPurchase = false,
+  requestPlan = "",
+  onPurchaseHandled,
 }: {
   state: State;
   notify: (s: string) => void;
+  requestPurchase?: boolean;
+  requestPlan?: string;
+  onPurchaseHandled?: ()=>void;
 }) {
   const [mode, setMode] = useState("login"),
     [email, setEmail] = useState(""),
@@ -22,6 +32,7 @@ export function AccountPage({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [purchase, setPurchase] = useState(false),
+    [purchaseInitialPlan, setPurchaseInitialPlan] = useState(""),
     [cooldown, setCooldown] = useState(0);
   useEffect(() => {
     if (!cooldown) return;
@@ -29,6 +40,13 @@ export function AccountPage({
     return () => clearTimeout(t);
   }, [cooldown]);
   const signed = !!state.account;
+  useEffect(()=>{
+    if (requestPurchase && signed) {
+      setPurchaseInitialPlan(requestPlan);
+      setPurchase(true);
+      onPurchaseHandled?.();
+    }
+  },[requestPurchase,requestPlan,signed,onPurchaseHandled]);
   const run = async (command: string, args: Record<string, unknown>) => {
     setBusy(true);
     setError("");
@@ -98,15 +116,19 @@ export function AccountPage({
               <Check />
               <div>
                 <strong>
-                  {state.account!.membership.tier === "pro"
-                    ? "MU PRO"
-                    : "普通账户"}
+                  {membershipName(state.account!)}
                 </strong>
                 <p>
-                  {state.account!.membership.expiresAt
+                  {state.account!.membership.expiresAt?.startsWith("9999-")
+                    ? "终身有效"
+                    : state.account!.membership.expiresAt
                     ? `有效期至 ${new Date(state.account!.membership.expiresAt).toLocaleDateString()}`
                     : "已登录 MU"}
                 </p>
+                {state.account!.membership.kind === "plus" && state.account!.membership.plusExpiresAt &&
+                  <p>Plus 权益至 {new Date(state.account!.membership.plusExpiresAt!).toLocaleDateString()} · 含 1 次一对一配置服务</p>}
+                {typeof state.account!.membership.remoteSessionsRemaining === "number" &&
+                  <p>远程指导剩余 {state.account!.membership.remoteSessionsRemaining} 次</p>}
               </div>
             </div>
             <p className="muted">
@@ -128,7 +150,7 @@ export function AccountPage({
             </Button>
             {state.account!.paymentsEnabled && (
               <Button onClick={() => setPurchase(true)}>
-                申请 Pro · 人工核对到账
+                开通 / 续费高级会员
               </Button>
             )}
             <Button
@@ -355,31 +377,38 @@ export function AccountPage({
         <p className="muted">{state.accountFeedback}</p>
       </section>
       {purchase && (
-        <PurchaseDialog onClose={() => setPurchase(false)} notify={notify} />
+        <PurchaseDialog state={state} initialPlanId={purchaseInitialPlan} onClose={() => {setPurchase(false);setPurchaseInitialPlan("");}} notify={notify} />
       )}
     </div>
   );
 }
-function PurchaseDialog({
+export function PurchaseDialog({
+  state,
+  initialPlanId = "",
   onClose,
   notify,
 }: {
+  state: State;
+  initialPlanId?: string;
   onClose: () => void;
   notify: (s: string) => void;
 }) {
+  const [available,setAvailable]=useState(false);
   const [plans, setPlans] = useState<Plan[] | null>(null),
     [orders, setOrders] = useState<Order[]>([]),
     [order, setOrder] = useState<Order | null>(null),
-    [plan, setPlan] = useState(""),
+    [plan, setPlan] = useState(initialPlanId),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const refresh = async () => {
     setBusy(true);
+    setError("");
     try {
       const p = await rpc<{ items: Plan[]; paymentsEnabled: boolean }>("plans");
-      if (!p.paymentsEnabled) throw new Error("人工收款暂未开放。");
       setPlans(p.items);
-      setPlan((v) => v || p.items[0]?.id || "");
+      setAvailable(p.paymentsEnabled);
+      setPlan(v=>p.items.some(item=>item.id===v) ? v : p.items[0]?.id || "");
+      if (!p.paymentsEnabled) setError("人工收款暂未开放，请联系微信 xrwCoder。");
       const o = await rpc<{ items: Order[] }>("orders");
       setOrders(o.items);
       if (order) setOrder(await rpc<Order>("order", { id: order.id }));
@@ -411,7 +440,9 @@ function PurchaseDialog({
   };
   return (
     <Modal
-      title="开通 Pro"
+      title="开通高级会员"
+      wide
+      className="purchase-modal"
       onClose={onClose}
       footer={
         <>
@@ -420,9 +451,11 @@ function PurchaseDialog({
           </Button>
           <Button
             primary
+            charge={!order}
             disabled={
               busy ||
-              (!order && !plan) ||
+              (!order && (!plan || !available)) ||
+              (!!order && !["pending","review_requested","paid"].includes(order.status)) ||
               order?.status === "paid" ||
               order?.status === "review_requested"
             }
@@ -438,7 +471,7 @@ function PurchaseDialog({
                 : order.status === "review_requested"
                   ? "待核对到账"
                   : "我已付款 · 提交核对"
-              : "创建付款申请"}
+              : "确认套餐 · 创建付款申请"}
           </Button>
         </>
       }
@@ -461,33 +494,39 @@ function PurchaseDialog({
             复制订单号
           </Button>
           <p className="preserve">{order.payment?.instructions}</p>
-          {order.payment?.qrImageUrl && (
-            <img
-              className="payment-qr"
-              src={order.payment.qrImageUrl}
-              alt="收款二维码"
-            />
-          )}
-          <p className="muted">付款时备注订单号；提交付款声明不会自动开通。</p>
+          {order.payment && order.status==="pending" && <PaymentCodes payment={order.payment} amountMinor={order.amountMinor}/>}
+
+          <p className="muted">{order.status === "paid" ? "管理员已确认到账，点击刷新状态可更新会员信息。" : order.status==="review_requested" ? "已提交付款声明，请勿重复付款，等待管理员核对到账。" : "付款时备注订单号；提交付款声明不会自动开通。"}</p>
+          <p>{order.grantsMembership===false ? "单次远程指导 · 不附带会员" : order.durationDays === 0 ? "终身会员 · 终身有效" : order.durationDays ? `${order.configurationSessions ? "高级 Plus 会员" : "高级会员"} · ${order.durationDays} 天` : "期限以订单为准"}</p>
+          {order.grantsMembership!==false && order.durationDays===0 && <div className="purchase-service">
+            <strong>终身专属权益</strong>
+            <p>终身享用所有付费软件功能，包含专属功能定制与专属优化。</p>
+            <p>{order.status==="paid" ? "添加微信 xrwCoder，发送订单号和你的定制或优化需求，由我人工提供服务。" : "核对到账后，添加微信 xrwCoder 提交定制或优化需求。"}</p>
+            <Button onClick={()=>navigator.clipboard.writeText("xrwCoder").then(()=>notify("微信号已复制")).catch(()=>setError("复制失败，微信号：xrwCoder"))}>复制联系微信</Button>
+          </div>}
+          {(order.configurationSessions || 0)>0 && <div className="purchase-service">
+            <strong>{order.configurationSessions} 次远程指导</strong>
+            <p>已用 {order.configurationSessionsUsed ?? (order.configurationServiceStatus === "completed" ? order.configurationSessions : 0)} 次 · 剩余 {Math.max(0,(order.configurationSessions || 0)-(order.configurationSessionsUsed ?? (order.configurationServiceStatus === "completed" ? order.configurationSessions || 0 : 0)))} 次</p>
+            <p>{order.configurationServiceStatus === "completed" ? "本订单远程指导已全部完成" : order.status === "paid" ? "已可预约：添加微信 xrwCoder，发送订单号预约指导。" : "核对到账后，添加微信 xrwCoder 预约指导。"}</p>
+            <Button onClick={()=>navigator.clipboard.writeText("xrwCoder").then(()=>notify("微信号已复制")).catch(()=>setError("复制失败，微信号：xrwCoder"))}>复制联系微信</Button>
+          </div>}
+          <Button disabled={busy} onClick={()=>setOrder(null)}>返回套餐选择</Button>
         </>
       ) : (
         <>
-          <label>
-            套餐
-            <select value={plan} onChange={(e) => setPlan(e.target.value)}>
-              {plans?.map((p) => (
-                <option value={p.id} key={p.id}>
-                  {p.name} · {p.durationDays} 天 · ¥
-                  {(p.priceMinor / 100).toFixed(2)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <PlanWall plans={plans || []} selected={plan} onSelect={setPlan} features={state.account?.features || []} disabled={busy}/>
+          {!plans?.length && !busy && <p>暂无可购买的套餐，请联系微信 xrwCoder。</p>}
+          <p className="purchase-manual-note">人工收款 · 核对到账后开通 · 不自动续费或扣款</p>
           {orders
-            .filter((o) => ["pending", "review_requested"].includes(o.status))
+            .filter((o) => ["pending", "review_requested"].includes(o.status) || (o.status === "paid" && ((o.configurationSessions || 0)>0 || o.durationDays===0)))
             .map((o) => (
-              <Button key={o.id} onClick={() => setOrder(o)}>
-                继续处理 {o.planName} · {o.id.slice(-8)}
+              <Button key={o.id} disabled={busy} onClick={async()=>{
+                setBusy(true);setError("");
+                try { setOrder(await rpc<Order>("order",{id:o.id})); }
+                catch(e){setError((e as Error).message);}
+                finally{setBusy(false);}
+              }}>
+                {o.status==="paid" ? "查看权益" : "继续处理"} {o.planName} · {o.id.slice(-8)}
               </Button>
             ))}
         </>

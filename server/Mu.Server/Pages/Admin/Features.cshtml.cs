@@ -10,6 +10,8 @@ public sealed class FeaturesModel(AppDbContext db, AccountManagementService mana
     public static string DisplayName(string key) => key switch
     {
         "library.manage" => "游戏库管理",
+        "games.supported.view" => "支持游戏库（高级会员）",
+        "services.remote" => "远程指导（有效Plus或有剩余指导次数，含终身赠送/单次购买）",
         "dlss.configure" => "DLSS 配置",
         "optiscaler.configure" => "OptiScaler 配置",
         "magpie.launch" => "Magpie 启动",

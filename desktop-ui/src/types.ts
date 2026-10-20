@@ -15,6 +15,7 @@ export interface PresetSetting {
   key: string;
   value: string;
 }
+export interface PresetAttachmentInfo { name: string; size: number; sha256: string }
 export interface CommunityPreset {
   id: string;
   gameKey: string;
@@ -30,6 +31,10 @@ export interface CommunityPreset {
   hasImage: boolean;
   isMine: boolean;
   settingCount: number;
+  scope?: "game" | "universal";
+  resourceUrl?: string | null;
+  resourceCode?: string | null;
+  attachment?: PresetAttachmentInfo | null;
   thumbnailData?: string | null;
 }
 export interface CommunityPresetDetail {
@@ -40,6 +45,8 @@ export interface CommunityPresetDetail {
 export interface CommunityPresetList {
   items: CommunityPreset[];
   total: number;
+  page?: number;
+  pageSize?: number;
 }
 export interface CommunityPresetSnapshot {
   mode: number;
@@ -59,8 +66,8 @@ export interface Game {
 export interface Account {
   id: string;
   email: string;
-  membership: { tier: string; expiresAt: string | null };
-  features: { key: string; allowed: boolean }[];
+  membership: { tier: string; expiresAt: string | null; kind?: "standard" | "advanced" | "lifetime" | "plus"; plusExpiresAt?: string | null; remoteSessionsRemaining?: number | null };
+  features: { key: string; allowed: boolean; enabled?: boolean; minimumTier?: string }[];
   paymentsEnabled: boolean;
 }
 export interface Download {
@@ -94,6 +101,8 @@ export interface State {
   magpieStatus: string;
 }
 export interface Recommendation {
+  is32Bit?: boolean;
+  graphicsApi?: string;
   gpu: { name: string; vramMb: number | null };
   width: number;
   height: number;
@@ -106,6 +115,20 @@ export interface Recommendation {
     availability: number;
   };
   hipSetupPending: boolean;
+}
+export interface NeuralOptions {
+  backend: string; graphicsApi: string; proxy: string; passes: number | null;
+  modelScale: number; temporal: boolean; historyStrength: number; applyModel: boolean; dynamicResolution: number;
+  nrInline?: boolean | null; earlyAnyModuleWrap?: boolean | null; allowEnhancedBarriers?: boolean | null;
+}
+export interface NeuralReceipt {
+  backend: string; passes: number; proxy: string; graphicsApi: string;
+  statusLabel: string; modeLabel: string; options: NeuralOptions;
+}
+export interface NeuralPlanResponse {
+  plan: NeuralReceipt & { notices: string[] };
+  missingResources: string[];
+  installed: NeuralReceipt | null;
 }
 export interface Check {
   title: string;
@@ -145,6 +168,8 @@ export interface WishDetail {
   }[];
 }
 export interface Plan {
+  configurationSessions?: number;
+  grantsMembership?: boolean;
   id: string;
   name: string;
   durationDays: number;
@@ -152,16 +177,25 @@ export interface Plan {
   currency: string;
 }
 export interface Order {
+  durationDays?: number;
+  configurationSessions?: number;
+  configurationServiceStatus?: string;
+  configurationSessionsUsed?: number | null;
+  grantsMembership?: boolean;
   id: string;
   planName: string;
   amountMinor: number;
   currency: string;
   status: string;
-  payment: { instructions: string; qrImageUrl: string | null };
+  payment: { instructions: string; qrImageUrl: string | null; channels?: {id:string;name:string;qrImageUrl:string}[] } | null;
 }
 export interface Prompt {
+  confirmLabel?: string | null;
   id: string;
   title: string;
   text: string;
   confirm: boolean;
 }
+
+export interface SupportedGame { title: string; canonicalName: string; steamAppId: string | null; aliases: string[]; }
+export interface SupportedCatalog { asOf: string; games: SupportedGame[]; }
