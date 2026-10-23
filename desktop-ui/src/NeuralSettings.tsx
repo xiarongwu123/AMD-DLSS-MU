@@ -79,7 +79,7 @@ export function NeuralSettings({ gameId, options, onChange, installed = false, d
         {result && <p>当前匹配：{result.plan.backend} · {result.plan.graphicsApi} · {result.plan.proxy} · {result.plan.passes} Pass</p>}
         {(options.passes ?? 1) >= 4 && <p className="warning"><FlaskConical size={16} />额外 Pass 会增加耗时与显存占用。9–30 Pass 仅用于实验 / 压力测试，不是最高画质推荐。</p>}
         <p className="muted">Mochizuki 主要面向 RDNA4；RX 6000/7000 不作为稳定推荐。切换后端或代理需先恢复配置。</p>
-        <p className="muted">所需专有 DLL / 权重由你合法提供。导入目录可包含 Daniel 0.6.0 的 Runtime 与权重、Mochizuki 的 dlssnr.bin 或 310.8.0 DLL、lmxxf 的 native-game-tiled-assets。MU 不执行第三方 Setup。</p>
+        <p className="muted">MU 会从内置资源自动准备 310.8.0 DLL；Mochizuki 模型也会在首次配置时自动提取。Daniel 0.6.0 的 Runtime 与权重、lmxxf 的模型资源仍需另行准备。MU 不执行第三方 Setup。</p>
         <Button disabled={importing} onClick={prepare}><FolderInput size={18} />{importing ? "正在导入…" : "准备本机资源"}</Button>
       </fieldset>
     </details>

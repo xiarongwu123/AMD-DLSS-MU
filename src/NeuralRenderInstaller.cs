@@ -19,6 +19,10 @@ public static class NeuralRenderInstaller
     public const string Version = "OptScaler-NR 1.12.1";
     public const string MochizukiModelHash = "2b41c888cf4155b8958c665ba64018ab0bd25c85fc71a2b6db86d0d04d1f7fbd";
     public const string NvidiaSourceHash = "e16bcf15e16e13f527491cdf7845b2fe6521a738d8f7c9c721866a8496e1fc8e";
+    const string PythonUrl = "https://www.python.org/ftp/python/3.13.9/python-3.13.9-embed-amd64.zip";
+    const long PythonSize = 10926675;
+    const string PythonHash = "91d828c2da3a029b41699e918674a0cb379c02cf20dab9c501306885f837402a";
+    const string PythonExeHash = "08a64dc73ac3e3776b49f0097c6306bdb9c8f7990a037065213324d328467bf5";
     const string DanielRuntimeHash = "195c4a891b6eac4c1cb7671e10ff62bbbe2b17f1dfae1344dc5a6714e4775721";
     public sealed record FilePin(long Size, string Sha256);
     public sealed record PackagePin(string Version, string Url, long Size, string Sha256, Dictionary<string, FilePin> Files);
@@ -131,7 +135,7 @@ public static class NeuralRenderInstaller
         if (backend == "mochizuki")
         {
             var model = Find(resources, gameRoot, "dlssnr-amd/dlssnr.bin", "dlssnr.bin")
-                ?? throw new IOException("Mochizuki 缺少用户模型。请提供合法持有的 dlssnr.bin，或导入 nvngx_dlssnr.dll 310.8.0 后由 MU 提取。");
+                ?? throw new IOException("模型尚未准备好，请重试一键配置。MU 会从内置资源自动提取并校验。");
             if (new FileInfo(model).Length != 147756560 || Core.Hash(model) != MochizukiModelHash)
                 throw new IOException("Mochizuki 模型不匹配：需要 310.8.0 对应的已校验模型，游戏文件尚未修改。");
             Add("dlssnr-amd/dlssnr.bin", model);
@@ -145,7 +149,7 @@ public static class NeuralRenderInstaller
             var weights = Find(resources, gameRoot, "dlssnr_on_amd_weights.bin") ?? throw new IOException("Daniel 缺少 dlssnr_on_amd_weights.bin，请导入你有权使用的权重。");
             if (new FileInfo(weights).Length is < 1048576 or > 536870912) throw new IOException("Daniel 权重大小异常或不完整。");
             Add("dlssnr_on_amd_weights.bin", weights);
-            var nv = Find(resources, gameRoot, "nvngx_dlssnr.dll") ?? throw new IOException("Daniel 缺少 nvngx_dlssnr.dll 310.8.0，请自行提供有权使用的文件。");
+            var nv = Find(resources, gameRoot, "nvngx_dlssnr.dll") ?? throw new IOException("内置 DLSS 5 文件尚未准备好，请重新运行一键配置。");
             Core.ValidateDll(nv);
             if (Core.Hash(nv) != NvidiaSourceHash && Core.Hash(nv) != Core.BundledDllSha256) throw new IOException("NVIDIA DLL 不在已核验的 310.8.0 文件列表中。");
             Add("nvngx_dlssnr.dll", nv);
@@ -169,8 +173,25 @@ public static class NeuralRenderInstaller
     }
     public static string[] MissingResources(string exe, NeuralPlan plan)
     {
+        if (plan.Backend == "mochizuki" && Find(Resources, Path.GetDirectoryName(exe)!, "dlssnr-amd/dlssnr.bin", "dlssnr.bin") == null)
+            return typeof(NeuralRenderInstaller).Assembly.GetManifestResourceInfo("AmdNrAssistant.nvngx_dlssnr.dll") != null
+                ? [] : ["内置 DLSS 5 资源缺失，请重新安装完整版本的 MU。"];
         try { UserFiles(Resources, Path.GetDirectoryName(exe)!, plan.Backend); return []; }
         catch (IOException error) { return [error.Message]; }
+    }
+    public static bool HasVerifiedMochizukiModel(string exe)
+    {
+        var model = Find(Resources, Path.GetDirectoryName(exe)!, "dlssnr-amd/dlssnr.bin", "dlssnr.bin");
+        return model != null && new FileInfo(model).Length == 147756560 && Core.Hash(model) == MochizukiModelHash;
+    }
+    public static bool CanPrepareMochizukiModel =>
+        typeof(NeuralRenderInstaller).Assembly.GetManifestResourceInfo("AmdNrAssistant.nvngx_dlssnr.dll") != null;
+    public static void EnsureBundledDll()
+    {
+        var file = Path.Combine(Resources, "nvngx_dlssnr.dll"); Core.RejectLinks(file);
+        if (File.Exists(file) && Core.Hash(file) is NvidiaSourceHash or Core.BundledDllSha256) return;
+        if (File.Exists(file)) throw new IOException("已有 nvngx_dlssnr.dll 与 MU 内置版本不一致；请移走缓存中的冲突文件后重试。");
+        Core.ExtractBundledDll(file);
     }
     // Imports only data and the explicitly reviewed runtime. Never imports setup
     // executables, scripts, unrelated DLLs, or symlinks from a user's folder.
@@ -194,28 +215,99 @@ public static class NeuralRenderInstaller
     }
     public static async Task PrepareModelAsync(string package, IProgress<string> progress, CancellationToken token)
     {
-        if (Find(Resources, Resources, "dlssnr-amd/dlssnr.bin", "dlssnr.bin") != null) return;
-        var nv = Path.Combine(Resources, "nvngx_dlssnr.dll"); Core.RejectLinks(nv);
-        if (!File.Exists(nv)) return;
-        if (Core.Hash(nv) != NvidiaSourceHash) throw new IOException("Mochizuki 提取需要上游指定 SHA256 的 nvngx_dlssnr.dll 310.8.0；其他版本不能替代。");
+        var existing = Find(Resources, Resources, "dlssnr-amd/dlssnr.bin", "dlssnr.bin");
+        if (existing != null)
+        {
+            if (new FileInfo(existing).Length != 147756560 || Core.Hash(existing) != MochizukiModelHash)
+                throw new IOException("已有模型校验失败，请删除损坏的 dlssnr.bin 后重试。");
+            return;
+        }
         await Task.Run(() => ValidatePackage(package), token);
-        progress.Report("正在从用户提供的 DLL 提取 Mochizuki 模型（仅读取数据）…");
+        progress.Report("正在从 MU 内置资源准备神经渲染模型，首次运行可能需要几分钟…");
         var output = Path.Combine(Resources, "dlssnr-amd/dlssnr.bin"); Core.RejectLinks(output);
-        var info = new System.Diagnostics.ProcessStartInfo("py.exe") { UseShellExecute = false, CreateNoWindow = true,
-            RedirectStandardOutput = true, RedirectStandardError = true, WorkingDirectory = package };
-        foreach (var arg in new[] { "-3", "-X", "utf8", Path.Combine(package, "mochizuki-model.py"), nv, output, "--work", Path.Combine(package, "model-work") }) info.ArgumentList.Add(arg);
+        var nv = Path.Combine(package, "mu-model-source", "nvngx_dlssnr.dll");
+        var script = Path.Combine(package, "mu-mochizuki-model.py");
         try
         {
+            await Task.Run(() => Core.ExtractBundledDll(nv), token);
+            // The pinned upstream script accepts one 310.8.0 file hash. MU's bundled
+            // 310.8.0 DLL has different metadata but produces the same verified model.
+            var source = await File.ReadAllTextAsync(Path.Combine(package, "mochizuki-model.py"), token);
+            if (source.Split(NvidiaSourceHash).Length != 2) throw new IOException("上游模型提取脚本已变化，已停止以免生成错误模型。");
+            await File.WriteAllTextAsync(script, source.Replace(NvidiaSourceHash, Core.BundledDllSha256, StringComparison.Ordinal), token);
+            var python = await PreparePythonAsync(progress, token);
+            var info = new System.Diagnostics.ProcessStartInfo(python) { UseShellExecute = false, CreateNoWindow = true,
+                RedirectStandardOutput = true, RedirectStandardError = true, WorkingDirectory = package };
+            if (Path.GetFileName(python).Equals("py.exe", StringComparison.OrdinalIgnoreCase)) info.ArgumentList.Add("-3");
+            foreach (var arg in new[] { "-X", "utf8", script, nv, output, "--work", Path.Combine(package, "model-work") }) info.ArgumentList.Add(arg);
             using var process = System.Diagnostics.Process.Start(info) ?? throw new IOException("无法启动 Python。");
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token); timeout.CancelAfter(TimeSpan.FromMinutes(15));
             var stdout = process.StandardOutput.ReadToEndAsync(); var stderr = process.StandardError.ReadToEndAsync();
             try { await process.WaitForExitAsync(timeout.Token); }
             catch { try { process.Kill(true); } catch { } throw; }
             await Task.WhenAll(stdout, stderr);
-            if (process.ExitCode != 0 || !File.Exists(output) || Core.Hash(output) != MochizukiModelHash)
-                throw new IOException("模型提取失败。请安装 Python 3.10+，或自行提供已校验的 dlssnr.bin。游戏文件尚未修改。");
+            if (process.ExitCode != 0 || !File.Exists(output) || new FileInfo(output).Length != 147756560 || Core.Hash(output) != MochizukiModelHash)
+                throw new IOException("模型自动提取或校验失败，游戏文件尚未修改。" + (await stderr).Trim().Split('\n').LastOrDefault());
         }
-        catch (System.ComponentModel.Win32Exception e) { throw new IOException("未找到 Python 启动器。请安装 Python 3.10+（包含 py 启动器），或导入已提取的 dlssnr.bin。", e); }
+        finally
+        {
+            if (File.Exists(script)) File.Delete(script);
+            if (File.Exists(nv)) File.Delete(nv);
+            if (File.Exists(output) && Core.Hash(output) != MochizukiModelHash) File.Delete(output);
+        }
+    }
+    static async Task<string> PreparePythonAsync(IProgress<string> progress, CancellationToken token)
+    {
+        var cache = Path.Combine(Core.InstallerCacheDirectory, "python-3.13.9-embed-amd64");
+        Core.RejectLinks(cache); Directory.CreateDirectory(cache);
+        var zip = Path.Combine(cache, "python.zip"); Core.RejectLinks(zip);
+        if (!File.Exists(zip) || new FileInfo(zip).Length != PythonSize || Core.Hash(zip) != PythonHash)
+        {
+            progress.Report("正在下载模型提取组件…");
+            using var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+            await DownloadSources.DownloadAsync(http, PythonUrl, null, PythonHash, PythonSize, zip,
+                new Progress<int>(n => progress.Report($"模型提取组件下载 {n}%")), token, progress.Report);
+        }
+        var runtime = Path.Combine(cache, "runtime");
+        var exe = Path.Combine(runtime, "python.exe"); Core.RejectLinks(exe);
+        // Check every executable/runtime byte before running the cached interpreter.
+        if (File.Exists(exe) && Core.Hash(exe) == PythonExeHash && RuntimeMatchesArchive(zip, runtime)) return exe;
+        progress.Report("正在准备模型提取组件…");
+        var stage = Path.Combine(cache, "runtime-" + Guid.NewGuid().ToString("N")); Core.RejectLinks(stage);
+        try
+        {
+            using var archive = ZipFile.OpenRead(zip);
+            if (archive.Entries.Count > 100) throw new IOException("模型提取组件文件数异常。");
+            foreach (var entry in archive.Entries)
+            {
+                if (!Safe(entry.FullName) || entry.FullName.Contains('/') || entry.FullName.Contains('\\') ||
+                    (entry.ExternalAttributes >> 16 & 0xf000) == 0xa000 || entry.Length > 30L * 1024 * 1024)
+                    throw new IOException("模型提取组件包含非法文件。");
+                var target = Path.Combine(stage, entry.FullName); Core.RejectLinks(target);
+                Directory.CreateDirectory(stage);
+                using var input = entry.Open(); using var output = new FileStream(target, FileMode.CreateNew);
+                await input.CopyToAsync(output, token);
+            }
+            if (Core.Hash(Path.Combine(stage, "python.exe")) != PythonExeHash) throw new IOException("模型提取组件校验失败。");
+            if (Directory.Exists(runtime)) Directory.Delete(runtime, true);
+            Directory.Move(stage, runtime);
+            return exe;
+        }
+        finally { if (Directory.Exists(stage)) Directory.Delete(stage, true); }
+    }
+    static bool RuntimeMatchesArchive(string zip, string runtime)
+    {
+        using var archive = ZipFile.OpenRead(zip);
+        foreach (var entry in archive.Entries)
+        {
+            if (!Safe(entry.FullName) || entry.FullName.Contains('/') || entry.FullName.Contains('\\')) return false;
+            var file = Path.Combine(runtime, entry.FullName); Core.RejectLinks(file);
+            if (!File.Exists(file) || new FileInfo(file).Length != entry.Length) return false;
+            using var stream = entry.Open();
+            var expected = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+            if (Core.Hash(file) != expected) return false;
+        }
+        return true;
     }
     internal static string BytesHash(byte[] bytes) => Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
     internal static void AtomicWrite(string target, byte[] bytes)

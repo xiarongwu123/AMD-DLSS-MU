@@ -52,6 +52,13 @@ public static class EnvironmentDetector
         resources["hip-preparable"]=facts["architecture"].Value=="rdna2";
         foreach(var backend in new[]{"daniel","lmxxf","mochizuki"})
         {
+            if(backend=="mochizuki")
+            {
+                try{resources["mochizuki-model"]=NeuralRenderInstaller.HasVerifiedMochizukiModel(exe);}
+                catch(Exception e)when(e is IOException or InvalidDataException or UnauthorizedAccessException){resources["mochizuki-model"]=false;}
+                resources["mochizuki-model-preparable"]=NeuralRenderInstaller.CanPrepareMochizukiModel;
+                continue;
+            }
             var plan=new NeuralPlan(gameId,backend,"dx12","dxgi.dll",1,"unverified","probe",false,false,false,[],new(Backend:backend));
             bool ready;try{ready=NeuralRenderInstaller.MissingResources(exe,plan).Length==0;}catch(Exception e)when(e is IOException or InvalidDataException or UnauthorizedAccessException){ready=false;}
             if(backend=="daniel"){resources["daniel-runtime"]=ready;resources["daniel-weights"]=ready;}else resources[backend+"-model"]=ready;

@@ -8,12 +8,12 @@ import "./scheme-choices.css";
 
 export type SchemeId = "base" | "fps" | "compat" | "author" | "online" | "amd-magpie" | "legacy";
 export const schemes = [
-  { id: "base", name: "基础稳定版", detail: "Daniel 0.8 · 官方版入口", premium: false, icon: ShieldCheck },
+  { id: "base", name: "Daniel 0.8 官方入口", detail: "NeuralHub 独立程序，需在其中完成设置", premium: false, icon: ShieldCheck },
   { id: "fps", name: "高帧率版", detail: "DLSS 5 + XeFG 2X", premium: false, icon: Zap },
   { id: "author", name: "作者调校版", detail: "Mochizuki · RX 9000 实验路线", premium: true, icon: Sparkles },
   { id: "compat", name: "兼容版", detail: "多后端 · 尝试其他加载路径", premium: true, icon: Puzzle },
   { id: "online", name: "网游适配版", detail: "按游戏配置 · 使用前确认风险", premium: true, icon: UsersRound },
-  { id: "amd-magpie", name: "AMD 大力喜鹊", detail: "独立窗口增强 · RDNA3 实验版", premium: true, icon: WandSparkles },
+  { id: "amd-magpie", name: "AMD 大力喜鹊", detail: "自动准备完整包 · 打开独立工具", premium: true, icon: WandSparkles },
   { id: "legacy", name: "老游戏专用版", detail: "ReShade 桥接 · 支持 32 位游戏", premium: true, icon: Gamepad2 },
 ] as const;
 export function canUsePremium(state: State) {
@@ -27,7 +27,7 @@ export function SchemeChoices({ gameId, gameTitle, selected, state, disabled, on
 }) {
   const allowed = canUsePremium(state);
   return <section className="scheme-choices" aria-label="一键配置方案">
-    <div className="scheme-choice-heading"><h4>选择一个方案，一键配置</h4><span>2 个免费方案 · 5 个高级方案</span></div>
+    <div className="scheme-choice-heading"><h4>选择一个图形方案</h4><span>2 个免费方案 · 5 个高级方案</span></div>
     <div className="scheme-choice-grid">
       {schemes.map(s => <button type="button" key={s.id} disabled={disabled} aria-pressed={selected === s.id}
         className={`scheme-choice ${s.id === "author" ? "scheme-author-featured" : ""} ${selected === s.id ? "is-selected" : ""}`}

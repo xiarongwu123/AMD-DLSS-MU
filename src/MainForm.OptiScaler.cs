@@ -48,8 +48,9 @@ public sealed partial class MainForm
             if (!SmartRenderDiagnostics.HasHipRuntime()) throw new MissingAmdHipRuntimeException();
         }
         var progress = new Progress<string>(s => status.Text = s);
+        if (plan.Backend == "daniel") await Task.Run(NeuralRenderInstaller.EnsureBundledDll, token);
         var missing = await Task.Run(() => NeuralRenderInstaller.MissingResources(exe, plan), token);
-        if (missing.Length > 0 && !(plan.Backend == "mochizuki" && File.Exists(Path.Combine(NeuralRenderInstaller.Resources, "nvngx_dlssnr.dll"))))
+        if (missing.Length > 0)
             throw new IOException(string.Join("\n", missing) + "\n请打开高级设置中的“准备本机资源”。");
         var package = await NeuralRenderInstaller.PrepareAsync(progress, token);
         try

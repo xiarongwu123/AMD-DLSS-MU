@@ -126,7 +126,10 @@ export function SmartDialog({
         setInfo("已打开 Daniel 0.8 官方安装器。请在 NeuralHub 中导入自己的 DLL 并配置游戏；此操作不会将游戏直接标记为已配置。");
         return;
       }
-      if (scheme === "amd-magpie") { await rpc("amdMagpie",{gameId:game.id,...smartContext}); return; }
+      if (scheme === "amd-magpie") {
+        if(await rpc<boolean>("amdMagpie"))setInfo("已打开 AMD 大力喜鹊，请在工具内选择效果并按其主页快捷键启用；游戏文件未修改，实际效果需在游戏中确认。");
+        return;
+      }
       const receipt = await rpc<NeuralReceipt | null>("configure", {
         gameId: game.id,
         ...smartContext,
@@ -261,7 +264,7 @@ export function SmartDialog({
           <SchemeChoices gameId={game.id} gameTitle={game.title} state={state} selected={scheme} disabled={working}
             onSelect={chooseScheme} onUpgrade={() => setPurchase(true)} onContextChange={setSmartContext}
             onUseRecommendation={options => { setScheme(options.backend === "mochizuki" ? "author" : "compat"); setGamePreset(true); setGoal("custom"); setCustom(6); setNeural({ ...defaultNeuralOptions, ...options }); }} />
-          {scheme && !["base", "fps"].includes(scheme) && <p className="scheme-paid-selection"><strong>{schemes.find(s => s.id === scheme)?.name}</strong> · {scheme === "author" ? "Mochizuki 实验配置；本游戏未发布实测预设时不承诺最佳效果。" : scheme === "online" ? "不绕过反作弊，继续配置前需要知悉风险。" : scheme === "amd-magpie" ? "独立工具目录，需自行提供与该版本匹配的运行库和模型。" : "具体兼容性与效果需进入游戏验证。"}</p>}
+          {scheme && !["base", "fps"].includes(scheme) && <p className="scheme-paid-selection"><strong>{schemes.find(s => s.id === scheme)?.name}</strong> · {scheme === "author" ? "Mochizuki 实验配置；本游戏未发布实测预设时不承诺最佳效果。" : scheme === "online" ? "不绕过反作弊，继续配置前需要知悉风险。" : scheme === "amd-magpie" ? "首次自动下载完整包并打开独立工具，后续校验后直接打开；效果在 AMD 喜鹊内设置，不修改游戏文件。" : "具体兼容性与效果需进入游戏验证。"}</p>}
           <details className="scheme-custom-toggle"><summary>原有目标与自定义设置</summary>
           <h4 className="field-heading">你更在意什么？</h4>
           <div className="goals" data-guide="goals">

@@ -4,6 +4,11 @@ using Mu.Presets;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+if(args is ["verify-amd-magpie",var amdMagpieArchive,var amdMagpieDestination])
+{
+    await AmdMagpieTests.RunRealPackageAsync(amdMagpieArchive,amdMagpieDestination);return;
+}
+
 if(args is ["verify-legacy-reshade",var reshadeArchive,var reshadeTarget])
 {
     LegacyBridge.ExtractReShade(reshadeArchive,reshadeTarget);

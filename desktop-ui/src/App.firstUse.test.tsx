@@ -19,6 +19,18 @@ vi.mock("./bridge", () => ({
 
 afterEach(() => { cleanup(); localStorage.clear(); vi.resetAllMocks(); });
 
+it("大力喜鹊页的 A卡按钮无需选择游戏即可直接打开独立工具",async()=>{
+  localStorage.setItem("mu-first-use-guide-v1","done");
+  const state={...emptyState,page:"magpie",account:{id:"a",email:"a@test",membership:{tier:"pro",expiresAt:null},features:[{key:"schemes.premium.configure",allowed:true}]}};
+  vi.mocked(rpc).mockImplementation(async command=>command==="state"?state:command==="amdMagpie"?true:undefined);
+  render(<App/>);
+  fireEvent.click(await screen.findByRole("button",{name:/A卡专用/}));
+  await waitFor(()=>expect(rpc).toHaveBeenCalledWith("amdMagpie",{}));
+  expect(rpc).not.toHaveBeenCalledWith("configure",expect.anything());
+  expect(rpc).not.toHaveBeenCalledWith("recommend",expect.anything());
+  expect(screen.queryByRole("dialog",{name:"游戏图形方案"})).toBeNull();
+});
+
 it("首次进入游戏库自动引导，跳过后重新打开不会自动播放", async () => {
   vi.mocked(rpc).mockImplementation(async command =>
     command === "state" ? emptyState : undefined,

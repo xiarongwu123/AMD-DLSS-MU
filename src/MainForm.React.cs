@@ -512,7 +512,9 @@ public sealed partial class MainForm
                     else if(command=="magpie")await StartMagpieAsync();
                     else if(command=="amdMagpie")
                     {
-                        if(Arg(args,"gameId").Length>0)await ManualSmartPreflightAsync(ReactGame(args),"amd-magpie",args);
+                        // Opening the standalone tool does not configure a game or enable
+                        // its NR effect. Both entry points use the same launcher; game/API,
+                        // window and experimental GPU checks belong to effect evaluation.
                         return await StartAmdMagpieAsync();
                     }
                     else if(command=="daniel08")return await StartDaniel08Async();

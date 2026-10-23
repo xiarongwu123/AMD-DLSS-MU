@@ -41,6 +41,29 @@ afterEach(() => {
   vi.resetAllMocks();
 });
 describe("推荐目标与真实配置命令", () => {
+  it("6750 未确认游戏接口或窗口时仍直接打开 AMD 喜鹊，不执行游戏安装",async()=>{
+    vi.mocked(rpc).mockImplementation(async command=>command==="recommend"?{...recommendation,gpu:{name:"AMD RX 6750 XT",vramMb:12288}}:command==="amdMagpie"?true:undefined);
+    const complete=vi.fn();
+    render(<SmartDialog game={game} state={{...emptyState,viewAvailable:true,account:{id:"a",email:"a@test",membership:{tier:"pro",expiresAt:null},paymentsEnabled:true,features:[{key:"schemes.premium.configure",allowed:true}]}}} onClose={()=>{}} onComplete={complete}/>);
+    await screen.findByText("AMD RX 6750 XT");
+    fireEvent.click(screen.getByRole("button",{name:/AMD 大力喜鹊.*高级会员/}));
+    fireEvent.click(screen.getByRole("button",{name:"开启 AMD 大力喜鹊"}));
+    await waitFor(()=>expect(rpc).toHaveBeenCalledWith("amdMagpie"));
+    await screen.findByText(/已打开 AMD 大力喜鹊，请在工具内选择效果/);
+    expect(rpc).not.toHaveBeenCalledWith("configure",expect.anything());
+    expect(rpc).not.toHaveBeenCalledWith("gameRecommendation",expect.anything());
+    expect(complete).not.toHaveBeenCalled();
+    expect(screen.queryByText(/需自行提供与该版本匹配/)).toBeNull();
+  });
+  it("AMD 喜鹊取消准备时不会显示打开成功",async()=>{
+    vi.mocked(rpc).mockImplementation(async command=>command==="recommend"?recommendation:command==="amdMagpie"?false:undefined);
+    render(<SmartDialog game={game} state={{...emptyState,viewAvailable:true,account:{id:"a",email:"a@test",membership:{tier:"pro",expiresAt:null},paymentsEnabled:true,features:[{key:"schemes.premium.configure",allowed:true}]}}} onClose={()=>{}} onComplete={()=>{}}/>);
+    await screen.findByText("AMD RX 7900 XT");
+    fireEvent.click(screen.getByRole("button",{name:/AMD 大力喜鹊.*高级会员/}));
+    fireEvent.click(screen.getByRole("button",{name:"开启 AMD 大力喜鹊"}));
+    await waitFor(()=>expect(rpc).toHaveBeenCalledWith("amdMagpie"));
+    expect(screen.queryByText(/已打开 AMD 大力喜鹊，请在工具内选择效果/)).toBeNull();
+  });
   it("免费 Daniel 0.8 打开官方流程，不冒报游戏配置完成", async () => {
     vi.mocked(rpc).mockImplementation(async command => command === "recommend" ? recommendation : command === "daniel08" ? true : undefined);
     const complete = vi.fn();
