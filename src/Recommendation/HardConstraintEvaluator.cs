@@ -11,6 +11,8 @@ public static class HardConstraintEvaluator
         else if(c.Id!="standard"&&!gpu.Known)Add("GPU_UNKNOWN","无法确认游戏使用的显卡。");
         if(c.Id!="standard"&&arch=="unknown")Add("ARCH_UNKNOWN","当前显卡架构不在已核验能力表内，不能按未知架构自动配置。");
         if((backend is "mochizuki" or "lmxxf")&&arch!="rdna4")Add("ARCH_INCOMPATIBLE","此后端的自动路径仅限已支持的 RDNA4。","BLOCKED");
+        if(backend==Mu.Neural.NeuralBackends.LmxxfRdna3&&arch!="rdna3")Add("ARCH_INCOMPATIBLE","AMDNR lmxxf RDNA3 路线当前仅支持 RX 7000。","BLOCKED");
+        if(backend==Mu.Neural.NeuralBackends.LmxxfRdna3&&c.Id!="compat")Add("SCHEME_INCOMPATIBLE","AMDNR RDNA3 资源包请通过兼容版配置。","BLOCKED");
         if(c.Id=="amd-magpie"&&arch!="rdna3")Add("ARCH_INCOMPATIBLE","当前 AMD 大力喜鹊是 RDNA3 实验路线。","BLOCKED");
         if(!e.Field("bitness").Confirmed)Add("BITNESS_UNKNOWN","无法确认游戏进程位数。");
         else if(!c.Bitness.Select(b=>b.ToString()).Contains(e.Field("bitness").Value))
@@ -43,13 +45,13 @@ public static class HardConstraintEvaluator
             Add("RULE_DENIED",deny.Description.Length>0?deny.Description:"当前构建或驱动被明确禁止。","BLOCKED");
         if(all.Any(x=>x.Scheme==c.Id&&CompatibilityRuleEngine.Match(x,e,now)&&x.BlockedDrivers.Contains(e.Field("driver").Value)))Add("DRIVER_BLACKLIST","当前驱动处于此规则黑名单。","BLOCKED");
         if(r?.KnownConflicts.Any(x=>e.Components.ContainsKey(x))==true)Add("KNOWN_CONFLICT","检测到规则列出的冲突组件。","BLOCKED");
-        var defaults=(backend=="mochizuki"?["mochizuki-model"]:backend=="lmxxf"?["hip","lmxxf-model"]:
+        var defaults=(backend==Mu.Neural.NeuralBackends.LmxxfRdna3?["hip","amdnr-rdna3-package"]:backend=="mochizuki"?["mochizuki-model"]:backend=="lmxxf"?["hip","lmxxf-model"]:
             c.Id=="amd-magpie"?["amd-magpie-resources"]:c.Id is "base" or "standard"?Array.Empty<string>():c.Id=="fps"?["hip"]:c.Id=="legacy"?["hip"]:["hip","daniel-runtime","daniel-weights"]);
         var required=defaults.Concat(r?.Dependencies??[]).Distinct();
         foreach(var dep in required)if(!e.Resources.GetValueOrDefault(dep)&&!e.Resources.GetValueOrDefault(dep+"-preparable"))Add("MISSING_RESOURCE","需要准备并校验资源："+dep);
         if(r!=null&&r.ComponentVersion!=c.Version)Add("VERSION_MISMATCH","规则与组件固定版本不一致。","BLOCKED");
         if(!e.Field("driver").Known)Add("DRIVER_UNKNOWN","驱动版本未确认，无法排除版本冲突。");
-        if(int.TryParse(e.Field("osBuild").Value,out var build)&&build<(c.Id=="amd-magpie"?19041:c.Id=="standard"?19041:22000))Add("OS_VERSION","当前Windows构建低于固定运行库要求。","BLOCKED");
+        if(int.TryParse(e.Field("osBuild").Value,out var build)&&build<(c.Id is "amd-magpie" or "standard"||backend==Mu.Neural.NeuralBackends.LmxxfRdna3?19041:22000))Add("OS_VERSION","当前Windows构建低于固定运行库要求。","BLOCKED");
         if(e.Field("os").Value!="windows")Add("WINDOWS_REQUIRED","实际检测和部署需要Windows。","BLOCKED");
         return issues.ToArray();
     }

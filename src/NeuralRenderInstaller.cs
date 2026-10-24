@@ -40,7 +40,7 @@ public static class NeuralRenderInstaller
     public static bool ManagedPath(string name)
     {
         name = name.Replace('\\', '/');
-        return Safe(name) && (name is "LmxxfNrRuntime.dll" or "MochizukiNrRuntime.dll" ||
+        return Safe(name) && (name is "LmxxfNrRuntime.dll" or "LmxxfNrRuntime.pak" or "MochizukiNrRuntime.dll" ||
             new[] { "dlssnr-amd/", "lmxxf-modules/", "shaders/", "native-game-tiled-assets/", "experimental_lighting/" }
                 .Any(prefix => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)));
     }
@@ -53,9 +53,11 @@ public static class NeuralRenderInstaller
         backend == "mochizuki" && (name == "MochizukiNrRuntime.dll" || name.StartsWith("dlssnr-amd/", StringComparison.Ordinal)) ||
         backend == "lmxxf" && (name == "LmxxfNrRuntime.dll" || new[] { "lmxxf-modules/", "shaders/", "experimental_lighting/" }.Any(p => name.StartsWith(p, StringComparison.Ordinal)));
 
-    public static void ExtractVerified(string archiveFile, string destination)
+    static PackagePin PinFor(string backend) => backend == NeuralBackends.LmxxfRdna3 ? AmdNrRdna3Package.Pin() : Pin();
+    static bool SelectedPackagePath(string name, string backend) => backend == NeuralBackends.LmxxfRdna3 ? AmdNrRdna3Package.PackagePath(name) : PackagePath(name);
+    public static void ExtractVerified(string archiveFile, string destination, string backend = "")
     {
-        var pin = Pin(); Core.RejectLinks(archiveFile); Core.RejectLinks(destination);
+        var pin = PinFor(backend); Core.RejectLinks(archiveFile); Core.RejectLinks(destination);
         if (new FileInfo(archiveFile).Length != pin.Size || Core.Hash(archiveFile) != pin.Sha256)
             throw new IOException("神经渲染发布包 SHA256 校验失败。");
         using var archive = ZipFile.OpenRead(archiveFile);
@@ -67,31 +69,32 @@ public static class NeuralRenderInstaller
             if (entry.FullName.EndsWith('/') || entry.FullName.EndsWith('\\')) continue;
             if (!Safe(name) || !seen.Add(name) || (entry.ExternalAttributes >> 16 & 0xf000) == 0xa000)
                 throw new IOException("发布包含非法路径或重复文件。");
-            if (!PackagePath(name)) continue; // no Setup/Uninstall scripts or optional person worker/models
-            if (!pin.Files.TryGetValue(name, out var expected) || entry.Length != expected.Size || entry.Length > 256L * 1024 * 1024)
+            if (!SelectedPackagePath(name, backend)) continue; // no launchers, scripts or optional upscalers
+            var maximum = backend == NeuralBackends.LmxxfRdna3 && name == "LmxxfNrRuntime.pak" ? 1024L * 1024 * 1024 : 256L * 1024 * 1024;
+            if (!pin.Files.TryGetValue(name, out var expected) || entry.Length != expected.Size || entry.Length > maximum)
                 throw new IOException("发布包组件不匹配：" + name);
             var target = Path.Combine(destination, name); Core.RejectLinks(target);
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             using (var input = entry.Open()) using (var output = new FileStream(target, FileMode.CreateNew)) input.CopyTo(output);
             if (Core.Hash(target) != expected.Sha256) throw new IOException("解压组件校验失败：" + name);
         }
-        ValidatePackage(destination);
+        ValidatePackage(destination, backend);
     }
-    public static void ValidatePackage(string folder)
+    public static void ValidatePackage(string folder, string backend = "")
     {
         Core.RejectLinks(folder);
-        foreach (var pair in Pin().Files.Where(p => PackagePath(p.Key)))
+        foreach (var pair in PinFor(backend).Files.Where(p => SelectedPackagePath(p.Key, backend)))
         {
             var path = Path.Combine(folder, pair.Key); Core.RejectLinks(path);
             if (!File.Exists(path) || new FileInfo(path).Length != pair.Value.Size || Core.Hash(path) != pair.Value.Sha256)
                 throw new IOException("资源包缺少或损坏组件：" + pair.Key);
         }
-        foreach (var name in new[] { "OptiScaler.dll", "MochizukiNrRuntime.dll", "LmxxfNrRuntime.dll" })
+        foreach (var name in backend == NeuralBackends.LmxxfRdna3 ? new[] { "OptiScaler.dll", "LmxxfNrRuntime.dll" } : new[] { "OptiScaler.dll", "MochizukiNrRuntime.dll", "LmxxfNrRuntime.dll" })
             Core.CheckPe(Path.Combine(folder, name), true);
     }
-    public static async Task<string> PrepareAsync(IProgress<string> progress, CancellationToken token)
+    public static async Task<string> PrepareAsync(IProgress<string> progress, CancellationToken token, string backend = "")
     {
-        var pin = Pin(); var cache = Path.Combine(Core.InstallerCacheDirectory, "OptScaler-NR-" + pin.Version);
+        var pin = PinFor(backend); var cache = Path.Combine(Core.InstallerCacheDirectory, (backend == NeuralBackends.LmxxfRdna3 ? "AMDNR-RDNA3-" : "OptScaler-NR-") + pin.Version);
         Core.RejectLinks(cache); Directory.CreateDirectory(cache);
         var zip = Path.Combine(cache, "package.zip"); Core.RejectLinks(zip);
         if (!File.Exists(zip) || new FileInfo(zip).Length != pin.Size || Core.Hash(zip) != pin.Sha256)
@@ -102,7 +105,7 @@ public static class NeuralRenderInstaller
         }
         token.ThrowIfCancellationRequested(); progress.Report("正在校验神经渲染文件…");
         var stage = Path.Combine(cache, "extract-" + Guid.NewGuid().ToString("N"));
-        try { await Task.Run(() => ExtractVerified(zip, stage), token); return stage; }
+        try { await Task.Run(() => ExtractVerified(zip, stage, backend), token); return stage; }
         catch { if (Directory.Exists(stage)) Directory.Delete(stage, true); throw; }
     }
     static IEnumerable<string> Files(string root)
@@ -173,6 +176,9 @@ public static class NeuralRenderInstaller
     }
     public static string[] MissingResources(string exe, NeuralPlan plan)
     {
+        // The matched AMDNR pak is acquired and verified with its host at install
+        // time. Never ask the player for the incompatible RDNA4 loose assets.
+        if (plan.Backend == NeuralBackends.LmxxfRdna3) return [];
         if (plan.Backend == "mochizuki" && Find(Resources, Path.GetDirectoryName(exe)!, "dlssnr-amd/dlssnr.bin", "dlssnr.bin") == null)
             return typeof(NeuralRenderInstaller).Assembly.GetManifestResourceInfo("AmdNrAssistant.nvngx_dlssnr.dll") != null
                 ? [] : ["内置 DLSS 5 资源缺失，请重新安装完整版本的 MU。"];
@@ -186,6 +192,15 @@ public static class NeuralRenderInstaller
     }
     public static bool CanPrepareMochizukiModel =>
         typeof(NeuralRenderInstaller).Assembly.GetManifestResourceInfo("AmdNrAssistant.nvngx_dlssnr.dll") != null;
+    public static string[] ResourcePreparation(string exe, NeuralPlan plan)
+    {
+        if (MissingResources(exe, plan).Length > 0) return [];
+        if (plan.Backend == NeuralBackends.LmxxfRdna3)
+            return ["首次配置需下载约 1 GB 的 AMDNR 配套运行库与内核包；MU 会校验文件并复用已下载的缓存。"];
+        if (plan.Backend == "mochizuki" && !HasVerifiedMochizukiModel(exe) && CanPrepareMochizukiModel)
+            return ["Mochizuki 模型尚未就绪。点击一键配置后，MU 会下载配套组件，从内置 310.8.0 资源提取 dlssnr.bin 并校验；首次需要联网并等待数分钟。"];
+        return [];
+    }
     public static void EnsureBundledDll()
     {
         var file = Path.Combine(Resources, "nvngx_dlssnr.dll"); Core.RejectLinks(file);
@@ -336,15 +351,16 @@ public static class NeuralRenderInstaller
             !NeuralRules.Apis.Contains(plan.GraphicsApi) || plan.Passes < 1 || plan.Passes > (plan.Backend == "mochizuki" ? 30 : 3))
             throw new IOException("安装计划无效。");
         if (GameManagement.Read(exe) is { Phase: not "restored" }) throw new IOException("请先按安装记录恢复旧方案，再切换或升级。");
-        ValidatePackage(package); var root = Path.GetDirectoryName(exe)!;
+        ValidatePackage(package, plan.Backend); var root = Path.GetDirectoryName(exe)!;
         if (root.Split(Path.DirectorySeparatorChar).Any(p => p.Equals("WindowsApps", StringComparison.OrdinalIgnoreCase)))
             throw new IOException("不能向 WindowsApps 写入插件，请选择可写的游戏目录。");
         var conflicting = GameManagement.Loaders.Where(n => File.Exists(Path.Combine(root, n))).ToArray();
         if (conflicting.Length > 0) throw new IOException("已有注入代理或 OptiScaler / ReShade 冲突：" + string.Join("、", conflicting) + "。请先恢复或卸载对应插件。");
-        var pin = Pin(); var files = pin.Files.Where(p => BackendPath(p.Key, plan.Backend) && p.Key != "OptiScaler.ini")
-            .Select(p => new SourceFile(p.Key == "OptiScaler.dll" ? plan.Proxy : p.Key is "LICENSE" or "NOTICE" ? "Licenses/OptScaler-NR-" + p.Key + ".txt" : p.Key,
+        var rdna3 = plan.Backend == NeuralBackends.LmxxfRdna3;
+        var pin = PinFor(plan.Backend); var files = pin.Files.Where(p => (rdna3 ? AmdNrRdna3Package.PackagePath(p.Key) : BackendPath(p.Key, plan.Backend)) && p.Key != "OptiScaler.ini")
+            .Select(p => new SourceFile(rdna3 ? AmdNrRdna3Package.InstalledName(p.Key, plan.Proxy) : p.Key == "OptiScaler.dll" ? plan.Proxy : p.Key is "LICENSE" or "NOTICE" ? "Licenses/OptScaler-NR-" + p.Key + ".txt" : p.Key,
                 Path.Combine(package, p.Key), p.Value.Sha256, "official-release:" + pin.Version)).ToList();
-        files.AddRange(UserFiles(Resources, root, plan.Backend));
+        if (!rdna3) files.AddRange(UserFiles(Resources, root, plan.Backend));
         if (files.Select(f => f.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() != files.Count) throw new IOException("安装清单包含重复文件。");
         var expectedBefore = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var f in files)
@@ -364,6 +380,8 @@ public static class NeuralRenderInstaller
         var libraryPath = ManagedIni.Get(text, "Libraries", "OptiDllPath");
         if (libraryPath != null && !new[] { "auto", "OptiScaler" }.Contains(libraryPath, StringComparer.OrdinalIgnoreCase))
             throw new IOException("现有 OptiScaler.ini 使用自定义依赖路径；请先在高级配置中核对路径。MU 不会覆盖这项设置。");
+        if (rdna3 && ManagedIni.Get(text, "DlssNr", "AmdRuntimePath") is { Length: > 0 })
+            throw new IOException("现有 AMDNR 配置使用外部 Runtime 路径，请先核对 AmdRuntimePath；MU 不会将其覆盖为本机包。");
         foreach (var pair in NeuralRenderPlanner.Settings(plan))
         {
             changes.Add(new("DlssNr", pair.Key, ManagedIni.Get(text, "DlssNr", pair.Key), pair.Value));
@@ -415,11 +433,11 @@ public static class NeuralRenderInstaller
             var path = Path.Combine(root, pair.Key); Core.RejectLinks(path);
             var before = File.Exists(path) ? Core.Hash(path) : "";
             if (before != expectedBefore[pair.Key]) throw new IOException("备份前组件已发生并发变更：" + pair.Key);
-            if (before.Length > 0) AtomicCopy(path, Backup(exe, manifest.BackupId, pair.Key), before);
+            if (before.Length > 0 && before != pair.Value) AtomicCopy(path, Backup(exe, manifest.BackupId, pair.Key), before);
             files.Add(new(pair.Key, before, pair.Value));
         }
         // Intent is durable before the first game write, so a crash is recoverable.
-        GameManagement.Save(new GameRecord(exe, Mode, Version, DateTime.UtcNow, "installing", files) { Neural = manifest });
+        GameManagement.Save(new GameRecord(exe, Mode, manifest.Backend == NeuralBackends.LmxxfRdna3 ? "AMDNR " + manifest.PackageVersion : Version, DateTime.UtcNow, "installing", files) { Neural = manifest });
     }
     static string Backup(string exe, string id, string name)
     {
@@ -435,7 +453,7 @@ public static class NeuralRenderInstaller
         var dirs = record.Files.Where(f => f.Before.Length == 0 && f.Name.Replace('\\', '/').Contains('/'))
             .Select(f => f.Name.Replace('\\', '/').Split('/')[0]).Distinct(StringComparer.OrdinalIgnoreCase)
             .SelectMany(name => GameManagement.ComponentDirectories(Path.Combine(root, name))).OrderByDescending(p => p.Length).ToArray();
-        foreach (var f in record.Files)
+        foreach (var f in record.Files.Where(f => f.Before != f.After))
         {
             if (!GameManagement.IsTracked(f.Name)) throw new IOException("安装记录含非法文件路径。");
             var path = Path.Combine(root, f.Name); Core.RejectLinks(path); var current = File.Exists(path) ? Core.Hash(path) : "";
@@ -474,7 +492,7 @@ public static class NeuralRenderInstaller
     public static void UpdateSettings(string exe, NeuralPlan plan)
     {
         GameManagement.EnsureClosed(exe); var record = GameManagement.Read(exe);
-        if (record is not { Phase: "installed", Neural: not null } || record.Neural.Backend != plan.Backend || record.Neural.Proxy != plan.Proxy)
+        if (record is not { Phase: "installed", Neural: not null } || record.Neural.Backend != plan.Backend || record.Neural.Proxy != plan.Proxy || record.Neural.PackageVersion != plan.PackageVersion)
             throw new IOException("切换后端或代理需要先恢复，再按新方案部署。");
         var path = Path.Combine(Path.GetDirectoryName(exe)!, "OptiScaler.ini"); Core.RejectLinks(path);
         var before = File.ReadAllBytes(path); var (text, encoding) = ManagedIni.Decode(before);

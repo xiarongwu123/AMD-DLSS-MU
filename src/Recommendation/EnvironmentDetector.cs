@@ -50,6 +50,9 @@ public static class EnvironmentDetector
         {var file=Path.Combine(root,f.Name);Core.RejectLinks(file);if(!File.Exists(file)||Core.Hash(file)!=f.After){integrity=true;break;}}
         var resources=new Dictionary<string,bool>{["hip"]=SmartRenderDiagnostics.HasHipRuntime(),["amd-magpie-resources"]=AmdMagpieIntegration.HasResources()};
         resources["hip-preparable"]=facts["architecture"].Value=="rdna2";
+        // This is a pinned download, not a requirement to import RDNA4 models.
+        resources["amdnr-rdna3-package"]=false;
+        resources["amdnr-rdna3-package-preparable"]=true;
         foreach(var backend in new[]{"daniel","lmxxf","mochizuki"})
         {
             if(backend=="mochizuki")
@@ -76,6 +79,15 @@ public static class EnvironmentDetector
             Conflicts=conflicts,AntiCheat=GameManagement.DetectAntiCheat(exe),Running=GameManagement.RunningSince(exe)!=null,
             BackupReady=backup,HasConfiguration=active,IntegrityFailed=integrity};
         return snapshot with{Fingerprint=Fingerprint(snapshot)};
+    }
+    public static bool MatchesAfterPreparation(EnvironmentSnapshot before,EnvironmentSnapshot current,IEnumerable<string> preparedResources)
+    {
+        var resources=new Dictionary<string,bool>(current.Resources);
+        foreach(var key in preparedResources.Distinct())
+            if(key is "hip" or "mochizuki-model" && before.Resources.GetValueOrDefault(key+"-preparable") &&
+                !before.Resources.GetValueOrDefault(key) && current.Resources.GetValueOrDefault(key))
+                resources[key]=false;
+        return Fingerprint(before)==Fingerprint(current with{Resources=resources});
     }
     public static string Fingerprint(EnvironmentSnapshot snapshot)=>Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(
         new{snapshot.Fields,snapshot.Components,snapshot.Resources,snapshot.Conflicts,snapshot.AntiCheat,snapshot.Running,snapshot.BackupReady,snapshot.HasConfiguration,snapshot.IntegrityFailed}))));

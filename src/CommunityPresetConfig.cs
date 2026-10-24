@@ -18,11 +18,11 @@ public static class CommunityPresetConfig
         foreach (var raw in text.Replace("\r\n", "\n").Split('\n'))
         {
             var line = raw.Trim();
-            if (line.StartsWith('[') && line.EndsWith(']')) { section = line[1..^1].Trim(); continue; }
+            if (ManagedIni.TryReadSection(line, out var header)) { section = header; continue; }
             if (line.Length == 0 || line.StartsWith(';') || line.StartsWith('#')) continue;
             var equal = line.IndexOf('=');
             if (equal < 1) continue;
-            var setting = new PresetSetting(file, section, line[..equal].Trim(), line[(equal + 1)..].Trim());
+            var setting = new PresetSetting(file, section, line[..equal].Trim(), ManagedIni.Value(line));
             if (PresetRules.Allowed(mode, setting)) result.Add(setting);
         }
         return PresetRules.Validate(mode, result);
@@ -76,7 +76,7 @@ public static class CommunityPresetConfig
         if (!File.Exists(path)) throw new IOException("游戏缺少方案设置文件。");
         if (record.Neural is { } neural)
         {
-            var options = NeuralOptionsFromPreset(preset.Settings);
+            var options = NeuralOptionsFromPreset(preset.Settings, preset.Item.ComponentVersion);
             if (options.Backend != neural.Backend) throw new IOException("分享方案后端不同，请先切换并部署所需 Runtime。");
             var plan = new NeuralPlan(preset.Item.GameKey, neural.Backend, neural.GraphicsApi, neural.Proxy, options.Passes ?? 1,
                 "unverified", "community:" + preset.Item.Id, options.NrInline ?? false, options.EarlyAnyModuleWrap ?? false,
@@ -87,16 +87,24 @@ public static class CommunityPresetConfig
         var updated = Patch(record.Mode, original, preset.Settings);
         if (updated != original) LivePanel.SaveConfig(exe, path, original, updated);
     }
-    public static NeuralOptions NeuralOptionsFromPreset(IEnumerable<PresetSetting> settings)
+    public static NeuralOptions NeuralOptionsFromPreset(IEnumerable<PresetSetting> settings, string? componentVersion = null)
     {
         var values = PresetRules.Validate(6, settings).ToDictionary(s => s.Key, s => s.Value, StringComparer.OrdinalIgnoreCase);
         bool Flag(string key, bool fallback) => values.TryGetValue(key, out var value) ? bool.Parse(value) : fallback;
         double Number(string key, double fallback) => values.TryGetValue(key, out var value) ? double.Parse(value, System.Globalization.CultureInfo.InvariantCulture) : fallback;
         var mochi = values["NrBackend"] == "mochizuki";
-        return new(values["NrBackend"], Passes: (int)Number(mochi ? "MochizukiPasses" : "Passes", 1),
+        var backend = values["NrBackend"];
+        if (componentVersion == "AMDNR " + Mu.Neural.NeuralBackends.AmdNrVersion)
+        {
+            if (backend != "lmxxf") throw new IOException("AMDNR RDNA3 分享方案不能混用其他后端。");
+            backend = Mu.Neural.NeuralBackends.LmxxfRdna3;
+        }
+        return new(backend, Passes: (int)Number(mochi ? "MochizukiPasses" : "Passes", 1),
             ModelScale: Number("MochizukiModelScale", 1), Temporal: Flag("MochizukiTemporal", true),
             HistoryStrength: Number("MochizukiHistoryStrength", 1), ApplyModel: Flag("MochizukiApplyModel", true),
             DynamicResolution: (int)Number("MochizukiDynamicResolution", 1), NrInline: Flag("NrInline", false),
-            EarlyAnyModuleWrap: Flag("LmxxfEarlyAnyModuleWrap", false), AllowEnhancedBarriers: Flag("LmxxfAllowEnhancedBarriers", false));
+            EarlyAnyModuleWrap: Flag("LmxxfEarlyAnyModuleWrap", false), AllowEnhancedBarriers: Flag("LmxxfAllowEnhancedBarriers", false),
+            LmxxfFastMode: backend == Mu.Neural.NeuralBackends.LmxxfRdna3 ? Flag("AmdLmxxfFastMode", true) : null,
+            LmxxfTierSnap: backend == Mu.Neural.NeuralBackends.LmxxfRdna3 ? Flag("AmdLmxxfTierSnap", true) : null);
     }
 }

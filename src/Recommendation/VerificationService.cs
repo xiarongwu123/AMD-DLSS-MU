@@ -32,7 +32,7 @@ public static class VerificationService
         }
         if(installed&&record!=null)
         {
-            var names=candidate?.Scheme=="standard"?new[]{candidate.Configuration.Proxy}:candidate?.Configuration.Backend switch{"mochizuki"=>new[]{"MochizukiNrRuntime.dll"},"lmxxf"=>new[]{"LmxxfNrRuntime.dll"},_=>new[]{"dlssnr_amd_pass1.dll","dlssnr_amd_pass2.dll","version.dll"}};
+            var names=candidate?.Scheme=="standard"?new[]{candidate.Configuration.Proxy}:(candidate?.Configuration.Backend??record.Neural?.Backend) switch{"mochizuki"=>new[]{"MochizukiNrRuntime.dll"},"lmxxf" or Mu.Neural.NeuralBackends.LmxxfRdna3=>new[]{"LmxxfNrRuntime.dll"},_=>new[]{"dlssnr_amd_pass1.dll","dlssnr_amd_pass2.dll","version.dll"}};
             foreach(var process in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(exe)))using(process)
             {
                 try

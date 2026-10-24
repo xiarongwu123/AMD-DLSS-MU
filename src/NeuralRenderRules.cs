@@ -3,6 +3,14 @@ using System.Text.RegularExpressions;
 
 namespace Mu.Neural;
 
+public static class NeuralBackends
+{
+    public const string LmxxfRdna3 = "lmxxf-rdna3";
+    public const string AmdNrVersion = "0.3.5.8";
+    public static string DefaultForSeries(string series) => series == "rx7000" ? LmxxfRdna3 : "daniel";
+    public static string PackageVersion(string backend) => backend == LmxxfRdna3 ? AmdNrVersion : "1.12.1";
+}
+
 // Shared by the service and desktop. Rules contain bounded data, never download
 // locations, paths, arbitrary INI keys or commands.
 public sealed record NeuralGameRule(string GameId, string Backend, string Proxy,
@@ -15,7 +23,7 @@ public sealed record NeuralRuleDocument(int SchemaVersion, string Revision,
 
 public static class NeuralRules
 {
-    public static readonly string[] Backends = ["daniel", "lmxxf", "mochizuki"];
+    public static readonly string[] Backends = ["daniel", "lmxxf", "mochizuki", NeuralBackends.LmxxfRdna3];
     public static readonly string[] Proxies = ["dxgi.dll", "winmm.dll", "d3d12.dll", "winhttp.dll", "wininet.dll", "dbghelp.dll"];
     public static readonly string[] Apis = ["dx11", "dx12", "vulkan"];
     public static readonly string[] Statuses = ["verified", "community", "experimental", "unverified"];
@@ -52,6 +60,8 @@ public static class NeuralRules
             // No client may turn untested RDNA2/3 into a stable RDNA4 recommendation.
             if (r.Backend is "mochizuki" or "lmxxf" && r.GpuSeries.Any(g => g != "rx9000") && r.Status == "verified")
                 throw new InvalidDataException("RDNA4 后端在 RX 6000/7000 上不能标为已验证。");
+            if (r.Backend == NeuralBackends.LmxxfRdna3 && r.GpuSeries.Any(g => g != "rx7000"))
+                throw new InvalidDataException("AMDNR RDNA3 路线当前仅接入 RX 7000，不能用于 RX 6000 或 RX 9000。");
         }
         var identities = d.Rules.SelectMany(r => r.GpuSeries.SelectMany(g => r.GraphicsApis.Select(a => $"{r.GameId}/{g}/{a}")));
         if (identities.Distinct(StringComparer.Ordinal).Count() != identities.Count())

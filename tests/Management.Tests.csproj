@@ -4,6 +4,7 @@
     <Compile Include="../src/HipRuntime.cs" Link="HipRuntime.cs"/>
     <Compile Include="../src/MagpieIntegration.cs" Link="MagpieIntegration.cs"/>
     <Compile Include="../src/GameLibrary.cs" Link="GameLibrary.cs"/>
+    <Compile Include="../src/GameSearch.cs" Link="GameSearch.cs"/>
     <Compile Include="../src/LibraryPaging.cs" Link="LibraryPaging.cs"/>
     <Compile Include="../src/DownloadSources.cs" Link="DownloadSources.cs"/>
     <Compile Include="../src/AutoUpdate.cs" Link="AutoUpdate.cs"/>
@@ -17,6 +18,9 @@
     <Compile Include="../src/LivePanel.cs" Link="LivePanel.cs"/>
     <Compile Include="../src/CommunityPresetModels.cs" Link="CommunityPresetModels.cs"/>
     <Compile Include="../src/CommunityPresetConfig.cs" Link="CommunityPresetConfig.cs"/>
+    <Compile Include="../src/InstallationContext.cs" Link="InstallationContext.cs"/>
+    <Compile Include="../src/AmdNrRdna3Package.cs" Link="AmdNrRdna3Package.cs"/>
+    <EmbeddedResource Include="../assets/amdnr-rdna3-0.3.5.8.json" LogicalName="Mu.AmdNrRdna3.Pins" />
     <PackageReference Include="SharpCompress" Version="0.48.1" />
   </ItemGroup>
   <ItemGroup><EmbeddedResource Include="../assets/x86-bridge-pins.json" LogicalName="Mu.X86Bridge.Pins" /></ItemGroup>

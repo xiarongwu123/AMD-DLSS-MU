@@ -60,7 +60,7 @@ public static class PresetRules
     { "Enabled", "LocalTone", "LocalStructure", "SkinStructure", "UseAutoMask", "ToneChannels",
       "Scale", "Temporal", "Tonemap", "UseFsrInputs", "UseDepth", "Interop", "Inline", "InlineWaitMs" };
     static readonly HashSet<string> IntegratedNrKeys = new(StringComparer.OrdinalIgnoreCase)
-    { "Enabled", "RunBeforeSR", "NrBackend", "Passes", "NrInline", "LmxxfEarlyAnyModuleWrap", "LmxxfAllowEnhancedBarriers",
+    { "Enabled", "RunBeforeSR", "NrBackend", "Passes", "NrInline", "LmxxfEarlyAnyModuleWrap", "LmxxfAllowEnhancedBarriers", "AmdLmxxfFastMode", "AmdLmxxfTierSnap",
       "MochizukiUnlockPasses", "MochizukiPasses", "MochizukiMaxPasses", "MochizukiModelScale", "MochizukiTemporal",
       "MochizukiHistoryStrength", "MochizukiApplyModel", "MochizukiDynamicResolution" };
 

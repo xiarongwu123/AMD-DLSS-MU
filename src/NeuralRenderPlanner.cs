@@ -8,11 +8,13 @@ namespace AmdNrAssistant;
 public sealed record NeuralOptions(string Backend = "auto", string GraphicsApi = "auto", string Proxy = "auto",
     int? Passes = null, double ModelScale = 1, bool Temporal = true, double HistoryStrength = 1,
     bool ApplyModel = true, int DynamicResolution = 1, bool? NrInline = null,
-    bool? EarlyAnyModuleWrap = null, bool? AllowEnhancedBarriers = null);
+    bool? EarlyAnyModuleWrap = null, bool? AllowEnhancedBarriers = null,
+    bool? LmxxfFastMode = null, bool? LmxxfTierSnap = null);
 public sealed record NeuralPlan(string GameId, string Backend, string GraphicsApi, string Proxy, int Passes,
     string Status, string RuleRevision, bool NrInline, bool EarlyAnyModuleWrap, bool AllowEnhancedBarriers,
     string[] Notices, NeuralOptions Options)
 {
+    public string PackageVersion => NeuralBackends.PackageVersion(Backend);
     public string StatusLabel => NeuralRules.StatusLabel(Status);
     public string ModeLabel => Passes switch { 1 => "标准", 2 => "增强", 3 => "高质量", <= 8 => "实验", _ => "实验 / 压力测试" };
 }
@@ -72,17 +74,26 @@ public static class NeuralRenderPlanner
             else notices.Add("远程兼容规则已过期，使用未验证的保守默认设置。");
         }
         else notices.Add("暂未取得远程兼容规则，使用未验证的保守默认设置。");
-        var backend = options.Backend == "auto" ? rule?.Backend ?? "daniel" : options.Backend;
+        var backend = options.Backend == "auto" ? rule?.Backend ?? NeuralBackends.DefaultForSeries(series) : options.Backend;
+        if (backend == NeuralBackends.LmxxfRdna3 && series != "rx7000")
+            throw new IOException("AMDNR RDNA3 后端仅适用于 RX 7000；RX 6000 请使用 Daniel，RX 9000 请使用原 lmxxf 路线。");
+        if (backend == NeuralBackends.LmxxfRdna3 && (options.NrInline == true || options.EarlyAnyModuleWrap == true || options.AllowEnhancedBarriers == true ||
+            options.ModelScale != 1 || !options.Temporal || options.HistoryStrength != 1 || !options.ApplyModel || options.DynamicResolution != 1))
+            throw new IOException("AMDNR RDNA3 使用自己的参数接口；请清除 Mochizuki 的模型参数与原宿主的 Inline／模块包装／增强屏障开关。");
         var proxy = options.Proxy == "auto" ? rule?.Proxy ?? (api == "vulkan" ? "winmm.dll" : "dxgi.dll") : options.Proxy;
         var passes = options.Passes ?? rule?.Passes ?? 1;
         if (backend != "mochizuki" && passes > 3) throw new IOException("Daniel / lmxxf 仅支持 1–3 Pass；4–30 Pass 仅用于 Mochizuki 实验模式。");
         var followsRule = rule != null && backend == rule.Backend && proxy == rule.Proxy && passes == rule.Passes;
         var status = followsRule ? rule!.Status : backend == "mochizuki" && series == "rx9000" ? "experimental" : "unverified";
+        if (backend == NeuralBackends.LmxxfRdna3 && !followsRule) status = "experimental";
+        if (backend == NeuralBackends.LmxxfRdna3)
+            notices.Add("RX 7000 使用 AMDNR by 3zwr1 的 lmxxf RDNA3 适配。首次按需下载约 1 GB 的独立资源包；默认使用 Fast mode，实际效果与性能需在游戏中确认。");
         if (backend is "mochizuki" or "lmxxf" && series != "rx9000")
         { status = "unverified"; notices.Add("该后端当前面向 RDNA4；此 RX 6000/7000 组合未经验证，可能无法运行。可在高级设置改用 Daniel。"); }
         if (options.Backend != "auto" || options.Proxy != "auto" || options.Passes != null || options.ModelScale != 1 ||
             !options.Temporal || options.HistoryStrength != 1 || !options.ApplyModel || options.DynamicResolution != 1 ||
-            options.NrInline != null || options.EarlyAnyModuleWrap != null || options.AllowEnhancedBarriers != null)
+            options.NrInline != null || options.EarlyAnyModuleWrap != null || options.AllowEnhancedBarriers != null ||
+            options.LmxxfFastMode != null || options.LmxxfTierSnap != null)
         { status = status is "verified" or "community" ? "unverified" : status; notices.Add("已手动修改参数，兼容状态不沿用原规则的验证结论。"); }
         if (passes >= 4) { status = "experimental"; notices.Add(passes >= 9 ? "9–30 Pass 为实验 / 压力测试，会显著增加 GPU 时间和显存占用，不代表更好画质。" : "4–8 Pass 为实验模式，画质和性能需自行验证。"); }
         if (api != "dx12") notices.Add("此接口使用到 DX12 的桥接路径；检测到接口不代表该游戏已稳定兼容。");
@@ -94,6 +105,10 @@ public static class NeuralRenderPlanner
     public static Dictionary<string, string> Settings(NeuralPlan plan)
     {
         Validate(plan.Options);
+        if (plan.Backend == NeuralBackends.LmxxfRdna3)
+            return new() { ["Enabled"] = "true", ["NrBackend"] = "lmxxf", ["Passes"] = plan.Passes.ToString(),
+                ["AmdLmxxfFastMode"] = (plan.Options.LmxxfFastMode ?? true).ToString().ToLowerInvariant(),
+                ["AmdLmxxfTierSnap"] = (plan.Options.LmxxfTierSnap ?? true).ToString().ToLowerInvariant() };
         var result = new Dictionary<string, string> {
             ["Enabled"] = "true", ["RunBeforeSR"] = "true", ["NrBackend"] = plan.Backend,
             ["NrInline"] = plan.NrInline.ToString().ToLowerInvariant(),

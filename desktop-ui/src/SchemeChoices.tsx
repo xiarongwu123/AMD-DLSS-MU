@@ -11,7 +11,7 @@ export const schemes = [
   { id: "base", name: "Daniel 0.8 官方入口", detail: "NeuralHub 独立程序，需在其中完成设置", premium: false, icon: ShieldCheck },
   { id: "fps", name: "高帧率版", detail: "DLSS 5 + XeFG 2X", premium: false, icon: Zap },
   { id: "author", name: "作者调校版", detail: "Mochizuki · RX 9000 实验路线", premium: true, icon: Sparkles },
-  { id: "compat", name: "兼容版", detail: "多后端 · 尝试其他加载路径", premium: true, icon: Puzzle },
+  { id: "compat", name: "兼容版", detail: "多后端 · 含 RX 7000 lmxxf 适配", premium: true, icon: Puzzle },
   { id: "online", name: "网游适配版", detail: "按游戏配置 · 使用前确认风险", premium: true, icon: UsersRound },
   { id: "amd-magpie", name: "AMD 大力喜鹊", detail: "自动准备完整包 · 打开独立工具", premium: true, icon: WandSparkles },
   { id: "legacy", name: "老游戏专用版", detail: "ReShade 桥接 · 支持 32 位游戏", premium: true, icon: Gamepad2 },

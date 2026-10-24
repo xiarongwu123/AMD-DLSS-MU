@@ -58,6 +58,7 @@ export interface CommunityPresetSnapshot {
 export interface Game {
   id: string;
   title: string;
+  searchTerms?: string[];
   cover: string | null;
   state: string;
   mode: number | null;
@@ -71,6 +72,7 @@ export interface Account {
   paymentsEnabled: boolean;
 }
 export interface Download {
+  independent?: boolean;
   id: string;
   title: string;
   state: string;
@@ -80,6 +82,7 @@ export interface Download {
   paused: boolean;
 }
 export interface State {
+  magpiePreparing?: boolean;
   version: string;
   page: Page;
   games: Game[];
@@ -120,14 +123,17 @@ export interface NeuralOptions {
   backend: string; graphicsApi: string; proxy: string; passes: number | null;
   modelScale: number; temporal: boolean; historyStrength: number; applyModel: boolean; dynamicResolution: number;
   nrInline?: boolean | null; earlyAnyModuleWrap?: boolean | null; allowEnhancedBarriers?: boolean | null;
+  lmxxfFastMode?: boolean | null; lmxxfTierSnap?: boolean | null;
 }
 export interface NeuralReceipt {
   backend: string; passes: number; proxy: string; graphicsApi: string;
+  packageVersion?: string;
   statusLabel: string; modeLabel: string; options: NeuralOptions;
 }
 export interface NeuralPlanResponse {
   plan: NeuralReceipt & { notices: string[] };
   missingResources: string[];
+  resourcePreparation?: string[];
   installed: NeuralReceipt | null;
 }
 export interface Check {

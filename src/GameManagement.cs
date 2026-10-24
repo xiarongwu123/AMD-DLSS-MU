@@ -143,9 +143,11 @@ public static class GameManagement
         var r = Read(exe) ?? throw new IOException("没有可恢复记录；旧版安装请使用原安装器卸载。");
         if (r.Neural != null) { NeuralRenderInstaller.Restore(exe, r, preserveChangedSettings); return; }
         if (r.Phase == "installing") throw new IOException("检测到安装意外中断。无法确认外部安装器修改范围，请使用原安装器恢复并保留诊断记录。");
+        if (r.Files.Any(f => !IsTracked(f.Name))) throw new IOException("安装记录含非法文件路径。");
         var changedSettings = new List<string>();
-        // Check all files and all backups before the first mutation; a second attempt is safe.
-        foreach (var f in r.Files)
+        // Files only observed/reused by MU have no restore action. Their later
+        // changes (or missing backups) must not prevent removing MU's own files.
+        foreach (var f in r.Files.Where(f => f.Before != f.After))
         {
             var p = Target(exe, f.Name); var current = File.Exists(p) ? Core.Hash(p) : "";
             if (current != f.Before && current != f.After)

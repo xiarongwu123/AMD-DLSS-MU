@@ -4,6 +4,13 @@ public static class RenderSchemes
 {
     public static readonly string[] Paid = ["compat", "author", "online", "amd-magpie", "legacy", "game"];
     public static bool PremiumMode(int mode) => mode is 5 or 6 or 8;
+    public static string PreflightBackend(string scheme, int mode, string architecture, string requested)
+    {
+        if (scheme == "standard") return "none";
+        if (mode != 6) return "daniel"; // Original modes never acquire the new host.
+        var backend = scheme == "author" ? "mochizuki" : scheme is "compat" or "online" ? requested : "daniel";
+        return backend != "auto" ? backend : scheme == "compat" && architecture == "rdna3" ? Mu.Neural.NeuralBackends.LmxxfRdna3 : "daniel";
+    }
     public static void Validate(string scheme, int mode, bool x86)
     {
         if (scheme.Length == 0) return; // legacy callers still pass through mode authorization

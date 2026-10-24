@@ -3,7 +3,8 @@
 @{ ViewData["Title"] = "神经渲染兼容规则"; }
 <h1>神经渲染兼容规则</h1>
 <p>按游戏 ID（例如 steam:12345）、显卡系列和图形接口匹配。新智能推荐读取 smartRules，空规则仅显示未验证候选，不生成自动推荐。不得将启动成功标为稳定支持。</p>
-<p>backend：daniel / lmxxf / mochizuki；status：verified / community / experimental / unverified。gpuSeries：rx6000 / rx7000 / rx9000；graphicsApis：dx11 / dx12 / vulkan。</p>
+<p>backend：daniel / lmxxf / mochizuki / lmxxf-rdna3（AMDNR RX 7000）。status：verified / community / experimental / unverified。gpuSeries：rx6000 / rx7000 / rx9000；graphicsApis：dx11 / dx12 / vulkan。</p>
+<p>lmxxf-rdna3 的 smartRules 必须指定 scheme=compat、architectures=[rdna3]、bitness=64、componentVersion=0.3.5.8；依赖为 hip 与 amdnr-rdna3-package。此路线不可使用原宿主的 Inline、提前包装或增强屏障参数。发布给新客户端前请保持旧客户端规则兼容。</p>
 <p>修改 revision，并将 expiresUtc 设在未来 30 天内。规则不允许指定下载 URL、任意 INI 键或命令；历史版本保存在服务器规则文件旁的 .history 目录。</p>
 <form method="post">
     <div asp-validation-summary="All" role="alert"></div>

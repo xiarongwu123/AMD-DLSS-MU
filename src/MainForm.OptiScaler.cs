@@ -36,7 +36,9 @@ public sealed partial class MainForm
         status.Text = "正在匹配游戏兼容规则与显卡…";
         using var operation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token, DownloadSources.CurrentSession.Value?.Token ?? CancellationToken.None);
         var token = operation.Token;
-        var plan = await BuildNeuralPlanAsync(exe, neuralOptions, true, token);
+        var options = neuralOptions.Backend == "auto" && smartPreflightExe == exe && smartPreflightBackend != null
+            ? neuralOptions with { Backend = smartPreflightBackend } : neuralOptions;
+        var plan = await BuildNeuralPlanAsync(exe, options, true, token);
         if(smartInstallingCandidate is {} selected)
         {
             if(plan.Backend!=selected.Configuration.Backend||plan.Proxy!=selected.Configuration.Proxy||plan.Passes!=selected.Configuration.Passes)throw new IOException("实际安装参数与推荐计划不一致，已停止。");
@@ -52,13 +54,13 @@ public sealed partial class MainForm
         var missing = await Task.Run(() => NeuralRenderInstaller.MissingResources(exe, plan), token);
         if (missing.Length > 0)
             throw new IOException(string.Join("\n", missing) + "\n请打开高级设置中的“准备本机资源”。");
-        var package = await NeuralRenderInstaller.PrepareAsync(progress, token);
+        var package = await NeuralRenderInstaller.PrepareAsync(progress, token, plan.Backend);
         try
         {
             if (plan.Backend == "mochizuki") await NeuralRenderInstaller.PrepareModelAsync(package, progress, token);
             token.ThrowIfCancellationRequested();
             if (!await RequireFeatureAsync("schemes.premium.configure")) return;
-            await ValidateSmartBeforeWriteAsync(exe);
+            await ValidateSmartBeforeWriteAsync(exe, plan.Backend == "mochizuki" ? ["mochizuki-model"] : []);
             using var transaction = BeginAccountTransaction();
             status.Text = "正在备份游戏文件并部署神经渲染…";
             await Task.Run(() => NeuralRenderInstaller.Install(exe, package, plan, token, progress));

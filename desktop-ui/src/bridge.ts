@@ -168,7 +168,7 @@ async function preview(
   if (command === "neuralPlan") {
     const options = args.neural as NeuralOptions;
     const passes = options.passes ?? 1;
-    return { plan: { backend: options.backend === "auto" ? "daniel" : options.backend,
+    return { plan: { backend: options.backend === "auto" ? "lmxxf-rdna3" : options.backend,
       graphicsApi: options.graphicsApi === "auto" ? "dx12" : options.graphicsApi,
       proxy: options.proxy === "auto" ? "dxgi.dll" : options.proxy,
       passes, modeLabel: passes === 1 ? "标准" : passes === 2 ? "增强" : passes === 3 ? "高质量" : "实验 / 压力测试",

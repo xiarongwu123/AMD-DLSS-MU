@@ -1,0 +1,116 @@
+{
+  "version": "0.3.5.8",
+  "url": "https://github.com/3zwr1/AMD-NR---OptiScaler/releases/download/Alpha0.3.5.8/AMDNR-v0.3.5.8.zip",
+  "size": 1008053921,
+  "sha256": "5be27149c19442c4b022e993c679fdd17879fa68a5b472afa4521205e1e90695",
+  "files": {
+    "Licenses/DirectX_LICENSE.txt": {
+      "size": 12989,
+      "sha256": "95598665ca96fc6a9355e57be75fe3afcdf2501bb39f3b40ac6b91d0ed85915c"
+    },
+    "Licenses/FidelityFX_v2_LICENSE.md": {
+      "size": 61784,
+      "sha256": "f0da09d71ad5c82759a179e774535d4a829e5c96c49294167c1152402b2cb400"
+    },
+    "Licenses/lmxxf_LICENSE.txt": {
+      "size": 1061,
+      "sha256": "e289f704a22be5bb836eca345831b81e383ff9ffab443ecd1e436347515bf111"
+    },
+    "Licenses/RenoDX_ATTRIBUTION.txt": {
+      "size": 6348,
+      "sha256": "ce62588275295864e7a781f3775d18552ba8a095e284a1cd9a43d250fe34ee58"
+    },
+    "Licenses/XeSS_LICENSE.txt": {
+      "size": 4194,
+      "sha256": "784be42c39a4a4d03cf85d88e15e59d75828fca773ce45b8dbfffbd7eaf208df"
+    },
+    "OptiScaler/amd_fidelityfx_denoiser_dx12.dll": {
+      "size": 13782280,
+      "sha256": "48f1e5888ba6a0a3d59a98b9751e37c392b0f7b8c223d0082d5c1f40642879d3"
+    },
+    "OptiScaler/amd_fidelityfx_framegeneration_dx12.dll": {
+      "size": 40085776,
+      "sha256": "02297beedd285e822d3a64f314cf00faf378dcec0edc47ff0c4dd71b3a8c2f18"
+    },
+    "OptiScaler/amd_fidelityfx_loader_dx12.dll": {
+      "size": 26376,
+      "sha256": "e2d85aa05a9bd9ed8b38935fdf5199372cca6f74c12015143bb6f945ee1608aa"
+    },
+    "OptiScaler/amd_fidelityfx_upscaler_dx12.dll": {
+      "size": 28761864,
+      "sha256": "d0dcccc74a43c44ba435b7a369b456e0970d8a4464e4bd683119b374f2c9fb46"
+    },
+    "OptiScaler/amd_fidelityfx_vk.dll": {
+      "size": 9332432,
+      "sha256": "a1624cc4238fef046f30c4d80ce3f47be63fc5f5373f49e3ee9edb9960f54c78"
+    },
+    "OptiScaler/libxell.dll": {
+      "size": 415368,
+      "sha256": "d2030dcd694fda8f2ec7e044b13e6db8f0b56d4ba9113a5efad334e3f3ded8c7"
+    },
+    "OptiScaler/libxess.dll": {
+      "size": 77795704,
+      "sha256": "251659dd84a3e84de67c886a4186e01f3eca49b00641906fe38bb6b807e5d5b7"
+    },
+    "OptiScaler/libxess_dx11.dll": {
+      "size": 156016,
+      "sha256": "c7cfe86f0c9d94e4fb3696d3cd5035e2bbb6a8b1b0572f8b7395a4cdfd0c625e"
+    },
+    "OptiScaler/libxess_fg.dll": {
+      "size": 22957432,
+      "sha256": "ec5e0c65e075570c6ede72618bb666d0be0c2e10b2ea9762c0fe8cb8e375ab27"
+    },
+    "OptiScaler/D3D12_OptiScaler/D3D12Core.dll": {
+      "size": 3351064,
+      "sha256": "07d286c306f8117321422affd9e6388c12d0fb4be1c7fc689d9e899324feeb24"
+    },
+    "LICENSE": {
+      "size": 35149,
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    "LmxxfNrRuntime.dll": {
+      "size": 1530880,
+      "sha256": "1e6dce7ef7226f722ad7990315e72c794420990a932ae782661a38cabf4c6c4c"
+    },
+    "LmxxfNrRuntime.pak": {
+      "size": 759906475,
+      "sha256": "9d92106e6e6e5204a2e2c181847ba74bd49c7bf54e88466946fb2fee19cbb542"
+    },
+    "OptiScaler.dll": {
+      "size": 31700080,
+      "sha256": "c5489edb1211bf7a1fd871add9522bd35cf0cd53769e5a4ea4a11eb13b5ef570"
+    },
+    "OptiScaler.ini": {
+      "size": 182816,
+      "sha256": "11c5bd68d9ed46ae21ac980ba5bc459b3d528928229bb969d77e20cb040320d2"
+    },
+    "README.md": {
+      "size": 116395,
+      "sha256": "7aca56c69f7a40467f0d95b6eade341ede5b720bad1de9cc7086296a00d3fa20"
+    },
+    "OptiScaler/amdnr_dlssg_fsr3.dll": {
+      "size": 3041792,
+      "sha256": "14e83096f4e7648b89a724208c6219508b44563ce8c44967c60a5fa46a9221e2"
+    },
+    "Licenses/AMDNR_NOTICE.txt": {
+      "size": 23796,
+      "sha256": "ec94eb6d24ea0a27ad72c97579abb0669e94af0c7f928793a60801bde15b4b18"
+    },
+    "Licenses/danielblnc_ATTRIBUTION.txt": {
+      "size": 1053,
+      "sha256": "b8b7c8b738679a8185f8b65a9e018ef9104f599fba0053bbca1edc3c45751e23"
+    },
+    "Licenses/AMDNR_RDNA3_BACKEND.txt": {
+      "size": 3007,
+      "sha256": "ca2ca3ba02153d3eb1126081f94ca203f6015f19540b11ddf94d297823907514"
+    },
+    "Licenses/dlssg-to-fsr3_ATTRIBUTION.txt": {
+      "size": 539,
+      "sha256": "2d8646857ae695a1198a0ddb5da113aa64035c1fd5d9b080d937313c7e2ce30d"
+    },
+    "KNOWN-LIMITS.md": {
+      "size": 1941,
+      "sha256": "99fc12ff8f43f7948174491b0fbc82d3c6315edf5f7a65c342b3fa3ecab9c0e1"
+    }
+  }
+}

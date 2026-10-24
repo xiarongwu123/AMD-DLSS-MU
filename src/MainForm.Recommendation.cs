@@ -66,8 +66,7 @@ public sealed partial class MainForm
     {
         if(scheme=="base")return; // Opening an external manager does not deploy to the game.
         var env=await SmartEnvironmentAsync(exe,args);
-        var backend=scheme=="author"?"mochizuki":scheme=="standard"?"none":scheme is "compat" or "online"?ReadNeuralOptions(args).Backend:"daniel";
-        if(backend=="auto")backend="daniel"; // No evidence does not justify a silent alternate backend.
+        var backend=RenderSchemes.PreflightBackend(scheme,Number(args,"mode",-1),env.Field("architecture").Value,ReadNeuralOptions(args).Backend);
         SmartCompatibilityRule[] rules=[];
         if(SmartMayRead)
         {
@@ -77,7 +76,7 @@ public sealed partial class MainForm
         }
         var matching=rules.Where(r=>r.Scheme==scheme&&r.Backend==backend&&CompatibilityRuleEngine.Match(r,env,DateTimeOffset.UtcNow))
             .OrderByDescending(r=>CompatibilityRuleEngine.Priority(r,env)).FirstOrDefault();
-        var cap=CapabilityCatalog.For(scheme,Core.IsX86(exe)?32:64);
+        var cap=CapabilityCatalog.For(scheme,Core.IsX86(exe)?32:64,backend);
         if(Number(args,"mode",-1)==0){cap=new("base","原有Daniel模式","0.6.0",false,false,["dx12"],[64]);matching=null;}
         var errors=HardConstraintEvaluator.Evaluate(env,cap,backend,matching,rules,DateTimeOffset.UtcNow,true);
         if(scheme is "author" or "compat" or "online")
@@ -103,7 +102,7 @@ public sealed partial class MainForm
         var backend=options.Backend=="auto"?record.Neural.Backend:options.Backend;
         var rules=SmartMayRead?(await SmartRulesAsync(env.GameId)).Document.SmartRules??[]:Array.Empty<SmartCompatibilityRule>();
         var rule=rules.Where(r=>r.Backend==backend&&CompatibilityRuleEngine.Match(r,env,DateTimeOffset.UtcNow)).OrderByDescending(r=>CompatibilityRuleEngine.Priority(r,env)).FirstOrDefault();
-        var issues=HardConstraintEvaluator.Evaluate(env,CapabilityCatalog.For(backend=="mochizuki"?"author":"compat"),backend,rule,rules,DateTimeOffset.UtcNow)
+        var issues=HardConstraintEvaluator.Evaluate(env,CapabilityCatalog.For(backend=="mochizuki"?"author":"compat",64,backend),backend,rule,rules,DateTimeOffset.UtcNow)
             .Where(i=>i.State=="BLOCKED"||i.Code is "GAME_RUNNING" or "MISSING_RESOURCE").ToArray();
         if(issues.Length>0)throw new IOException(string.Join("\n",issues.Select(i=>i.Message)));
         if((options.NrInline==true||options.EarlyAnyModuleWrap==true||options.AllowEnhancedBarriers==true)&&
@@ -111,7 +110,7 @@ public sealed partial class MainForm
                 options.EarlyAnyModuleWrap==true&&!rule.Parameters.EarlyAnyModuleWrap||options.AllowEnhancedBarriers==true&&!rule.Parameters.AllowEnhancedBarriers))
             throw new IOException("当前设备缺少这些特殊参数的有效兼容规则。");
     }
-    async Task ValidateSmartBeforeWriteAsync(string exe)
+    async Task ValidateSmartBeforeWriteAsync(string exe, params string[] preparedResources)
     {
         if(smartInstallingCandidate is not {} candidate)return;
         var now=DateTimeOffset.UtcNow;
@@ -123,13 +122,12 @@ public sealed partial class MainForm
             windowed=smartLastResults.GetValueOrDefault(SmartGameKey(exe))?.Environment.Field("windowed").Value??""}));
         var rule=(rules.Document.SmartRules??[]).SingleOrDefault(r=>r.Id==candidate.RuleId&&r.Version==candidate.RuleVersion&&CompatibilityRuleEngine.Match(r,env,now));
         if(candidate.RuleId!=null&&rule==null)throw new IOException("此推荐规则已禁用、过期或不再匹配。");
-        var issues=HardConstraintEvaluator.Evaluate(env,CapabilityCatalog.For(candidate.Scheme,config.Bitness),config.Backend,rule,rules.Document.SmartRules??[],now);
+        var issues=HardConstraintEvaluator.Evaluate(env,CapabilityCatalog.For(candidate.Scheme,config.Bitness,config.Backend),config.Backend,rule,rules.Document.SmartRules??[],now);
         if(issues.Any(i=>i.State is "BLOCKED" or "REQUIRE_ACTION"))throw new IOException(string.Join("\n",issues.Select(i=>i.Message)));
         var before=smartLastResults.GetValueOrDefault(SmartGameKey(exe))?.Environment;
-        var normalized=env;
-        if(before is not null&&before.Resources.GetValueOrDefault("hip-preparable")&&!before.Resources.GetValueOrDefault("hip")&&env.Resources.GetValueOrDefault("hip"))
-        {var resources=new Dictionary<string,bool>(env.Resources){["hip"]=false};normalized=env with{Resources=resources};}
-        if(EnvironmentDetector.Fingerprint(normalized)!=candidate.Fingerprint)throw new IOException("下载期间游戏或组件发生变化，已停止写入，请重新检测。");
+        if(before is null || EnvironmentDetector.Fingerprint(before)!=candidate.Fingerprint ||
+            !EnvironmentDetector.MatchesAfterPreparation(before,env,preparedResources.Append("hip")))
+            throw new IOException("下载期间游戏或组件发生变化，已停止写入，请重新检测。");
     }
     async Task<object?> ApplySmartRecommendationAsync(JsonElement args)
     {
@@ -177,7 +175,7 @@ public sealed partial class MainForm
             var mode=candidate.Scheme switch{"fps"=>4,"legacy"=>config.Bitness==32?5:8,"standard"=>2,_=>6};
             var installArgs=JsonSerializer.SerializeToElement(new{gameId=Arg(args,"gameId"),mode,scheme=candidate.Scheme=="standard"?"":candidate.Scheme,
                 confirmedApi=Arg(args,"confirmedApi"),confirmedInput=Arg(args,"confirmedInput"),windowed=Arg(args,"windowed"),
-                x86Api=config.GraphicsApi,vulkan=config.GraphicsApi=="vulkan",fgInput="nofg",
+                x86Api=InstallationContext.BridgeApi(mode,config.GraphicsApi),vulkan=config.GraphicsApi=="vulkan",fgInput="nofg",
                 neural=new{backend=config.Backend,graphicsApi=config.GraphicsApi,proxy=config.Proxy,passes=p.Passes,modelScale=p.ModelScale,temporal=p.Temporal,
                     historyStrength=p.HistoryStrength,applyModel=p.ApplyModel,dynamicResolution=p.DynamicResolution,nrInline=p.NrInline,
                     earlyAnyModuleWrap=p.EarlyAnyModuleWrap,allowEnhancedBarriers=p.AllowEnhancedBarriers}});

@@ -10,6 +10,13 @@ public sealed record ManagedIniKey(string Section, string Key, string? Before, s
 public static class ManagedIni
 {
     sealed record Line(string Text, string End);
+    static readonly Regex SectionHeader = new(@"^\[([^\]]+)\]\s*(?:[;#].*)?$");
+    internal static bool TryReadSection(string line, out string section)
+    {
+        var match = SectionHeader.Match(line.Trim());
+        section = match.Success ? match.Groups[1].Value.Trim() : "";
+        return match.Success;
+    }
     static List<Line> Lines(string text) => Regex.Matches(text, @"[^\r\n]*(?:\r\n|\n|\r|$)")
         .Cast<Match>().Where(m => m.Length > 0).Select(m =>
         { var value = m.Value; var raw = value.TrimEnd('\r', '\n'); return new Line(raw, value[raw.Length..]); }).ToList();
@@ -19,11 +26,10 @@ public static class ManagedIni
         for (var i = 0; i < lines.Count; i++)
         {
             var raw = lines[i].Text.Trim();
-            var header = Regex.Match(raw, @"^\[([^\]]+)\]\s*(?:[;#].*)?$");
-            if (header.Success)
+            if (TryReadSection(raw, out var sectionName))
             {
                 if (active) end = i;
-                active = header.Groups[1].Value.Trim().Equals(section, StringComparison.OrdinalIgnoreCase);
+                active = sectionName.Equals(section, StringComparison.OrdinalIgnoreCase);
                 if (active) { if (start >= 0) throw new IOException("配置含重复节：[" + section + "]"); start = i; end = lines.Count; }
             }
             else if (active && !raw.StartsWith(';') && !raw.StartsWith('#') && raw.Contains('='))
@@ -34,7 +40,7 @@ public static class ManagedIni
         }
         return (start, end, found);
     }
-    static string Value(string line) => new Regex(@"\s+[;#]").Split(line[(line.IndexOf('=') + 1)..], 2)[0].Trim();
+    internal static string Value(string line) => new Regex(@"\s+[;#]").Split(line[(line.IndexOf('=') + 1)..], 2)[0].Trim();
     public static string? Get(string text, string section, string key)
     { var lines = Lines(text); var at = Find(lines, section, key).Key; return at < 0 ? null : Value(lines[at].Text); }
     public static string Set(string text, string section, string key, string? value)

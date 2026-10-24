@@ -1,5 +1,13 @@
 .neural-settings{margin-top:20px;padding:16px 0;border-top:1px solid #ffffff18}
 .neural-summary{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.neural-resource-status{display:flex;align-items:flex-start;gap:12px;padding:18px 20px;margin:0 0 18px;background:#10232bef;border:1px solid #73c3e05c;border-radius:14px;color:#eef5ff}
+.neural-resource-status>svg{flex-shrink:0;margin-top:2px;color:#8bd6f0}
+.neural-resource-status>div{min-width:0}
+.neural-resource-status strong{font-size:16px;line-height:1.5}
+.neural-resource-status ul{margin:10px 0;padding-left:20px;line-height:1.7;overflow-wrap:anywhere}
+.neural-resource-status.needs-resource{background:#33241aef;border-color:#ffb06b88}
+.neural-resource-status.needs-resource>svg,.neural-resource-status.needs-resource strong{color:#ffc58e}
+.neural-resource-status button{margin-top:6px}
 .neural-settings p{font-size:13px;line-height:1.65;margin:10px 0}
 .neural-settings summary{display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px 0;font-weight:650;color:var(--accent,#b4ff16)}
 .neural-settings fieldset{border:0;padding:0;margin:0;min-width:0}

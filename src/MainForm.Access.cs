@@ -11,7 +11,7 @@ public sealed partial class MainForm
     RoundedButton? accountHeader;
     bool heartbeatRunning, accountRequestBusy, lastAccountViewAvailable;
     int accountTransactionDepth;
-    DownloadSession? activeAccountDownload;
+    readonly System.Collections.Concurrent.ConcurrentDictionary<DownloadSession, byte> activeAccountDownloads = new();
     string accountFeedback = "登录后使用客户端功能。账户服务需要保持联网。";
 
     void InitializeAccountAccess()
@@ -103,7 +103,7 @@ public sealed partial class MainForm
             accountMode = "login";
             accountFeedback = accountClient.HasSession ? "账户服务连接中断，联网验证成功后可继续使用。" : "登录已失效，请重新登录。";
             controlPanel?.Close();
-            if (accountTransactionDepth == 0) activeAccountDownload?.Cancel();
+            if (accountTransactionDepth == 0) foreach(var download in activeAccountDownloads.Keys) download.Cancel();
         }
         if (accountClient.Account?.Features.FirstOrDefault(f => f.Key == "diagnostics.use") is { Allowed: false }) controlPanel?.Close();
         ApplyAccountGate();

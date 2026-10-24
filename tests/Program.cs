@@ -4,6 +4,16 @@ using Mu.Presets;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+if(args is ["verify-amdnr-rdna3-archive",var rdna3Archive,var rdna3ArchiveTarget])
+{
+    var stage=Path.Combine(Path.GetFullPath(rdna3ArchiveTarget),"package");
+    NeuralRenderInstaller.ExtractVerified(rdna3Archive,stage,Mu.Neural.NeuralBackends.LmxxfRdna3);
+    AmdNrRdna3Tests.RealPackage(stage,Path.Combine(rdna3ArchiveTarget,"transactions"));return;
+}
+if(args is ["verify-amdnr-rdna3",var rdna3Package,var rdna3Destination])
+{
+    AmdNrRdna3Tests.RealPackage(rdna3Package,rdna3Destination);return;
+}
 if(args is ["verify-amd-magpie",var amdMagpieArchive,var amdMagpieDestination])
 {
     await AmdMagpieTests.RunRealPackageAsync(amdMagpieArchive,amdMagpieDestination);return;
@@ -21,7 +31,10 @@ if (args is ["verify-neural", var nrPackage, var nrDestination])
     NeuralRenderTests.Run(); NeuralRenderTests.RealPackage(nrPackage, nrDestination); return;
 }
 NeuralRenderTests.Run();
+AmdNrRdna3Tests.Run();
 RenderSchemeTests.Run();
+BugRegressionTests.Run();
+GameSearchTests.Run();
 await RecommendationTests.RunAsync();
 
 if (args.Length == 2 && args[0] == "--live-magpie")

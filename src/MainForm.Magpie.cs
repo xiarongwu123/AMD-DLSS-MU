@@ -12,6 +12,8 @@ public sealed partial class MainForm
     readonly FlowLayoutPanel magpieGameCards = new() { Dock = DockStyle.Fill, WrapContents = false, AutoScroll = false, Margin = Padding.Empty };
     readonly FlowLayoutPanel magpieConfiguredCards = new() { Dock = DockStyle.Fill, WrapContents = false, AutoScroll = false, Margin = Padding.Empty };
     RoundedButton? magpieStart;
+    readonly SemaphoreSlim magpieOperation = new(1, 1);
+    bool magpiePreparing => magpieOperation.CurrentCount == 0;
 
     void BuildMagpiePage()
     {
@@ -257,40 +259,45 @@ public sealed partial class MainForm
 
     async Task StartMagpieAsync()
     {
-        if (busy) { await UiMessageAsync( "请等待当前操作完成后再开启大力喜鹊。", Text); return; }
-        if (!await RequireFeatureAsync("magpie.launch") || busy) return;
-        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041) || System.Runtime.InteropServices.RuntimeInformation.OSArchitecture != System.Runtime.InteropServices.Architecture.X64)
-        { await UiMessageAsync( "此集成需要 Windows 10 2004 或更新版本的 x64 系统。", Text); return; }
-        // Upstream is single-instance: do not silently switch another installation's settings.
-        var processes = Process.GetProcessesByName("Magpie");
-        var running = processes.Length > 0;
-        foreach (var process in processes) process.Dispose();
-        if (running) { magpieStatus.Text = "Magpie 已在运行。请切回游戏按其快捷键启用效果；如需使用 MU 独立配置，请先从托盘退出已有 Magpie。"; return; }
-        busy = true; magpieStart!.Enabled = false; UpdateButtons();
-        magpieProgress.Visible = true; magpieProgress.Indeterminate = true;
-        magpieStatus.Text = "正在检查大力喜鹊组件…";
-        using var session = BeginDownloadSession("大力喜鹊 · Magpie", StartMagpieAsync, "magpie.launch");
+        if (!await magpieOperation.WaitAsync(0)) { magpieStatus.Text = "大力喜鹊正在准备中，可在下载任务查看进度。"; return; }
+        PublishReactState();
         try
         {
-            var phase = new Progress<string>(text => { magpieStatus.Text = text; magpieProgress.Indeterminate = true; });
-            var progress = new Progress<int>(value =>
-            {
-                magpieProgress.Indeterminate = value >= 100;
-                magpieProgress.Value = Math.Clamp(value, 0, 100);
-                magpieStatus.Text = value < 100 ? $"正在下载大力喜鹊 · {value}%" : "下载完成，正在校验与准备组件…";
-            });
-            var exe = await MagpieIntegration.PrepareAsync(progress, phase, lifetime.Token);
-            var portableConfig = Path.Combine(Path.GetDirectoryName(exe)!, "config", "v4e", "config.json");
-            Core.RejectLinks(portableConfig);
-            if (!File.Exists(portableConfig)) throw new IOException("独立配置缺失，已停止启动以免使用其他 Magpie 的全局设置。");
             if (!await RequireFeatureAsync("magpie.launch")) return;
-            using var child = Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = Path.GetDirectoryName(exe)!, UseShellExecute = true });
-            if (child == null) throw new IOException("未能启动 Magpie。");
-            magpieProgress.Indeterminate = false; magpieProgress.Value = 100;
-            magpieStatus.Text = "已发起启动。切回窗口模式的游戏，按 Alt + Shift + A 启用效果（不代表效果已生效）。";
+            if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041) || System.Runtime.InteropServices.RuntimeInformation.OSArchitecture != System.Runtime.InteropServices.Architecture.X64)
+            { await UiMessageAsync( "此集成需要 Windows 10 2004 或更新版本的 x64 系统。", Text); return; }
+            // Upstream is single-instance: do not silently switch another installation's settings.
+            var processes = Process.GetProcessesByName("Magpie");
+            var running = processes.Length > 0;
+            foreach (var process in processes) process.Dispose();
+            if (running) { magpieStatus.Text = "Magpie 已在运行。请切回游戏按其快捷键启用效果；如需使用 MU 独立配置，请先从托盘退出已有 Magpie。"; return; }
+            magpieStart!.Enabled = false; UpdateButtons();
+            magpieProgress.Visible = true; magpieProgress.Indeterminate = true;
+            magpieStatus.Text = "正在检查大力喜鹊组件…";
+            using var session = BeginDownloadSession("大力喜鹊 · Magpie", StartMagpieAsync, "magpie.launch", independent: true);
+            try
+            {
+                var phase = new Progress<string>(text => { magpieStatus.Text = text; magpieProgress.Indeterminate = true; });
+                var progress = new Progress<int>(value =>
+                {
+                    magpieProgress.Indeterminate = value >= 100;
+                    magpieProgress.Value = Math.Clamp(value, 0, 100);
+                    magpieStatus.Text = value < 100 ? $"正在下载大力喜鹊 · {value}%" : "下载完成，正在校验与准备组件…";
+                });
+                var exe = await MagpieIntegration.PrepareAsync(progress, phase, lifetime.Token);
+                var portableConfig = Path.Combine(Path.GetDirectoryName(exe)!, "config", "v4e", "config.json");
+                Core.RejectLinks(portableConfig);
+                if (!File.Exists(portableConfig)) throw new IOException("独立配置缺失，已停止启动以免使用其他 Magpie 的全局设置。");
+                if (!await RequireFeatureAsync("magpie.launch")) return;
+                using var child = Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = Path.GetDirectoryName(exe)!, UseShellExecute = true });
+                if (child == null) throw new IOException("未能启动 Magpie。");
+                magpieProgress.Indeterminate = false; magpieProgress.Value = 100;
+                magpieStatus.Text = "已发起启动。切回窗口模式的游戏，按 Alt + Shift + A 启用效果（不代表效果已生效）。";
+            }
+            catch (OperationCanceledException) { magpieProgress.Indeterminate = false; magpieProgress.Visible = false; magpieStatus.Text = "下载已取消，可重新开启。"; }
+            catch (Exception e) { magpieProgress.Indeterminate = false; magpieProgress.Visible = false; magpieStatus.Text = "开启失败：" + e.Message; }
+            finally { magpieStart.Enabled = true; }
         }
-        catch (OperationCanceledException) { magpieProgress.Indeterminate = false; magpieProgress.Visible = false; magpieStatus.Text = "下载已取消，可重新开启。"; }
-        catch (Exception e) { magpieProgress.Indeterminate = false; magpieProgress.Visible = false; magpieStatus.Text = "开启失败：" + e.Message; }
-        finally { busy = false; magpieStart.Enabled = true; UpdateButtons(); }
+        finally { magpieOperation.Release(); UpdateButtons(); PublishReactState(); }
     }
 }

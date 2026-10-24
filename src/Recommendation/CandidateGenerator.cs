@@ -8,13 +8,13 @@ public static class CandidateGenerator
         var bits=int.TryParse(e.Field("bitness").Value,out var b)?b:64;
         foreach(var id in RecommendationRuleSchema.Schemes.Where(id=>scope==null||id==scope))
         {
-            var cap=CapabilityCatalog.For(id,bits);
             var matches=rules.Where(r=>r.Scheme==id&&CompatibilityRuleEngine.Match(r,e,now)&&r.Parameters.Passes<9)
                 .OrderByDescending(r=>CompatibilityRuleEngine.Priority(r,e)).ThenByDescending(r=>r.VerifiedAt).ToArray();
             var applicable=matches.Length>0?matches.Cast<SmartCompatibilityRule?>():new SmartCompatibilityRule?[]{null};
             foreach(var rule in applicable)
             {
-                var backend=rule?.Backend??(id=="author"?"mochizuki":id=="standard"?"none":"daniel");
+                var backend=rule?.Backend??(id=="author"?"mochizuki":id=="standard"?"none":id=="compat"&&e.Field("architecture").Value=="rdna3"?Mu.Neural.NeuralBackends.LmxxfRdna3:"daniel");
+                var cap=CapabilityCatalog.For(id,bits,backend);
                 var issues=HardConstraintEvaluator.Evaluate(e,cap,backend,rule,rules,now);
                 ResolvedConfiguration config;
                 try{config=ParameterResolver.Resolve(cap,e,rule,backend);}catch(InvalidDataException){continue;}

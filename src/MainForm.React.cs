@@ -132,11 +132,13 @@ public sealed partial class MainForm
     {
         version = AutoUpdate.DisplayVersion, page = activePage switch { 1 => "library", 2 => "about", 3 => "downloads", 4 => "help", 5 => "settings", 6 => "account", 7 => "magpie", 8 => "wishes", _ => "home" },
         games = libraryGames.Select(g => new { id = ReactGameId(g.ExePath), g.Title,
+            searchTerms = GameSearch.Terms(g.Title, g.SteamAppId, g.InstallDirectory),
             cover = ReactCover(g), state = GetLibraryState(g).ToString(), mode = GameManagement.Read(g.ExePath)?.Mode, g.SteamAppId }).ToArray(),
         account = accountClient.Account, online = accountClient.IsOnline, reconnecting = accountClient.IsReconnecting, viewAvailable = accountClient.CanKeepVerifiedView,
         busy=busy||smartApplying, scanning = !scan.Enabled, status = ReactAccountStatus(status.Text), accountFeedback = ReactAccountStatus(accountFeedback),
+        magpiePreparing,
         settings = new { dark = darkMode, english, autoUpdate = autoCheckUpdates, presentMon = presentMonPath ?? "" },
-        downloads = downloadRows.Select(r => new { id = r.Id, r.Title, r.State, r.Percent, r.Size, r.Detail, paused = r.Session.Paused }).ToArray(),
+        downloads = downloadRows.Select(r => new { id = r.Id, r.Title, r.State, r.Percent, r.Size, r.Detail, paused = r.Session.Paused, r.Independent }).ToArray(),
         magpieStatus = magpieStatus.Text
     };
     string ReactAccountStatus(string text) => accountClient.IsOnline && IsAccountConnectionFeedback(text)
@@ -169,12 +171,12 @@ public sealed partial class MainForm
         return "title:" + Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(title)))[..24];
     }
     string ReactPresetGameName(string exe) => libraryGames.First(g => g.ExePath.Equals(exe, StringComparison.OrdinalIgnoreCase)).Title;
-    static string CurrentPresetVersion(int mode) => mode switch
+    static string CurrentPresetVersion(int mode, string? backend = null) => mode switch
     {
         0 => Core.ReviewedTag,
         2 => "OptiScaler " + OptiInstaller.Version,
         4 => "DLSS5 + XeFG 2X (v1.10.3.1/v10.6)",
-        6 => NeuralRenderInstaller.Version,
+        6 => backend == Mu.Neural.NeuralBackends.LmxxfRdna3 ? "AMDNR " + Mu.Neural.NeuralBackends.AmdNrVersion : NeuralRenderInstaller.Version,
         8 => LegacyBridge.Version,
         _ => throw new IOException("未知图形方案。")
     };
@@ -188,7 +190,7 @@ public sealed partial class MainForm
         NeuralRenderPlanner.Validate(options); return options;
     }
     static object? NeuralReceipt(GameRecord? record) => record is { Phase: "installed", Neural: { } n }
-        ? new { n.Backend, n.Passes, n.Proxy, n.GraphicsApi, n.Options,
+        ? new { n.Backend, n.Passes, n.Proxy, n.GraphicsApi, n.Options, n.PackageVersion,
             statusLabel = Mu.Neural.NeuralRules.StatusLabel(n.Verification),
             modeLabel = n.Passes switch { 1 => "标准", 2 => "增强", 3 => "高质量", <= 8 => "实验", _ => "实验 / 压力测试" } } : null;
     void PublishReactState(bool force = false)
@@ -364,10 +366,10 @@ public sealed partial class MainForm
                     if (preset.Item.Mode == -1) throw new IOException("这条分享仅包含资源，请下载附件或打开网盘查看使用说明。");
                     if (preset.Item.Scope != "universal" && preset.Item.GameKey != ReactPresetGameKey(exe)) throw new IOException("这是其他游戏的专用方案，请选择对应游戏或使用通用方案。");
                     PresetRules.Validate(preset.Item.Mode, preset.Settings);
-                    if (!CurrentPresetVersion(preset.Item.Mode).Equals(preset.Item.ComponentVersion, StringComparison.OrdinalIgnoreCase))
+                    if (preset.Item.Mode == 6) neuralOptions = CommunityPresetConfig.NeuralOptionsFromPreset(preset.Settings, preset.Item.ComponentVersion);
+                    if (!CurrentPresetVersion(preset.Item.Mode, preset.Item.Mode == 6 ? neuralOptions.Backend : null).Equals(preset.Item.ComponentVersion, StringComparison.OrdinalIgnoreCase))
                         throw new IOException("分享方案的组件版本与当前 MU 不同，暂不能一键复用。");
                     var installed = GameManagement.Read(exe);
-                    if (preset.Item.Mode == 6) neuralOptions = CommunityPresetConfig.NeuralOptionsFromPreset(preset.Settings);
                     if (installed is { Phase: "installed" } &&
                         (installed.Mode != preset.Item.Mode || !installed.Version.Equals(preset.Item.ComponentVersion, StringComparison.OrdinalIgnoreCase) ||
                          installed.Mode == 2 && CommunityPresetConfig.UsesVulkan(installed) != preset.Item.Vulkan ||
@@ -387,7 +389,7 @@ public sealed partial class MainForm
                         await InstallAsync();
                         if (reactFailure != null) throw new IOException(reactFailure);
                     }
-                    if(preset.Item.Mode==6)await ValidateExistingSmartSettingsAsync(exe,CommunityPresetConfig.NeuralOptionsFromPreset(preset.Settings));
+                    if(preset.Item.Mode==6)await ValidateExistingSmartSettingsAsync(exe,CommunityPresetConfig.NeuralOptionsFromPreset(preset.Settings,preset.Item.ComponentVersion));
                     var localPreset = preset with { Item = preset.Item with { GameKey = ReactPresetGameKey(exe), GameName = ReactPresetGameName(exe) } };
                     await Task.Run(() => CommunityPresetConfig.Apply(exe, localPreset), lifetime.Token);
                     status.Text = "已应用社区方案：" + preset.Item.Title + "。效果请在游戏中确认。";
@@ -450,6 +452,7 @@ public sealed partial class MainForm
                 await ReactAuthorize("schemes.premium.configure"); var exe = ReactGame(args);
                 var plan = await BuildNeuralPlanAsync(exe, ReadNeuralOptions(args));
                 return new { plan, missingResources = await Task.Run(() => NeuralRenderInstaller.MissingResources(exe, plan), lifetime.Token),
+                    resourcePreparation = await Task.Run(() => NeuralRenderInstaller.ResourcePreparation(exe, plan), lifetime.Token),
                     installed = NeuralReceipt(GameManagement.Read(exe)) };
             }
             case "neuralResources":
@@ -480,7 +483,9 @@ public sealed partial class MainForm
                 }
                 finally { reactMutation = false; libraryStateCache.Clear(); }
             }
-            case "configure": case "restore": case "magpie": case "amdMagpie": case "daniel08": case "update":
+            case "magpie": await StartMagpieAsync(); return null;
+            case "amdMagpie": return await StartAmdMagpieAsync();
+            case "configure": case "restore": case "daniel08": case "update":
                 if (reactMutation || busy || smartApplying && !smartExecutingInstall) throw new IOException("请等待当前操作完成。");
                 reactMutation=true; reactFailure=null;
                 try
@@ -497,25 +502,17 @@ public sealed partial class MainForm
                         selectedGame=configureExe; installMode.SelectedIndex=mode==8?5:mode==6?4:mode==0?0:mode==4?2:mode==5?3:1;
                         neuralOptions = ReadNeuralOptions(args);
                         if(neuralOptions.Backend=="auto"&&smartPreflightBackend!=null)neuralOptions=neuralOptions with{Backend=smartPreflightBackend};
-                        x86GraphicsApi=Arg(args,"x86Api","auto");if(x86GraphicsApi is not ("auto" or "dx8" or "dx9" or "dx11" or "opengl"))throw new IOException("未知32位图形接口。");
+                        x86GraphicsApi=InstallationContext.BridgeApi(mode,Arg(args,"x86Api","auto"));
                         optiVulkan=Flag(args,"vulkan");optiFgInput=Arg(args,"fgInput","nofg"); if(optiFgInput is not ("nofg" or "fsrfg" or "dlssg"))throw new IOException("未知帧生成入口。");
-                        await InstallAsync();
+                        var installedSuccessfully=await InstallAsync(InstallationContext.Read(args));
                         if(reactFailure!=null)throw new IOException(reactFailure);
-                        if(!IsConfigured(configureExe))throw new IOException(status.Text);
+                        if(!installedSuccessfully||!IsConfigured(configureExe))throw new IOException(status.Text);
                         if(mode==6) return NeuralReceipt(GameManagement.Read(configureExe));
                     }
                     else if(command=="restore")
                     {
                         selectedGame=ReactGame(args);await RestoreAsync();
                         if(GameManagement.Read(selectedGame) is {Phase:not "restored"})throw new IOException(status.Text);
-                    }
-                    else if(command=="magpie")await StartMagpieAsync();
-                    else if(command=="amdMagpie")
-                    {
-                        // Opening the standalone tool does not configure a game or enable
-                        // its NR effect. Both entry points use the same launcher; game/API,
-                        // window and experimental GPU checks belong to effect evaluation.
-                        return await StartAmdMagpieAsync();
                     }
                     else if(command=="daniel08")return await StartDaniel08Async();
                     else await CheckAppUpdateAsync(false);
@@ -528,7 +525,9 @@ public sealed partial class MainForm
                 {
                     case "pause": if(row.Pause.Enabled){if(row.Session.Paused)await ReactAuthorize(row.FeatureKey);row.Session.TogglePause();}break;
                     case "cancel": row.Session.Cancel();break;
-                    case "retry": if(reactMutation||busy)throw new IOException("请等待当前操作完成。");reactMutation=true;try{await row.RetryAction();}finally{reactMutation=false;}break;
+                    case "retry":
+                        if(row.Independent){await row.RetryAction();break;}
+                        if(reactMutation||busy)throw new IOException("请等待当前操作完成。");reactMutation=true;try{await row.RetryAction();}finally{reactMutation=false;}break;
                     default:throw new IOException("未知下载操作。");
                 }
                 return null;

@@ -55,8 +55,8 @@ public static class RecommendationRuleSchema
     public static void Validate(SmartCompatibilityRule r)
     {
         if (r == null || !Regex.IsMatch(r.Id??"","^[a-zA-Z0-9_-]{1,80}$") || !Regex.IsMatch(r.Version??"","^[a-zA-Z0-9._-]{1,40}$") || !Id(r.GameId) || !Schemes.Contains(r.Scheme) ||
-            !new[]{"daniel","lmxxf","mochizuki","none"}.Contains(r.Backend) || !Apis.Contains(r.Api) ||
-            r.Bitness is not (32 or 64) || !Proxies.Contains(r.Proxy) || r.ComponentVersion != CapabilityCatalog.For(r.Scheme,r.Bitness).Version ||
+            !(Mu.Neural.NeuralRules.Backends.Contains(r.Backend)||r.Backend=="none") || !Apis.Contains(r.Api) ||
+            r.Bitness is not (32 or 64) || !Proxies.Contains(r.Proxy) || r.ComponentVersion != CapabilityCatalog.For(r.Scheme,r.Bitness,r.Backend).Version ||
             r.MinimumVramMb is < 0 or > 1048576 || r.MinimumBudgetMb is < 0 or > 1048576 || r.UpscalerInputs==null || r.UpscalerInputs.Any(x=>x is not ("dlss" or "xess" or "fsr")) || r.Parameters == null || r.Parameters.Passes is < 1 or > 30 || r.Parameters.Passes > (r.Backend=="mochizuki" ? 30 : 3) ||
             !double.IsFinite(r.Parameters.ModelScale) || r.Parameters.ModelScale is < .25 or > 1 ||
             !double.IsFinite(r.Parameters.HistoryStrength) || r.Parameters.HistoryStrength is < 0 or > 1 || r.Parameters.DynamicResolution is < 0 or > 2 ||
@@ -68,9 +68,12 @@ public static class RecommendationRuleSchema
                 .Any(a=>a==null || a.Length>100 || a.Any(x=>string.IsNullOrWhiteSpace(x)||x.Length>200||x.Any(char.IsControl))) ||
             r.BuildHashes.Any(x=>!Regex.IsMatch(x,"^[a-fA-F0-9]{64}$")) ||
             new[]{r.DriverMin,r.DriverMax}.Where(x=>x!=null).Any(x=>!Version.TryParse(x,out _)) ||
-            r.Dependencies.Any(x=>!new[]{"hip","daniel-runtime","daniel-weights","mochizuki-model","lmxxf-model","amd-magpie-resources"}.Contains(x)))
+            r.Dependencies.Any(x=>!new[]{"hip","daniel-runtime","daniel-weights","mochizuki-model","lmxxf-model","amdnr-rdna3-package","amd-magpie-resources"}.Contains(x)))
             throw new InvalidDataException("智能推荐规则包含不支持的组件版本、匹配条件或参数。");
-        var cap=CapabilityCatalog.For(r.Scheme,r.Bitness);
+        if(r.Backend==Mu.Neural.NeuralBackends.LmxxfRdna3 && (r.Scheme!="compat" || r.Bitness!=64 || r.Architectures.Length!=1 || r.Architectures[0]!="rdna3" ||
+            (r.Parameters with { Passes=1 }) != new SmartParameters()))
+            throw new InvalidDataException("AMDNR RDNA3 规则必须限定64位兼容版与RDNA3，不能套用其他宿主的兼容开关。");
+        var cap=CapabilityCatalog.For(r.Scheme,r.Bitness,r.Backend);
         if(!cap.Apis.Contains(r.Api)||!cap.Bitness.Contains(r.Bitness))throw new InvalidDataException("规则接口或位数不受现有安装器支持。");
         if(r.Scheme is "base" or "fps" or "online" or "amd-magpie" or "legacy" && r.Backend!="daniel" || r.Scheme=="standard"&&r.Backend!="none")
             throw new InvalidDataException("固定路线不能替换后端。");
@@ -90,7 +93,8 @@ public static class RecommendationRuleSchema
 }
 public static class CapabilityCatalog
 {
-    public static SchemeCapability For(string id,int bits=64) => id switch {
+    public static SchemeCapability For(string id,int bits=64,string? backend=null) => backend==Mu.Neural.NeuralBackends.LmxxfRdna3
+        ? For(id,bits) with { Version=Mu.Neural.NeuralBackends.AmdNrVersion } : id switch {
         "base"=>new(id,"基础稳定版","0.8.0",false,true,["dx12"],[64]),
         "fps"=>new(id,"高帧率版","1.10.3.1+10.6",false,false,["dx12"],[64]),
         "author"=>new(id,"作者调校版","1.12.1",true,false,["dx11","dx12","vulkan"],[64]),

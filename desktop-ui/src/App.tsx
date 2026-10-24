@@ -41,6 +41,7 @@ import { HomeLanding } from "./HomeLanding";
 import { ContactFloat } from "./ContactFloat";
 import { SupportedGames } from "./SupportedGames";
 import { LibraryEntrances } from "./LibraryEntrances";
+import { matchesGameSearch } from "./gameSearch";
 import ClickSpark from "./reactbits/ClickSpark";
 import { useVisualEffects, InteractiveSurface } from "./VisualEffects";
 import type { State, Page, Game, Prompt } from "./types";
@@ -234,7 +235,7 @@ export default function App() {
     state.games.filter((g) => kind === "All" || g.state === kind).length;
   const visible = state.games.filter(
     (g) =>
-      g.title.toLowerCase().includes(search.toLowerCase()) &&
+      matchesGameSearch(g, search) &&
       (filter === "All" || g.state === filter),
   );
   const busy =
@@ -244,8 +245,6 @@ export default function App() {
         "configure",
         "restore",
         "scan",
-        "magpie",
-        "amdMagpie",
         "daniel08",
         "update",
         "removeGame",
@@ -624,11 +623,11 @@ export default function App() {
                     一键开启大力喜鹊
                   </h2>
                   <div className="magpie-launch-options">
-                    <Button primary charge className="magpie-launch-option" disabled={busy} onClick={() => run("magpie")}>
+                    <Button primary charge className="magpie-launch-option" disabled={state.magpiePreparing || pending.includes("magpie") || pending.includes("amdMagpie")} onClick={() => run("magpie")}>
                       <Monitor size={27}/><span><strong>{pending.includes("magpie") ? "正在准备 N卡组件…" : "N卡专用"}</strong><small>NVIDIA · 免费开启</small></span>
                       <span className="magpie-launch-access">免费</span>
                     </Button>
-                    <Button charge className="magpie-launch-option magpie-launch-amd" disabled={busy} onClick={() => {
+                    <Button charge className="magpie-launch-option magpie-launch-amd" disabled={state.magpiePreparing || pending.includes("magpie") || pending.includes("amdMagpie")} onClick={() => {
                       if (!canUseMemberFeature(state, "schemes.premium.configure")) {
                         setPurchaseRequested(true); navigate("account");
                       } else void run("amdMagpie");
@@ -763,7 +762,7 @@ export default function App() {
                         </Button>
                         {["下载失败", "已取消"].includes(d.state) && (
                           <Button
-                            disabled={busy}
+                            disabled={busy && !d.independent}
                             onClick={() =>
                               run("downloadAction", {
                                 id: d.id,
@@ -924,6 +923,7 @@ export default function App() {
                 <h2>AMD DLSS MU</h2>
                 <p className="muted">v{state.version} · codeXia</p>
                 <p>整合图形方案，简化游戏配置。</p>
+                <p className="muted">RX 7000 lmxxf 适配：AMDNR by 3zwr1；神经网络移植：lmxxf（Kien）。组件保留原作者署名与许可。</p>
                 <div className="actions">
                   <Button
                     onClick={() =>
@@ -986,6 +986,7 @@ export default function App() {
           initialTab={smartTab}
           initialUpload={shareRequested}
           onClose={closeDialog}
+          onStartAmdMagpie={() => { closeDialog(); void run("amdMagpie"); }}
           onComplete={() => {
             closeDialog();
             const gameId = selected.id;

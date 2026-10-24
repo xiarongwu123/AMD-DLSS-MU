@@ -29,7 +29,7 @@ internal static class NeuralRenderTests
         var mochi = NeuralRenderPlanner.Select("steam:1", "AMD Radeon RX 9070 XT", "dx12", null, new(), now);
         Check(mochi.Backend == "daniel" && mochi.Passes == 1 && mochi.Status == "unverified", "GPU generation alone must not choose Mochizuki");
         var rdna3 = NeuralRenderPlanner.Select("steam:1", "AMD Radeon RX 7900 XT", "dx12", null, new(), now);
-        Check(rdna3.Backend == "daniel" && rdna3.Status == "unverified", "RX7000 auto chose unvalidated RDNA4 runtime");
+        Check(rdna3.Backend == NeuralBackends.LmxxfRdna3 && rdna3.Status == "experimental", "RX7000 auto did not choose the separate RDNA3 package");
         Reject(() => NeuralRenderPlanner.Select("steam:1", "RTX 5090", "dx12", null, new(), now), "NVIDIA accepted as AMD");
         Reject(() => NeuralRenderPlanner.Select("steam:1", "RX 9070 XT", "unknown", null, new(), now), "Unknown API guessed");
         var stress = NeuralRenderPlanner.Select("steam:1", "RX 9070 XT", "dx12", null, new("mochizuki", Passes: 30), now);

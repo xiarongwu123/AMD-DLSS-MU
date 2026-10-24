@@ -1403,7 +1403,7 @@ public sealed partial class MainForm : Form
             foreach (var game in reactReady ? Array.Empty<GameCandidate>() : list.ToArray())
             {
                 var card = CreateGameCard(game);
-                card.Visible = game.Title.Contains(librarySearch.Text, StringComparison.OrdinalIgnoreCase);
+                card.Visible = GameSearch.Matches(game.Title, game.SteamAppId, game.InstallDirectory, librarySearch.Text);
                 games.Controls.Add(card);
             }
             FilterGames();
@@ -1715,27 +1715,41 @@ public sealed partial class MainForm : Form
         await AddPathAsync(dialog.FileName);
     }
 
-    async Task InstallAsync()
+    async Task<bool> InstallAsync(InstallationContext? context = null)
     {
         if (selectedGame is null)
         {
-            return;
+            return false;
         }
 
-        if (busy) return;
+        if (busy) return false;
         var targetExe = selectedGame;
         var chosenMode = SelectedInstallMode;
         var chosenX86Api=x86GraphicsApi;
         var chosenNeuralOptions = neuralOptions;
         var chosenVulkan = optiVulkan;
         var chosenFgInput = optiFgInput;
+        var chosenContext = context ?? new InstallationContext();
+        var chosenCandidate = smartInstallingCandidate;
+        var chosenRevision = smartInstallingRevision;
         var featureKey = RenderSchemes.PremiumMode((int)chosenMode) ? "schemes.premium.configure" : chosenMode == InstallMode.OptiScalerStandard ? "optiscaler.configure" : "dlss.configure";
-        if (!await RequireFeatureAsync(featureKey) || busy) return;
+        if (!await RequireFeatureAsync(featureKey) || busy) return false;
         using var downloadSession = BeginDownloadSession(Path.GetFileNameWithoutExtension(targetExe) + " · " + (chosenMode == InstallMode.X86Bridge ? "32位神经渲染桥接" : chosenMode == InstallMode.Official ? "模式一组件" : "OptiScaler"), async () =>
         {
             selectedGame = targetExe; installMode.SelectedIndex = chosenMode switch { InstallMode.Official => 0, InstallMode.Dlss5XeFg => 2, InstallMode.X86Bridge => 3, InstallMode.NeuralRendering => 4, InstallMode.LegacyBridge => 5, _ => 1 };
             optiVulkan = chosenVulkan; optiFgInput = chosenFgInput; x86GraphicsApi=chosenX86Api; neuralOptions=chosenNeuralOptions;
-            selected.Text = Path.GetFileNameWithoutExtension(targetExe); await InstallAsync();
+            selected.Text = Path.GetFileNameWithoutExtension(targetExe);
+            // Re-run preflight on retry; preserve the original recommendation so
+            // rule and file verification still run immediately before writing.
+            smartPreflightExe=null;smartPreflightBackend=null;
+            smartInstallingCandidate=chosenCandidate;smartInstallingRevision=chosenRevision;
+            reactFailure=null;
+            try
+            {
+                if (await InstallAsync(chosenContext) && chosenCandidate != null)
+                    SaveSmartReceipt(targetExe,chosenCandidate,chosenRevision);
+            }
+            finally { smartInstallingCandidate=null;smartInstallingRevision="";smartPreflightExe=null;smartPreflightBackend=null; }
         }, featureKey);
         Diagnostics.Record(targetExe, "install", "start", chosenMode.ToString());
         busy = true;
@@ -1753,16 +1767,15 @@ public sealed partial class MainForm : Form
                 chosenMode is not (InstallMode.OptiScalerStandard or InstallMode.NeuralRendering), (int)chosenMode));
             if(smartPreflightExe!=targetExe)
             {
-                var scope=chosenMode switch {InstallMode.OptiScalerStandard=>"standard",InstallMode.Dlss5XeFg=>"fps",InstallMode.X86Bridge or InstallMode.LegacyBridge=>"legacy",_=>"compat"};
-                await ManualSmartPreflightAsync(targetExe,scope,System.Text.Json.JsonSerializer.SerializeToElement(new{mode=(int)chosenMode,
-                    neural=chosenNeuralOptions,confirmedApi=chosenX86Api!="auto"?chosenX86Api:chosenNeuralOptions.GraphicsApi!="auto"?chosenNeuralOptions.GraphicsApi:""}));
+                var preflight=chosenContext.Preflight((int)chosenMode,chosenNeuralOptions,chosenX86Api);
+                await ManualSmartPreflightAsync(targetExe,Arg(preflight,"scheme"),preflight);
             }
             if (compatibility.Blocked)
             {
                 status.Text = "安装检查未通过：" + string.Join("；", compatibility.BlockingReasons);
                 Diagnostics.Record(targetExe, "compatibility", "blocked", string.Join("; ", compatibility.Details));
                 await UiMessageAsync( string.Join("\n", compatibility.Details), "安装检查", MessageBoxButtons.OK);
-                return;
+                return false;
             }
             if (GameManagement.Read(targetExe) is { Phase: not "restored" })
                 throw new IOException("请先恢复此游戏，再安装或切换模式。");
@@ -1774,26 +1787,26 @@ public sealed partial class MainForm : Form
                 {
                     status.Text = "已取消配置，游戏文件未改动。";
                     Diagnostics.Record(targetExe, "anti-cheat", "declined", string.Join("、", compatibility.AntiCheatComponents));
-                    return;
+                    return false;
                 }
                 Diagnostics.Record(targetExe, "anti-cheat", "acknowledged", string.Join("、", compatibility.AntiCheatComponents));
             }
             if (chosenMode is InstallMode.Official or InstallMode.Dlss5XeFg or InstallMode.X86Bridge)
             {
-                if (!await EnsureHip72ForRx6000Async(targetExe)) return;
+                if (!await EnsureHip72ForRx6000Async(targetExe)) return false;
                 if (!SmartRenderDiagnostics.HasHipRuntime())
                     throw new MissingAmdHipRuntimeException();
             }
-            if(chosenMode==InstallMode.X86Bridge) { await InstallX86BridgeAsync(targetExe); return; }
-            if(chosenMode==InstallMode.LegacyBridge) { await InstallLegacyBridgeAsync(targetExe); return; }
-            if(chosenMode==InstallMode.NeuralRendering) { await InstallNeuralRenderAsync(targetExe); return; }
+            if(chosenMode==InstallMode.X86Bridge) { await InstallX86BridgeAsync(targetExe); return IsConfigured(targetExe); }
+            if(chosenMode==InstallMode.LegacyBridge) { await InstallLegacyBridgeAsync(targetExe); return IsConfigured(targetExe); }
+            if(chosenMode==InstallMode.NeuralRendering) { await InstallNeuralRenderAsync(targetExe); return IsConfigured(targetExe); }
             if (chosenMode == InstallMode.OptiScalerStandard)
             {
-                await InstallOptiScalerStandardAsync(targetExe, chosenVulkan); return;
+                await InstallOptiScalerStandardAsync(targetExe, chosenVulkan); return IsConfigured(targetExe);
             }
             if (chosenMode == InstallMode.Dlss5XeFg)
             {
-                await InstallCombinedRenderAsync(targetExe); return;
+                await InstallCombinedRenderAsync(targetExe); return IsConfigured(targetExe);
             }
 
             var gameDirectory = Path.GetDirectoryName(
@@ -1916,7 +1929,7 @@ public sealed partial class MainForm : Form
 
             status.Text = "正在准备游戏目录…";
 
-            if (!await RequireFeatureAsync(featureKey)) return;
+            if (!await RequireFeatureAsync(featureKey)) return false;
             Core.CheckPe(targetExe, false); // This payload contains x64 DLLs; validate before any file writes.
             fileTransaction = BeginAccountTransaction();
             GameManagement.Begin(targetExe, 0);
@@ -1994,7 +2007,7 @@ public sealed partial class MainForm : Form
                     "安装未完成",
                     MessageBoxButtons.OK);
 
-                return;
+                return false;
             }
 
             var configuredFile = Path.Combine(
@@ -2086,6 +2099,7 @@ public sealed partial class MainForm : Form
             finally { fileTransaction?.Dispose(); }
         }
         if (completed) ShowConfigurationComplete(targetExe, false);
+        return completed;
     }
 
     async Task<ReleaseInfo?> CheckReleaseAsync()
@@ -2151,6 +2165,7 @@ public sealed partial class MainForm : Form
 
     void UpdateButtons()
     {
+        if (magpieStart != null) magpieStart.Enabled = !magpiePreparing;
         try
         {
             var record = selectedGame == null ? null : GameManagement.Read(selectedGame);

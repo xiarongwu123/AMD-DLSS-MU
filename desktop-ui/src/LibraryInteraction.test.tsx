@@ -11,7 +11,7 @@ import {
 import App from "./App";
 import { DiagnosticsDialog } from "./SmartDialog";
 import { rpc } from "./bridge";
-import type { State } from "./types";
+import type { Game, State } from "./types";
 vi.mock("./bridge", () => ({
   rpc: vi.fn(),
   subscribe: () => () => {},
@@ -37,15 +37,16 @@ const games = [
     steamAppId: null,
   },
 ];
-function setup(page: "home" | "library") {
+function setup(page: State["page"], libraryGames: Game[] = games, overrides: Partial<State> = {}) {
   let state = {
     page,
-    games,
+    games: libraryGames,
     settings: { dark: true },
     viewAvailable: true,
     downloads: [],
     online: true,
     status: "",
+    ...overrides,
   } as unknown as State;
   vi.mocked(rpc).mockImplementation(async (command, args) => {
     if (command === "navigate")
@@ -62,8 +63,51 @@ function setup(page: "home" | "library") {
 afterEach(() => {
   cleanup();
   vi.resetAllMocks();
+  localStorage.removeItem("mu-first-use-guide-v1");
 });
 describe("游戏库原交互", () => {
+  it.each(["magpie", "amdMagpie"])("%s 下载未结束时仍可打开游戏配置、启动和排查", async command => {
+    localStorage.setItem("mu-first-use-guide-v1", "done");
+    setup("magpie", games, { account: { id: "a", email: "a@test", membership: { tier: "pro", expiresAt: null }, features: [{ key: "schemes.premium.configure", allowed: true }] } as State["account"] });
+    await screen.findByRole("heading", { name: /一键开启大力喜鹊/ });
+    const original = vi.mocked(rpc).getMockImplementation()!;
+    let finish!: () => void;
+    const download = new Promise<void>(resolve => { finish = resolve; });
+    vi.mocked(rpc).mockImplementation(async (name, args) => {
+      if (name === command) { await download; return true as never; }
+      if (name === "recommend") return { gpu: { name: "RX 7900 XT", vramMb: 20480 }, width: 2560, height: 1440, recommendation: { qualityMode: 0, performanceMode: 4, availability: 0 }, hipSetupPending: false } as never;
+      return original(name, args);
+    });
+    fireEvent.click(screen.getByRole("button", { name: command === "magpie" ? /N卡专用/ : /A卡专用/ }));
+    await waitFor(() => expect(rpc).toHaveBeenCalledWith(command, {}));
+    expect((screen.getByRole("button", { name: /正在准备.*卡组件/ }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "游戏库" }));
+    await screen.findByRole("heading", { name: "游戏库" });
+    const before = within(screen.getByRole("article", { name: "未配置游戏" }));
+    const ready = within(screen.getByRole("article", { name: "已配置游戏" }));
+    expect((before.getByRole("button", { name: "开启 DLSS 5" }) as HTMLButtonElement).disabled).toBe(false);
+    expect((ready.getByRole("button", { name: "启动游戏" }) as HTMLButtonElement).disabled).toBe(false);
+    expect((before.getByRole("button", { name: "排查" }) as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(before.getByRole("button", { name: "开启 DLSS 5" }));
+    await screen.findByRole("dialog", { name: "游戏图形方案" });
+    finish();
+    await waitFor(() => expect(rpc).toHaveBeenCalledWith("state"));
+  });
+  it("原生喜鹊下载状态不锁游戏，真实游戏写入忙碌状态仍阻止冲突", async () => {
+    setup("library", games, { magpiePreparing: true, busy: true });
+    await screen.findByRole("heading", { name: "游戏库" });
+    expect((screen.getByRole("button", { name: "开启 DLSS 5" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "启动游戏" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+  it.each(["神力科莎", "Assetto Corsa", "244210"])("我的游戏实际页面可以用 %s 找到神力科莎卡片", async query => {
+    setup("library", [...games, { id: "assetto", title: "assettocorsa", cover: null, state: "Unconfigured", mode: null,
+      steamAppId: "244210", searchTerms: ["Assetto Corsa", "神力科莎"] }]);
+    await screen.findByRole("heading", { name: "游戏库" });
+    fireEvent.change(screen.getByPlaceholderText("搜索游戏 / Search games…"), { target: { value: query } });
+    expect(screen.getByRole("article", { name: "assettocorsa" })).toBeTruthy();
+    expect(screen.queryByRole("article", { name: "未配置游戏" })).toBeNull();
+    expect(screen.queryByRole("article", { name: "已配置游戏" })).toBeNull();
+  });
   it("首页下滑切换游戏库，不在首页追加游戏库区块", async () => {
     setup("home");
     await screen.findByRole("heading", { name: "我的游戏" });

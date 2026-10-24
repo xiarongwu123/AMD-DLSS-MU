@@ -27,6 +27,7 @@ public sealed partial class MainForm
 
     sealed class DownloadRow
     {
+        public bool Independent;
         public string Id = Guid.NewGuid().ToString("N");
         public required Func<Task> RetryAction;
         public required string FeatureKey;
@@ -331,7 +332,7 @@ public sealed partial class MainForm
         if (unconfiguredTab != null) unconfiguredTab.Text = (english ? "Unconfigured " : "未配置 ") + states.Values.Count(s => s == LibraryFilter.Unconfigured);
         if (attentionTab != null) attentionTab.Text = (english ? "Unsupported " : "不支持 ") + states.Values.Count(s => s == LibraryFilter.Unsupported);
         libraryCount.Text = english ? $"{libraryGames.Count} games found" : $"已发现 {libraryGames.Count} 个游戏";
-        var matches = libraryGames.Where(g => g.Title.Contains(librarySearch.Text.Trim(), StringComparison.OrdinalIgnoreCase)
+        var matches = libraryGames.Where(g => GameSearch.Matches(g.Title, g.SteamAppId, g.InstallDirectory, librarySearch.Text)
             && (libraryFilter == LibraryFilter.All || states[g.ExePath] == libraryFilter)).ToList();
         var visible = matches.Select(g => g.ExePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (Control c in games.Controls)
@@ -361,25 +362,25 @@ public sealed partial class MainForm
         }
         games.ResumeLayout();
     }
-    DownloadSession BeginDownloadSession(string title, Func<Task> retry, string featureKey)
+    DownloadSession BeginDownloadSession(string title, Func<Task> retry, string featureKey, bool independent = false)
     {
         DownloadRow? row = null;
         var session = new DownloadSession();
-        activeAccountDownload = session;
-        session.Disposed += () => { if (ReferenceEquals(activeAccountDownload, session)) activeAccountDownload = null; };
+        activeAccountDownloads.TryAdd(session, 0);
+        session.Disposed += () => activeAccountDownloads.TryRemove(session, out _);
         session.Changed = snapshot =>
         {
             if (IsDisposed || !IsHandleCreated) return;
             void Apply()
             {
                 if (IsDisposed) return;
-                row ??= AddDownloadRow(session, title, retry, featureKey);
+                row ??= AddDownloadRow(session, title, retry, featureKey, independent);
                 row.State = snapshot.State; row.Percent = snapshot.Percent; row.Size = snapshot.Size; row.Detail = snapshot.Detail;
                 row.Info.Text = $"{title}\n{snapshot.State} · {snapshot.Percent}% · {snapshot.Size / 1048576d:0.00} MiB\n{snapshot.Detail.Split('\n')[0]}";
                 row.Bar.Value = Math.Clamp(snapshot.Percent, 0, 100);
                 var activeCover = selectedCard?.Controls.OfType<PictureBox>().FirstOrDefault()?
                     .Controls.OfType<DlssCoverAction>().FirstOrDefault();
-                if (activeCover is { IsDisposed: false, Loading: true })
+                if (!independent && activeCover is { IsDisposed: false, Loading: true })
                     activeCover.Progress = 4 + (int)Math.Round(snapshot.Percent * .82);
                 row.Pause.Enabled = snapshot.State is "下载中" or "已暂停"; row.Pause.Text = session.Paused ? "继续" : "暂停";
                 row.Cancel.Enabled = snapshot.State is "下载中" or "已暂停" or "连接中";
@@ -390,7 +391,7 @@ public sealed partial class MainForm
         };
         DownloadSources.CurrentSession.Value = session; return session;
     }
-    DownloadRow AddDownloadRow(DownloadSession session, string title, Func<Task> retry, string featureKey)
+    DownloadRow AddDownloadRow(DownloadSession session, string title, Func<Task> retry, string featureKey, bool independent = false)
     {
         var card = new RoundedPanel { Width = Math.Max(280, downloadList.ClientSize.Width - 28), Height = 190, BackColor = Surface, Radius = 5, Padding = new Padding(18), Margin = new Padding(0, 0, 0, 14) };
         var info = new Label { Dock = DockStyle.Top, Height = 78, ForeColor = ink, AutoEllipsis = true };
@@ -398,8 +399,8 @@ public sealed partial class MainForm
         var actions = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 42 };
         var pause = Action("暂停", "Pause", async (_, _) => { if (!session.Paused || await RequireFeatureAsync(featureKey)) session.TogglePause(); }); pause.Width = 76;
         var cancel = Action("取消", "Cancel", (_, _) => session.Cancel()); cancel.Width = 76;
-        var again = Action("重试", "Retry", async (_, _) => { if (busy) { MessageBox.Show(this, "请等待当前操作结束。", Text); return; } await retry(); }); again.Width = 76;
-        var row = new DownloadRow { RetryAction = retry, FeatureKey = featureKey, Session = session, Card = card, Info = info, Bar = bar, Pause = pause, Cancel = cancel, Retry = again, Title = title };
+        var again = Action("重试", "Retry", async (_, _) => { if (!independent && busy) { MessageBox.Show(this, "请等待当前操作结束。", Text); return; } await retry(); }); again.Width = 76;
+        var row = new DownloadRow { Independent = independent, RetryAction = retry, FeatureKey = featureKey, Session = session, Card = card, Info = info, Bar = bar, Pause = pause, Cancel = cancel, Retry = again, Title = title };
         var detail = Action("详情", "Details", (_, _) => ShowDownloadDetails(row)); detail.Width = 76;
         actions.Controls.AddRange(new Control[] { pause, cancel, again, detail });
         card.Controls.Add(bar); card.Controls.Add(info); card.Controls.Add(actions); downloadRows.Insert(0, row); downloadList.Controls.Add(card); downloadList.Controls.SetChildIndex(card, 0); return row;

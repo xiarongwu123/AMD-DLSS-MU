@@ -19,7 +19,9 @@ public static class ParameterResolver
                 ["NrInline"]=p.NrInline.ToString().ToLowerInvariant(),["LmxxfEarlyAnyModuleWrap"]=p.EarlyAnyModuleWrap.ToString().ToLowerInvariant(),
                 ["LmxxfAllowEnhancedBarriers"]=p.AllowEnhancedBarriers.ToString().ToLowerInvariant()};
             var nr=ini["DlssNr"];
-            if(backend=="mochizuki")foreach(var pair in new Dictionary<string,string>{["MochizukiUnlockPasses"]=(p.Passes>3).ToString().ToLowerInvariant(),
+            if(backend==Mu.Neural.NeuralBackends.LmxxfRdna3)
+                ini["DlssNr"]=new(){["Enabled"]="true",["NrBackend"]="lmxxf",["Passes"]=p.Passes.ToString(),["AmdLmxxfFastMode"]="true",["AmdLmxxfTierSnap"]="true"};
+            else if(backend=="mochizuki")foreach(var pair in new Dictionary<string,string>{["MochizukiUnlockPasses"]=(p.Passes>3).ToString().ToLowerInvariant(),
                 ["MochizukiPasses"]=p.Passes.ToString(),["MochizukiMaxPasses"]="0",["MochizukiModelScale"]=p.ModelScale.ToString(CultureInfo.InvariantCulture),
                 ["MochizukiTemporal"]=p.Temporal.ToString().ToLowerInvariant(),["MochizukiHistoryStrength"]=p.HistoryStrength.ToString(CultureInfo.InvariantCulture),
                 ["MochizukiApplyModel"]=p.ApplyModel.ToString().ToLowerInvariant(),["MochizukiDynamicResolution"]=p.DynamicResolution.ToString()})nr[pair.Key]=pair.Value;
