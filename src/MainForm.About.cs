@@ -32,6 +32,8 @@ public sealed partial class MainForm
         }
         Paragraph("游戏图形组件配置助手。登录账户后集中管理组件安装、配置恢复、运行状态与诊断。功能权限以账户服务为准。",
             "Sign in to manage game graphics components, restoration, runtime status and diagnostics. Feature access is verified by the account service.");
+        Paragraph("RX 7000 lmxxf 适配：AMDNR by 3zwr1（https://github.com/3zwr1/AMD-NR---OptiScaler）；神经网络移植：lmxxf（Kien）。保留组件原有署名与许可。",
+            "RX 7000 integration: AMDNR by 3zwr1 (https://github.com/3zwr1/AMD-NR---OptiScaler); neural network port by lmxxf (Kien). Original credits and licences are preserved.");
         Paragraph("模式一：AMD 神经渲染运行时方案。\n模式二：OptiScaler 标准版，提供兼容游戏的超分 / 帧生成配置；不等于 DLSS 5 神经渲染。",
             "Mode 1: AMD neural-rendering runtime setup.\nMode 2: standard OptiScaler for upscaling / frame generation in compatible games; this is not DLSS 5 neural rendering.");
         var community = new TableLayoutPanel { BackColor = Surface, Height = 282, Width = 740, ColumnCount = 2, Padding = new Padding(20), Margin = new Padding(0, 16, 0, 20) };

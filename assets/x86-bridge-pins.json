@@ -1,0 +1,57 @@
+[
+  {
+    "name": "amd-nr.addon32",
+    "path": "files/amd-nr.addon32",
+    "size": 305152,
+    "sha256": "b24c989845ada846aa504ce13655642b459b528a77d6ce44ef1519c886e51d69",
+    "url": "https://huggingface.co/datasets/zmodelerlover/amd-nr/resolve/main/bridge/0.7.12/amd-nr.addon32",
+    "mirrors": [
+      "https://github.com/zmodelerlover/dlss5-neural-amd/releases/download/v0.7.12/amd-nr.addon32"
+    ]
+  },
+  {
+    "name": "amd-nr-host64.exe",
+    "path": "files/amd-nr-host64.exe",
+    "size": 583168,
+    "sha256": "262f5f261108d75613fffb8b5dedaaf38f2d5492dbc36f7acf44907dfba60ec2",
+    "url": "https://huggingface.co/datasets/zmodelerlover/amd-nr/resolve/main/bridge/0.7.12/amd-nr-host64.exe",
+    "mirrors": [
+      "https://github.com/zmodelerlover/dlss5-neural-amd/releases/download/v0.7.12/amd-nr-host64.exe"
+    ]
+  },
+  {
+    "name": "dlssnr_amd_pass1.dll",
+    "size": 56677888,
+    "sha256": "430be589020685d03f0ad92194457bafe1a186bf658c8cfe2fb7a0bdb7592cc4",
+    "url": "https://huggingface.co/datasets/zmodelerlover/amd-nr/resolve/main/runtime/0.6.0/dlssnr_amd_pass1.dll"
+  },
+  {
+    "name": "dlssnr_on_amd_weights.bin",
+    "url": "https://huggingface.co/datasets/zmodelerlover/amd-nr/resolve/main/dlssnr_on_amd_weights.bin",
+    "mirrors": [
+      "https://files.catbox.moe/s1sh5d.bin"
+    ],
+    "size": 147689451,
+    "sha256": "6bf8dc931ef3ccffe18c82de26ab374156e7f19539ffcf8eabaa25dca5cf15ab"
+  },
+  {
+    "name": "dxgi.dll",
+    "path": "files/dxgi.dll",
+    "url": "https://huggingface.co/datasets/zmodelerlover/amd-nr/resolve/main/dxgi.dll",
+    "mirrors": [
+      "https://files.catbox.moe/g14bws.dll"
+    ],
+    "size": 4398080,
+    "sha256": "da430e0a9c6eecefa0d1b27d05e16c426fb5d04e808b194d914eaac4b31bc0f8"
+  },
+  {
+    "name": "d3d8to9.dll",
+    "path": "files/d3d8to9.dll",
+    "url": "https://huggingface.co/datasets/zmodelerlover/amd-nr/resolve/main/d3d8to9.dll",
+    "mirrors": [
+      "https://files.catbox.moe/oqcqkp.dll"
+    ],
+    "size": 124416,
+    "sha256": "ab6bf7a9a9f4b3e66a75ca038d8d10289c88acbfe8d52c3b5a8a9a259cb26cd5"
+  }
+]

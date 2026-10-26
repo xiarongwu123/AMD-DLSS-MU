@@ -54,6 +54,17 @@ public static class TelemetryEndpoints
 
     internal static string? Validate(GameTelemetryUpload x)
     {
+        if(x.Recommendation is {} r)
+        {
+            if(r.Active||r.ExperienceConfirmed)return "当前没有已接入的可核验运行时执行证明，不能将记录上报为ACTIVE或EXPERIENCE_CONFIRMED";
+            var texts=new[]{r.GameId,r.GameBuild,r.GpuModel,r.Architecture,r.DriverVersion,r.Api,r.Scheme,r.Backend,r.ComponentVersion,r.PresetId,r.RuleRevision,r.Feedback,r.GameVersion,r.GpuDeviceId};
+            if(texts.Any(v=>v==null||v.Length>160||v.Any(char.IsControl)||v.Contains(":")&&v.Contains("\\")||v.StartsWith('/')||v.StartsWith('\\'))||
+                !System.Text.RegularExpressions.Regex.IsMatch(r.DeviceId??"","^[A-Fa-f0-9]{64}$")||!Mu.Recommendation.RecommendationRuleSchema.Id(r.GameId)||
+                !Mu.Recommendation.RecommendationRuleSchema.Schemes.Contains(r.Scheme)||r.Bitness is not (32 or 64)||
+                r.FailureCodes==null||r.FailureCodes.Length>20||r.FailureCodes.Any(v=>!System.Text.RegularExpressions.Regex.IsMatch(v,"^[A-Z_]{1,80}$"))||
+                r.Active&&!r.Loaded||r.Loaded&&!r.Installed||r.ExperienceConfirmed&&!r.Active||r.VerifiedAt>x.EndedAt||r.VerifiedAt<x.StartedAt)
+                return "无效的推荐验证记录；未知、安装、加载、生效必须分开记录";
+        }
         if (!Guid.TryParse(x.SessionId, out _)) return "无效会话 ID";
         if (string.IsNullOrWhiteSpace(x.GameName) || x.GameName.Length > 160 || x.GameName.Any(char.IsControl)) return "无效游戏名称";
         if (new[] { x.SteamAppId, x.GameVersion, x.GpuName, x.DriverVersion, x.CpuName, x.WindowsVersion, x.MuMode, x.MuVersion, x.PresentRuntime, x.FpsSource, x.CaptureStatus }

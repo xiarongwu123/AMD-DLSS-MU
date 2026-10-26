@@ -2,16 +2,21 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   CheckCircle2,
   Cpu,
+  UsersRound,
   ChevronDown,
   ChevronUp,
   SlidersHorizontal,
 } from "lucide-react";
 import { rpc, subscribe } from "./bridge";
-import { Button, Modal, Loading, Progress } from "./components";
-import type { Game, Goal, Recommendation, Check, State } from "./types";
+import { Button, Modal, Loading, Progress, type CardOrigin } from "./components";
+import type { Game, Goal, Recommendation, Check, State, NeuralReceipt, NeuralPlanResponse, NeuralOptions } from "./types";
 import { CommunityPanel } from "./CommunityPanel";
+import { NeuralSettings, defaultNeuralOptions } from "./NeuralSettings";
+import { SchemeChoices, canUsePremium, schemes, type SchemeId } from "./SchemeChoices";
+import type { SmartContext } from "./SmartRecommendationPanel";
+import { PurchaseDialog } from "./AccountPage";
 export const modeName = (mode: number) =>
-  mode === 0
+  mode === 8 ? "老游戏神经渲染（ReShade 64位）" : mode === 6 ? "DLSS 5 神经渲染（多后端）" : mode === 5 ? "32位神经渲染桥接（实验性）" : mode === 0
     ? "DLSS 5 神经渲染（模式一）"
     : mode === 4
       ? "DLSS 5 + XeFG 2X"
@@ -25,12 +30,18 @@ export function SmartDialog({
   onClose,
   onComplete,
   initialTab = "recommend",
+  initialUpload = false,
+  cardOrigin,
+  onStartAmdMagpie,
 }: {
   game: Game;
   state: State;
   onClose: () => void;
   onComplete: () => void;
   initialTab?: "recommend" | "community";
+  initialUpload?: boolean;
+  cardOrigin?: CardOrigin | null;
+  onStartAmdMagpie?: () => void;
 }) {
   const [tab, setTab] = useState(initialTab),
     [goal, setGoal] = useState<Goal>("quality"),
@@ -42,8 +53,46 @@ export function SmartDialog({
     [working, setWorking] = useState(false),
     [vulkan, setVulkan] = useState(false),
     [fgInput, setFgInput] = useState("nofg");
+  const [neural, setNeural] = useState(defaultNeuralOptions);
+  const [resourceCheck, setResourceCheck] = useState<{ options: NeuralOptions; result: NeuralPlanResponse | null } | null>(null);
+  const onResourceCheck = useCallback((result: NeuralPlanResponse | null) => setResourceCheck({ options: neural, result }), [neural]);
+  const [completion, setCompletion] = useState<NeuralReceipt | null>(null);
+  const [editAdvanced, setEditAdvanced] = useState(false);
+  const [scheme, setScheme] = useState<SchemeId | null>("base");
+  const [purchase, setPurchase] = useState(false);
+  const [gamePreset, setGamePreset] = useState(false);
+  const [info, setInfo] = useState("");
+  const [smartContext,setSmartContext]=useState<SmartContext>({confirmedApi:"",confirmedInput:"",windowed:""});
+  const pendingScheme = useRef<SchemeId | null>(null);
   const detectionStarted = useRef(false);
-  const mode = selectedMode(goal, custom);
+  useEffect(() => {
+    let active = true;
+    if (game.mode === 6 && game.state === "Configured" && initialTab === "recommend") {
+      void rpc<NeuralReceipt | null>("neuralStatus", { gameId: game.id }).then(receipt => {
+        if (active && receipt) { setCompletion(receipt); setNeural({ ...receipt.options, backend: receipt.backend, proxy: receipt.proxy, graphicsApi: receipt.graphicsApi }); }
+      }).catch(e => { if (active) setError((e as Error).message); });
+    }
+    return () => { active = false; };
+  }, [game.id, game.mode, game.state, initialTab]);
+  const [x86Api,setX86Api]=useState("auto");
+  const is32Bit=result?.is32Bit===true;
+  const mode = scheme === "legacy" ? is32Bit ? 5 : 8 : scheme && !["base", "fps"].includes(scheme) ? 6 : selectedMode(goal, custom);
+  const missingNeuralResources = mode === 6 && scheme !== "amd-magpie" && resourceCheck?.options === neural && !!resourceCheck.result?.missingResources.length;
+  const chooseScheme = useCallback((id: SchemeId) => {
+    const item = schemes.find(s => s.id === id)!;
+    if (item.premium && !canUsePremium(state)) { pendingScheme.current = id; setPurchase(true); return; }
+    pendingScheme.current = null;
+    setScheme(id); setGamePreset(false); setError("");
+    if (id === "base" || id === "fps") setGoal(id === "base" ? "quality" : "performance");
+    else {
+      setGoal("custom"); setCustom(id === "legacy" ? is32Bit ? 5 : 8 : 6);
+      setNeural({ ...defaultNeuralOptions, backend: id === "author" ? "mochizuki" : id === "compat" ? "auto" : "daniel" });
+    }
+  }, [state, is32Bit]);
+  useEffect(() => {
+    if (pendingScheme.current && canUsePremium(state)) { const next = pendingScheme.current; pendingScheme.current = null; setPurchase(false); chooseScheme(next); }
+  }, [state, chooseScheme]);
+  const visualMode = tab === "community" ? "community" : goal;
   const detect = useCallback(async () => {
     setChecking(true);
     setError("");
@@ -74,27 +123,72 @@ export function SmartDialog({
   const configure = async () => {
     setWorking(true);
     setError("");
+    setInfo("");
     try {
-      await rpc("configure", {
+      if ([5, 6, 8].includes(mode) && scheme !== "base" && !canUsePremium(state)) { setPurchase(true); return; }
+      if (scheme === "base") {
+        if (!await rpc<boolean>("daniel08",{gameId:game.id})) return;
+        setInfo("已打开 Daniel 0.8 官方安装器。请在 NeuralHub 中导入自己的 DLL 并配置游戏；此操作不会将游戏直接标记为已配置。");
+        return;
+      }
+      if (scheme === "amd-magpie") {
+        if (onStartAmdMagpie) { onStartAmdMagpie(); return; }
+        if(await rpc<boolean>("amdMagpie"))setInfo("已打开 AMD 大力喜鹊，请在工具内选择效果并按其主页快捷键启用；游戏文件未修改，实际效果需在游戏中确认。");
+        return;
+      }
+      const receipt = await rpc<NeuralReceipt | null>("configure", {
         gameId: game.id,
+        ...smartContext,
+        confirmedApi:[5,8].includes(mode)&&x86Api!=="auto"?x86Api:mode===6&&neural.graphicsApi!=="auto"?neural.graphicsApi:mode===2&&vulkan?"vulkan":smartContext.confirmedApi,
         mode,
+        ...(scheme ? { scheme: gamePreset ? "game" : scheme } : {}),
+        ...([5,8].includes(mode) ? {x86Api} : {}),
+        ...(mode === 6 ? { neural } : {}),
         vulkan: mode === 2 && vulkan,
         fgInput: mode === 2 ? fgInput : "nofg",
       });
-      onComplete();
+      if (mode === 6) {
+        if (!receipt) throw new Error("未收到安装完成记录，请查看一键排查；未确认配置成功。");
+        setCompletion(receipt);
+        setNeural({ ...receipt.options, backend: receipt.backend, proxy: receipt.proxy, graphicsApi: receipt.graphicsApi });
+      } else onComplete();
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setWorking(false);
     }
   };
+  const updateAdvanced = async () => {
+    setWorking(true); setError("");
+    try { setCompletion(await rpc<NeuralReceipt>("neuralUpdate", { gameId: game.id, neural })); setEditAdvanced(false); }
+    catch (e) { setError((e as Error).message); }
+    finally { setWorking(false); }
+  };
+  const restoreNeural = async (switching = false) => {
+    setWorking(true); setError("");
+    try {
+      await rpc("restore", { gameId: game.id });
+      if (await rpc<NeuralReceipt | null>("neuralStatus", { gameId: game.id })) throw new Error("恢复尚未完成，当前方案仍保留。");
+      setCompletion(null); setEditAdvanced(false); setGoal("custom"); setNeural(defaultNeuralOptions); if (!switching) onClose();
+    } catch (e) { setError((e as Error).message); }
+    finally { setWorking(false); }
+  };
   const close = useCallback(() => {
     if (!working) onClose();
   }, [working, onClose]);
   return (
-    <Modal
+    <><Modal
       wide
       title="游戏图形方案"
+      cardOrigin={cardOrigin}
+      className={`scheme-modal immersive-scheme scheme-catalog-modal scheme-${visualMode}`}
+      backdrop={<div className="immersive-backdrop" aria-hidden="true">
+        {game.cover && <>
+          <img className="world-cover" src={game.cover} alt="" />
+          <img className="world-focus" src={game.cover} alt="" />
+        </>}
+        <div className="world-shade" />
+      </div>}
       onClose={close}
       footer={
         <>
@@ -106,19 +200,24 @@ export function SmartDialog({
           <Button disabled={working} onClick={close}>
             返回游戏库
           </Button>
-          {tab === "recommend" && <Button
+          {tab === "recommend" && !completion && <Button
             primary
+            charge
             data-guide="configure"
             disabled={
               checking ||
               working ||
-              game.state === "Configured" ||
+              missingNeuralResources ||
+              (game.state === "Configured" && scheme !== "base" && scheme !== "amd-magpie") ||
               (!result && goal !== "custom")
             }
             onClick={configure}
           >
             {working
               ? "正在配置…"
+              : scheme === "base" ? "打开 Daniel 0.8 官方版"
+              : scheme === "amd-magpie" ? "开启 AMD 大力喜鹊"
+              : missingNeuralResources ? "需先补齐资源"
               : game.state === "Configured"
                 ? "请先恢复再切换"
                 : "一键配置"}
@@ -130,19 +229,30 @@ export function SmartDialog({
         <button type="button" role="tab" aria-selected={tab === "recommend"}
           className={tab === "recommend" ? "active" : ""} onClick={() => setTab("recommend")}>智能推荐</button>
         <button type="button" role="tab" aria-selected={tab === "community"}
-          className={tab === "community" ? "active" : ""} data-guide="community-tab"
-          onClick={() => setTab("community")}>玩家方案 <span>NEW</span></button>
+          className={`community-entry ${tab === "community" ? "active" : ""}`} data-guide="community-tab"
+          onClick={() => setTab("community")}><UsersRound size={21} />玩家方案 <span>NEW</span></button>
       </div>
-      {tab === "community" ? <CommunityPanel game={game} onApplied={onComplete} /> : <>
-      <div className="steps">
-        <span className={checking ? "active" : ""}>1 检测</span>
-        <i />
-        <span className={!checking && !working ? "active" : ""}>
-          2 选择目标
-        </span>
-        <i />
-        <span className={working ? "active" : ""}>3 一键配置</span>
-      </div>
+      {completion && tab === "recommend" ? <section className="neural-success">
+        <CheckCircle2 size={42} className="accent" />
+        <h2>DLSS 5 神经渲染已启用</h2>
+        <span className="badge">{completion.statusLabel}</span>
+        <dl className="neural-receipt">
+          <div><dt>当前后端</dt><dd>{completion.backend === "daniel" ? "Daniel" : completion.backend === "mochizuki" ? "Mochizuki" : completion.backend === "lmxxf-rdna3" ? "lmxxf · AMDNR RDNA3" : "lmxxf"}</dd></div>
+          <div><dt>当前模式</dt><dd>{completion.modeLabel}</dd></div>
+          <div><dt>神经 Pass</dt><dd>{completion.passes}</dd></div>
+          <div><dt>代理方式</dt><dd>{completion.proxy.replace(".dll", "").toUpperCase()}</dd></div>
+        </dl>
+        <p>文件已部署并校验；实际画质、性能与稳定性需进入游戏验证。</p>
+        {completion.backend === "mochizuki" && <p className="muted">首次启动可能编译数分钟，请在游戏内按 Insert 查看进度。</p>}
+        <div className="neural-success-actions">
+          <Button primary disabled={working} onClick={async () => { try { await rpc("launch", { gameId: game.id }); onComplete(); } catch (e) { setError((e as Error).message); } }}>启动游戏</Button>
+          <Button disabled={working} onClick={() => setEditAdvanced(v => !v)}>高级设置</Button>
+          <Button disabled={working} onClick={() => restoreNeural(true)}>切换方案</Button>
+          <Button disabled={working} onClick={() => restoreNeural()}>恢复之前配置</Button>
+        </div>
+        {editAdvanced && <><NeuralSettings gameId={game.id} options={neural} onChange={setNeural} installed disabled={working} /><Button primary disabled={working} onClick={updateAdvanced}>保存高级设置</Button></>}
+      </section> : <div className={`mode-scene scene-${visualMode}`}>
+      {tab === "community" ? <CommunityPanel game={game} games={state.games} onApplied={onComplete} initialUpload={initialUpload} /> : <>
       {checking ? (
         <Loading text={stage} />
       ) : (
@@ -159,6 +269,12 @@ export function SmartDialog({
             </div>
             <span className="badge">{result ? "检测完成" : "待确认"}</span>
           </div>
+          <SchemeChoices gameId={game.id} gameTitle={game.title} state={state} selected={scheme} disabled={working}
+            onSelect={chooseScheme} onUpgrade={() => setPurchase(true)} onContextChange={setSmartContext}
+            onUseRecommendation={options => { setScheme(options.backend === "mochizuki" ? "author" : "compat"); setGamePreset(true); setGoal("custom"); setCustom(6); setNeural({ ...defaultNeuralOptions, ...options }); }} />
+          {scheme && !["base", "fps"].includes(scheme) && <p className="scheme-paid-selection"><strong>{schemes.find(s => s.id === scheme)?.name}</strong> · {scheme === "author" ? "Mochizuki 实验配置；本游戏未发布实测预设时不承诺最佳效果。" : scheme === "online" ? "不绕过反作弊，继续配置前需要知悉风险。" : scheme === "amd-magpie" ? "首次自动下载完整包并打开独立工具，后续校验后直接打开；效果在 AMD 喜鹊内设置，不修改游戏文件。" : "具体兼容性与效果需进入游戏验证。"}</p>}
+          {mode === 6 && scheme !== "amd-magpie" && canUsePremium(state) && <NeuralSettings gameId={game.id} options={neural} onChange={setNeural} onResourceCheck={onResourceCheck} disabled={working} />}
+          <details className="scheme-custom-toggle"><summary>原有目标与自定义设置</summary>
           <h4 className="field-heading">你更在意什么？</h4>
           <div className="goals" data-guide="goals">
             {(
@@ -172,8 +288,9 @@ export function SmartDialog({
                 key={key}
                 className={`goal ${goal === key ? "selected" : ""}`}
                 aria-pressed={goal === key}
-                onClick={() => setGoal(key)}
+                onClick={() => { setScheme(null); setGamePreset(false); setGoal(key); }}
               >
+                <span className={`goal-art goal-art-${key}`} aria-hidden="true"><i /><i /><i /><b /></span>
                 <strong>{title}</strong>
                 <span>{note}</span>
                 {route && <small>{route}</small>}
@@ -186,10 +303,18 @@ export function SmartDialog({
               </button>
             ))}
           </div>
-          {goal === "custom" && (
+          </details>
+          {[5,8].includes(mode) && <section className="custom-options">
+            <p>{is32Bit ? "已识别32位游戏，使用实验性桥接。" : "老游戏使用64位 ReShade 插件。"}神经渲染效果与性能需进入游戏验证；当前不提供XeFG帧生成。</p>
+            <label>游戏图形接口<select aria-label="32位游戏图形接口" value={x86Api} onChange={e=>setX86Api(e.target.value)}>
+              <option value="auto">自动识别{result?.graphicsApi && result.graphicsApi!=="unknown" ? `（${result.graphicsApi}）` : "（未确认时请手动选择）"}</option>
+              {is32Bit && <option value="dx8">DirectX 8</option>}<option value="dx9">DirectX 9</option><option value="dx11">DirectX 10 / 11</option><option value="opengl">OpenGL</option>
+            </select></label>
+          </section>}
+          {goal === "custom" && !scheme && (
             <section className="custom-options">
               <h4>选择方案</h4>
-              {[0, 2, 4].map((m) => (
+              {[0, 2, 4, 6, is32Bit ? 5 : 8].map((m) => (
                 <label key={m} className="radio-row">
                   <input
                     type="radio"
@@ -202,8 +327,12 @@ export function SmartDialog({
                     <small>
                       {m === 0
                         ? "神经渲染，游戏内开启 FSR，按 End 查看"
+                        : m === 6
+                          ? "新增方案：自动匹配 Daniel / lmxxf / Mochizuki，按 Insert 查看"
                         : m === 4
                           ? "神经渲染与 XeFG 帧生成，按 Insert 查看"
+                        : m === 5 || m === 8
+                          ? "ReShade 神经渲染桥接，游戏内 Home 打开面板"
                           : "标准超分辨率与帧生成，按 Insert 查看"}
                     </small>
                   </div>
@@ -234,7 +363,7 @@ export function SmartDialog({
               )}
             </section>
           )}
-          {result && (
+          {result && mode !== 6 && (
             <div className="advice">
               <p>
                 {result.recommendation.availability === 0
@@ -252,6 +381,7 @@ export function SmartDialog({
         </>
       )}
       </>}
+      </div>}
       {working && (
         <div className="operation">
           <p role="status">{state.status || "正在准备组件…"}</p>
@@ -269,7 +399,9 @@ export function SmartDialog({
           {error}
         </p>
       )}
+      {info && <p role="status" className="muted">{info}</p>}
     </Modal>
+    {purchase && <PurchaseDialog state={state} onClose={() => setPurchase(false)} notify={message => setError(message)} />}</>
   );
 }
 export function DiagnosticsDialog({

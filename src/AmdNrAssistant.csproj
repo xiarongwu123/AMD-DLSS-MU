@@ -7,10 +7,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>AMD-DLSS-MU</AssemblyName>
-    <Version>2.2.0-react-preview.5</Version>
-    <AssemblyVersion>2.2.0.0</AssemblyVersion>
-    <FileVersion>2.2.0.5</FileVersion>
-    <InformationalVersion>2.2.0-react-preview.5</InformationalVersion>
+    <Version>2.2.4</Version>
+    <AssemblyVersion>2.2.4.0</AssemblyVersion>
+    <FileVersion>2.2.4.0</FileVersion>
+    <InformationalVersion>2.2.4</InformationalVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>../assets/amd-dlss-mu.ico</ApplicationIcon>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
@@ -26,6 +26,8 @@
     <EmbeddedResource Include="..\native\LICENSE-SharpCompress.txt" LogicalName="Licenses.SharpCompress" />
     <EmbeddedResource Include="..\native\vendor\LICENSE-ReShade.md" LogicalName="Licenses.ReShade" />
     <EmbeddedResource Include="..\native\vendor\LICENSE-ImGui.txt" LogicalName="Licenses.ImGui" />
+    <EmbeddedResource Include="../desktop-ui/src/reactbits/LICENSE.md" LogicalName="Licenses.ReactBits" />
+    <EmbeddedResource Include="../assets/AMDNR-integration-NOTICE.txt" LogicalName="Licenses.AMDNR" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\assets\nvngx_dlssnr.dll" LogicalName="AmdNrAssistant.nvngx_dlssnr.dll" />
@@ -53,4 +55,7 @@
   <Target Name="RemoveUnusedWebViewWpf" BeforeTargets="ResolveAssemblyReferences">
     <ItemGroup><Reference Remove="@(Reference)" Condition="'%(Reference.Filename)' == 'Microsoft.Web.WebView2.Wpf'" /></ItemGroup>
   </Target>
-</Project>
+  <ItemGroup><EmbeddedResource Include="../assets/x86-bridge-pins.json" LogicalName="Mu.X86Bridge.Pins" /></ItemGroup>
+  <ItemGroup><EmbeddedResource Include="../assets/x86-bridge-LICENSE.txt" LogicalName="Licenses.X86Bridge" /></ItemGroup>
+<ItemGroup><EmbeddedResource Include="../assets/neural-rendering-1.12.1.json" LogicalName="Mu.NeuralRendering.Pins" />
+<EmbeddedResource Include="../assets/amdnr-rdna3-0.3.5.8.json" LogicalName="Mu.AmdNrRdna3.Pins" /></ItemGroup></Project>

@@ -6,7 +6,7 @@ public sealed record CompatibilityCatalogInfo(string Provider, string Url, DateT
     string? LocalizedName, string? ReleaseDate, CompatibilityTechnologyReference[] References);
 public sealed record CompatibilityTechnologyReference(string Provider, string Url, DateTimeOffset RetrievedAt,
     string MatchedTitle, string[] Features);
-public sealed record CompatibilityGpu(string Name, string Vendor, long? VramMb, string? Architecture, string DriverVersion);
+public sealed record CompatibilityGpu(string Name, string Vendor, long? VramMb, string? Architecture, string DriverVersion, string? DeviceId = null);
 public sealed record CompatibilityEnvironment(
     CompatibilityGpu Gpu, string OsVersion, string SystemDirectX, string GameVersion,
     string RenderApi, string DlssVersion, string Dlss5Version, string ToolVersion,

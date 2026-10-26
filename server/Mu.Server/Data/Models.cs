@@ -58,7 +58,9 @@ public sealed class Plan
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Name { get; set; } = "";
-    public int DurationDays { get; set; }
+    public int DurationDays { get; set; } // 0 = lifetime membership
+    public int ConfigurationSessions { get; set; }
+    public bool GrantsMembership { get; set; } = true;
     public long PriceMinor { get; set; }
     public string Currency { get; set; } = "CNY";
     public bool Enabled { get; set; }
@@ -70,8 +72,12 @@ public sealed class Order
     public string UserId { get; set; } = "";
     public string PlanId { get; set; } = "";
     public string PlanName { get; set; } = "";
-    public int DurationDays { get; set; }
+    public int DurationDays { get; set; } // 0 = lifetime membership
+    public int ConfigurationSessions { get; set; }
+    public int ConfigurationSessionsUsed { get; set; }
+    public bool GrantsMembership { get; set; } = true;
     public string Status { get; set; } = "pending";
+    public string ConfigurationServiceStatus { get; set; } = "none";
     public long AmountMinor { get; set; }
     public string Currency { get; set; } = "CNY";
     public long CreatedAt { get; set; }

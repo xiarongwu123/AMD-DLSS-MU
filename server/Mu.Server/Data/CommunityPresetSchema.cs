@@ -26,11 +26,27 @@ public static class CommunityPresetSchema
         await db.Database.OpenConnectionAsync();
         await using var command = connection.CreateCommand();
         command.CommandText = "PRAGMA table_info(CommunityPresets)";
-        var hasThumbnail = false;
+        var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         await using (var reader = await command.ExecuteReaderAsync())
             while (await reader.ReadAsync())
-                if (reader.GetString(1) == "ThumbnailData") hasThumbnail = true;
-        if (!hasThumbnail)
-            await db.Database.ExecuteSqlRawAsync("ALTER TABLE CommunityPresets ADD COLUMN ThumbnailData TEXT NULL");
+                columns.Add(reader.GetString(1));
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        // These migration statements are fixed source literals, never request data.
+        foreach (var (name, sql) in new[] {
+            ("ThumbnailData", "ALTER TABLE CommunityPresets ADD COLUMN ThumbnailData TEXT NULL"),
+            ("Scope", "ALTER TABLE CommunityPresets ADD COLUMN Scope TEXT NOT NULL DEFAULT 'game'"),
+            ("ResourceUrl", "ALTER TABLE CommunityPresets ADD COLUMN ResourceUrl TEXT NULL"),
+            ("ResourceCode", "ALTER TABLE CommunityPresets ADD COLUMN ResourceCode TEXT NULL"),
+            ("AttachmentName", "ALTER TABLE CommunityPresets ADD COLUMN AttachmentName TEXT NULL"),
+            ("AttachmentSize", "ALTER TABLE CommunityPresets ADD COLUMN AttachmentSize INTEGER NOT NULL DEFAULT 0"),
+            ("AttachmentSha256", "ALTER TABLE CommunityPresets ADD COLUMN AttachmentSha256 TEXT NULL") })
+            if (!columns.Contains(name)) await db.Database.ExecuteSqlRawAsync(sql);
+        await db.Database.ExecuteSqlRawAsync("""
+            CREATE TABLE IF NOT EXISTS "CommunityPresetAttachments" (
+              "PresetId" TEXT NOT NULL PRIMARY KEY, "Content" BLOB NOT NULL,
+              FOREIGN KEY ("PresetId") REFERENCES "CommunityPresets" ("Id") ON DELETE CASCADE);
+            CREATE INDEX IF NOT EXISTS "IX_CommunityPresets_CreatedAt" ON "CommunityPresets" ("CreatedAt");
+            """);
+        await transaction.CommitAsync();
     }
 }

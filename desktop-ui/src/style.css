@@ -585,6 +585,17 @@ small {
 .magpie-layout .muted {
   margin-top: 16px;
 }
+.magpie-launch-options { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
+.magpie-launch-option.button { position: relative; justify-content: flex-start; gap: 16px; padding: 28px 22px; min-height: 120px; text-align: left; border-radius: 18px; white-space: normal; }
+.magpie-launch-option > svg { flex-shrink: 0; }
+.magpie-launch-option > span:not(.magpie-launch-access):not(.charge-energy):not(.charge-electric) { display: grid; gap: 9px; }
+.magpie-launch-option strong { font-size: 25px; font-weight: 850; }
+.magpie-launch-option small { font-size: 13px; font-weight: 600; opacity: .8; }
+.magpie-launch-access { position: absolute; top: 12px; right: 14px; display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 750; }
+.magpie-launch-amd.button { color: var(--ink); border-color: #e7c77880; background: radial-gradient(ellipse at 100% 0%,#e7c77824,transparent 75%),var(--surface); }
+.magpie-launch-amd > svg,.magpie-launch-amd .magpie-launch-access { color: #d5b46b; }
+.magpie-launch-amd.button:hover:not(:disabled) { border-color: #e7c778; background: radial-gradient(ellipse at 100% 0%,#e7c77835,transparent 80%),var(--surface); box-shadow: 0 0 26px #e7c7781a; }
+@media(max-width:600px) { .magpie-launch-options { grid-template-columns: 1fr; } }
 .magpie-layout ol {
   padding-left: 23px;
   color: var(--muted);

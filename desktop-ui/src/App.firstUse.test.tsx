@@ -19,6 +19,18 @@ vi.mock("./bridge", () => ({
 
 afterEach(() => { cleanup(); localStorage.clear(); vi.resetAllMocks(); });
 
+it("大力喜鹊页的 A卡按钮无需选择游戏即可直接打开独立工具",async()=>{
+  localStorage.setItem("mu-first-use-guide-v1","done");
+  const state={...emptyState,page:"magpie",account:{id:"a",email:"a@test",membership:{tier:"pro",expiresAt:null},features:[{key:"schemes.premium.configure",allowed:true}]}};
+  vi.mocked(rpc).mockImplementation(async command=>command==="state"?state:command==="amdMagpie"?true:undefined);
+  render(<App/>);
+  fireEvent.click(await screen.findByRole("button",{name:/A卡专用/}));
+  await waitFor(()=>expect(rpc).toHaveBeenCalledWith("amdMagpie",{}));
+  expect(rpc).not.toHaveBeenCalledWith("configure",expect.anything());
+  expect(rpc).not.toHaveBeenCalledWith("recommend",expect.anything());
+  expect(screen.queryByRole("dialog",{name:"游戏图形方案"})).toBeNull();
+});
+
 it("首次进入游戏库自动引导，跳过后重新打开不会自动播放", async () => {
   vi.mocked(rpc).mockImplementation(async command =>
     command === "state" ? emptyState : undefined,
@@ -35,7 +47,7 @@ it("首次进入游戏库自动引导，跳过后重新打开不会自动播放"
   expect(screen.queryByRole("dialog", { name: "新手引导" })).toBeNull();
 });
 
-it("选择游戏后从游戏库顶部直达玩家方案", async () => {
+it("无需选择游戏即可从游戏库顶部打开全部玩家方案", async () => {
   localStorage.setItem("mu-first-use-guide-v1", "done");
   const state = { ...emptyState, games: [{ id: "game-1", title: "游戏一", cover: null,
     state: "Unconfigured", mode: null, steamAppId: null }] };
@@ -46,9 +58,8 @@ it("选择游戏后从游戏库顶部直达玩家方案", async () => {
   });
   render(<App />);
   await waitFor(() => expect(document.querySelector('[data-guide="community-header"]')).not.toBeNull());
-  fireEvent.click(screen.getByLabelText("游戏一"));
   fireEvent.click(document.querySelector('[data-guide="community-header"]')!);
-  expect((await screen.findByRole("tab", { name: /玩家方案/ })).getAttribute("aria-selected")).toBe("true");
-  expect(rpc).toHaveBeenCalledWith("presets", { gameId: "game-1" });
+  expect(await screen.findByRole("dialog", { name: "玩家方案" })).toBeTruthy();
+  expect(rpc).toHaveBeenCalledWith("presets", { page: 1 });
   expect(rpc).not.toHaveBeenCalledWith("recommend", { gameId: "game-1" });
 });

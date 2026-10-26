@@ -19,9 +19,9 @@ internal static class CommunityPresetTests
         var saved = await service.SubmitAsync(userId, submission, default);
         if (saved.Item.Mode != 4 || saved.Settings.Length != 1 || saved.Item.GameKey != submission.GameKey)
             throw new Exception("Community preset was not stored correctly");
-        var list = await service.ListAsync(userId, submission.GameKey, default);
+        var list = await service.ListAsync(userId, default);
         if (list.Total != 1 || list.Items[0].Id != saved.Item.Id)
-            throw new Exception("Community preset was not listed for its game");
+            throw new Exception("Community preset was not listed in the global feed");
         var repeated = await service.SubmitAsync(userId, submission, default);
         if (repeated.Item.Id != saved.Item.Id || await db.CommunityPresets.CountAsync() != 1)
             throw new Exception("Community preset retry created a duplicate");
@@ -48,7 +48,7 @@ internal static class CommunityPresetTests
             ImageData = tinyJpeg, ThumbnailData = tinyJpeg
         }, default);
         if (screenshot.Item.ThumbnailData != tinyJpeg || screenshot.ImageData != tinyJpeg ||
-            (await service.ListAsync(userId, submission.GameKey, default)).Items.All(x => x.ThumbnailData == null))
+            (await service.ListAsync(userId, default)).Items.All(x => x.ThumbnailData == null))
             throw new Exception("Community screenshot thumbnail was not preserved in the list");
         return 6;
     }

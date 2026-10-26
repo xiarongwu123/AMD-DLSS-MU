@@ -5,18 +5,32 @@ using System.Text.Json;
 
 namespace AmdNrAssistant;
 
-public sealed record MembershipInfo(string Tier, DateTimeOffset? ExpiresAt);
+public sealed record MembershipInfo(string Tier, DateTimeOffset? ExpiresAt, string Kind = "standard", DateTimeOffset? PlusExpiresAt = null, int? RemoteSessionsRemaining = null);
 public sealed record FeatureAccess(string Key, bool Enabled, string MinimumTier, bool Allowed);
 public sealed record AccountSnapshot(string Id, string Email, MembershipInfo Membership, FeatureAccess[] Features, bool PaymentsEnabled);
 public sealed record SessionResponse(string AccessToken, string RefreshToken, DateTimeOffset AccessTokenExpiresAt, AccountSnapshot Account);
 public sealed record CodeResponse(string Message, int RetryAfterSeconds);
 public sealed record AuthorizationResponse(bool Allowed, string? Reason, AccountSnapshot Account);
-public sealed record PurchasePlan(string Id, string Name, int DurationDays, long PriceMinor, string Currency);
+public sealed record PurchasePlan(string Id, string Name, int DurationDays, long PriceMinor, string Currency, int ConfigurationSessions = 0, bool GrantsMembership = true);
 public sealed record PurchasePlans(PurchasePlan[] Items, bool PaymentsEnabled, string? PaymentMethod);
-public sealed record ManualPaymentDetails(string Method, string Instructions, string? QrImageUrl);
+public sealed record PurchasePaymentChannel(string Id, string Name, string QrImageUrl);
+public sealed record ManualPaymentDetails(string Method, string Instructions, string? QrImageUrl, PurchasePaymentChannel[]? Channels = null);
 public sealed record PurchaseOrder(string Id, string PlanId, string PlanName, int DurationDays, string Status,
-    long AmountMinor, string Currency, long CreatedAt, long? PaidAt, ManualPaymentDetails? Payment);
+    long AmountMinor, string Currency, long CreatedAt, long? PaidAt, ManualPaymentDetails? Payment, int ConfigurationSessions = 0, string ConfigurationServiceStatus = "none", int? ConfigurationSessionsUsed = null, bool GrantsMembership = true);
 public sealed record PurchaseOrderList(PurchaseOrder[] Items, bool PaymentsEnabled);
+
+public static class MembershipAccess
+{
+    public static bool IsAdvancedFeature(string key) => key is "schemes.premium.configure" or "schemes.game.view" or "games.supported.view";
+    public static bool HasActiveMembership(AccountSnapshot? account, DateTimeOffset now) =>
+        account?.Membership is { Tier: "pro" } member && (member.ExpiresAt == null || member.ExpiresAt > now);
+    public static bool CanUse(AccountSnapshot? account, string key, DateTimeOffset now)
+    {
+        if (!HasActiveMembership(account, now)) return false;
+        var feature = account!.Features.FirstOrDefault(f => f.Key == key);
+        return feature != null ? feature.Enabled && feature.Allowed : IsAdvancedFeature(key);
+    }
+}
 
 public sealed class AccountApiException : Exception
 {
@@ -133,9 +147,38 @@ public sealed partial class AccountApiClient : IDisposable
 
     public async Task<bool> AuthorizeAsync(string featureKey, CancellationToken token)
     {
-        var response = await AuthenticatedAsync<AuthorizationResponse>(HttpMethod.Post, "account/authorize", new { featureKey }, token);
+        AuthorizationResponse response;
+        try { response = await AuthenticatedAsync<AuthorizationResponse>(HttpMethod.Post, "account/authorize", new { featureKey }, token); }
+        catch (AccountApiException e) when (e.Code == "unknown_feature" && MembershipAccess.IsAdvancedFeature(featureKey)
+            && MembershipAccess.HasActiveMembership(e.Account, clock.GetUtcNow())
+            && !e.Account!.Features.Any(f => f.Key == featureKey))
+        {
+            // An older server can still authenticate membership and authorize the
+            // original operation. Never use this path for an explicitly denied key.
+            var legacyKey = featureKey == "schemes.premium.configure" ? "dlss.configure" : "configuration.edit";
+            response = await AuthenticatedAsync<AuthorizationResponse>(HttpMethod.Post, "account/authorize", new { featureKey = legacyKey }, token);
+            if (!MembershipAccess.CanUse(response.Account, featureKey, clock.GetUtcNow()))
+                throw new AccountApiException(HttpStatusCode.Forbidden, "pro_required", "此功能需要有效的高级会员。", account: response.Account);
+        }
         if (!response.Allowed) throw new AccountApiException(HttpStatusCode.Forbidden, "feature_denied", response.Reason ?? "当前账户没有此功能权限。", account: response.Account);
         return true;
+    }
+
+    public Task<JsonElement> GetSmartRulesAsync(string gameId, CancellationToken token) =>
+        AuthenticatedAsync<JsonElement>(HttpMethod.Get, "render-rules?format=2&gameId=" + Uri.EscapeDataString(gameId.ToLowerInvariant()), null, token);
+
+    public Task<JsonElement> GetNeuralRulesAsync(string gameId, CancellationToken token) =>
+        AuthenticatedAsync<JsonElement>(HttpMethod.Get, "render-rules?gameId=" + Uri.EscapeDataString(gameId.ToLowerInvariant()), null, token);
+
+    public async Task<JsonElement> GetSupportedGamesAsync(CancellationToken token)
+    {
+        var result = await AuthenticatedAsync<JsonElement>(HttpMethod.Get, "catalog/supported-games", null, token);
+        var snapshot = result.GetProperty("account").Deserialize<AccountSnapshot>(Json)
+            ?? throw new IOException("会员状态响应不完整。");
+        ValidateAccount(snapshot);
+        Account = snapshot;
+        Changed?.Invoke();
+        return result.GetProperty("catalog").Clone();
     }
 
     public Task<PurchasePlans> GetPurchasePlansAsync(CancellationToken token) =>
@@ -156,6 +199,7 @@ public sealed partial class AccountApiClient : IDisposable
     async Task<T> AuthenticatedAsync<T>(HttpMethod method, string route, object? body, CancellationToken token)
     {
         await gate.WaitAsync(token);
+        var compatibilityRateLimited = false;
         try
         {
             if (refreshToken == null) throw new AccountApiException(HttpStatusCode.Unauthorized, "login_required", "请先登录账户。");
@@ -167,6 +211,8 @@ public sealed partial class AccountApiClient : IDisposable
                 await RefreshCoreAsync(token);
                 result = await SendAsync<T>(method, route, body, accessToken, token);
             }
+            catch (AccountApiException e) when (e.Status == HttpStatusCode.TooManyRequests && route.StartsWith("compatibility/", StringComparison.Ordinal))
+            { compatibilityRateLimited = true; throw; }
             if (result is AccountSnapshot snapshot) { ValidateAccount(snapshot); Account = snapshot; }
             else if (result is AuthorizationResponse authorization) { ValidateAccount(authorization.Account); Account = authorization.Account; }
             ConnectionVerified();
@@ -176,6 +222,7 @@ public sealed partial class AccountApiClient : IDisposable
         {
             if (e.Account != null) Account = e.Account;
             if (e.Status == HttpStatusCode.Unauthorized || e.Code is "disabled" or "account_disabled" or "user_disabled") ClearLocal();
+            else if (compatibilityRateLimited) ConnectionVerified();
             else if ((int)e.Status >= 500 || e.Status is HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests)
                 ConnectionFailed();
             else ConnectionVerified();
@@ -256,6 +303,13 @@ public sealed partial class AccountApiClient : IDisposable
         if (body != null) request.Content = JsonContent.Create(body, options: Json);
         if (bearer != null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
         using var response = await http.SendAsync(request, token);
+        if(route.StartsWith("render-rules?",StringComparison.Ordinal))
+        {
+            var actual=response.RequestMessage?.RequestUri;
+            var origin=http.BaseAddress!;
+            if(actual!=null&&(actual.Scheme!="https"||actual.Host!=origin.Host||actual.Port!=origin.Port))throw new IOException("规则响应来源不可信，拒绝重定向。");
+            if(response.Content.Headers.ContentLength>1024*1024)throw new IOException("规则响应过大。");
+        }
         var content = await response.Content.ReadAsStringAsync(token);
         if (!response.IsSuccessStatusCode)
         {
@@ -271,6 +325,9 @@ public sealed partial class AccountApiClient : IDisposable
 
     static string ResponseError(HttpStatusCode status, string route) => status switch
     {
+        HttpStatusCode.NotFound when route.StartsWith("presets/all", StringComparison.Ordinal) => "全站玩家方案需要更新后台服务，请联系管理员同步部署。",
+        HttpStatusCode.NotFound when route.StartsWith("render-rules", StringComparison.Ordinal) => "游戏专属推荐需要更新后台服务；你的会员身份未改变。",
+        HttpStatusCode.NotFound when route.StartsWith("catalog/supported-games", StringComparison.Ordinal) => "支持游戏库需要更新后台服务；你的会员身份未改变。",
         HttpStatusCode.NotFound when route.StartsWith("wishes", StringComparison.Ordinal) => "许愿池服务尚未上线，请稍后再试（HTTP 404）。",
         HttpStatusCode.NotFound when route.StartsWith("presets", StringComparison.Ordinal) => "社区方案后台尚未更新，请稍后再试（HTTP 404）。",
         HttpStatusCode.NotFound => "请求的服务接口不存在（HTTP 404），请检查客户端版本。",

@@ -8,5 +8,7 @@
   <ItemGroup>
     <Compile Include="../src/AccountApiClient.cs" Link="AccountApiClient.cs" />
     <Compile Include="../src/AccountTokenStore.cs" Link="AccountTokenStore.cs" />
+    <Compile Include="../src/AccountApiClient.Presets.cs" Link="AccountApiClient.Presets.cs" />
+    <Compile Include="../src/CommunityPresetModels.cs" Link="CommunityPresetModels.cs" />
   </ItemGroup>
 </Project>

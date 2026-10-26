@@ -302,6 +302,79 @@ using (var client = new AccountApiClient(new HttpClient(new Handler(request => T
     Check(client.IsOnline && client.HasSession, "missing endpoint does not invalidate login");
 }
 
+var oldPro = account with { Membership = new("pro", DateTimeOffset.UtcNow.AddDays(30), "advanced") };
+foreach (var featureKey in new[] { "schemes.premium.configure", "schemes.game.view", "games.supported.view" })
+{
+    var checkedKeys = new List<string>();
+    using var client = new AccountApiClient(new HttpClient(new Handler(async request =>
+    {
+        if (request.RequestUri!.AbsolutePath.EndsWith("login")) return Ok(Session() with { Account = oldPro });
+        var body = await request.Content!.ReadFromJsonAsync<JsonElement>();
+        var key = body.GetProperty("featureKey").GetString()!; checkedKeys.Add(key);
+        return key == featureKey
+            ? new(HttpStatusCode.Forbidden) { Content = JsonContent.Create(new { code = "unknown_feature", message = "该功能暂不可用。", account = oldPro }) }
+            : Ok(new AuthorizationResponse(true, null, oldPro));
+    })), new MemoryStore());
+    await client.LoginAsync(account.Email, "password123", false, default);
+    Check(await client.AuthorizeAsync(featureKey, default), "existing Pro can authorize newly introduced software feature " + featureKey);
+    Check(checkedKeys.SequenceEqual(new[] { featureKey, featureKey == "schemes.premium.configure" ? "dlss.configure" : "configuration.edit" }), "legacy compatibility still revalidates the actual operation online");
+}
+foreach (var blockedAccount in new[] { account, oldPro with { Membership = new("pro", DateTimeOffset.UtcNow.AddMinutes(-1)) }, oldPro with { Features = [new("schemes.premium.configure", false, "pro", false)] } })
+{
+    var calls = 0;
+    using var client = new AccountApiClient(new HttpClient(new Handler(request =>
+    {
+        if (request.RequestUri!.AbsolutePath.EndsWith("login")) return Task.FromResult(Ok(Session() with { Account = blockedAccount }));
+        calls++;
+        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Forbidden) { Content = JsonContent.Create(new { code = "unknown_feature", message = "Denied", account = blockedAccount }) });
+    })), new MemoryStore());
+    await client.LoginAsync(account.Email, "password123", false, default);
+    await Throws(() => client.AuthorizeAsync("schemes.premium.configure", default), e => e is AccountApiException, "standard, expired or explicitly denied account stays locked");
+    Check(calls == 1, "denied entitlement never falls back to the old feature");
+}
+foreach (var code in new[] { "feature_disabled", "pro_required", "unknown_feature" })
+{
+    var calls = 0;
+    using var client = new AccountApiClient(new HttpClient(new Handler(request =>
+    {
+        if (request.RequestUri!.AbsolutePath.EndsWith("login")) return Task.FromResult(Ok(Session() with { Account = oldPro }));
+        calls++;
+        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Forbidden) { Content = JsonContent.Create(new { code, message = "Denied", account = code == "unknown_feature" ? account : oldPro }) });
+    })), new MemoryStore());
+    await client.LoginAsync(account.Email, "password123", false, default);
+    await Throws(() => client.AuthorizeAsync(code == "unknown_feature" ? "services.remote" : "schemes.premium.configure", default), e => e is AccountApiException, "explicit denial and Plus-only service are not overridden");
+    Check(calls == 1, "no authorization fallback after explicit denial");
+}
+var membershipChecks = 0;
+using (var client = new AccountApiClient(new HttpClient(new Handler(request =>
+{
+    if (request.RequestUri!.AbsolutePath.EndsWith("login")) return Task.FromResult(Ok(Session() with { Account = oldPro }));
+    membershipChecks++;
+    return Task.FromResult(membershipChecks == 1
+        ? new HttpResponseMessage(HttpStatusCode.Forbidden) { Content = JsonContent.Create(new { code = "unknown_feature", message = "Denied", account = oldPro }) }
+        : Ok(new AuthorizationResponse(true, null, account)));
+})), new MemoryStore()))
+{
+    await client.LoginAsync(account.Email, "password123", false, default);
+    await Throws(() => client.AuthorizeAsync("schemes.premium.configure", default), e => e is AccountApiException { Code: "pro_required" }, "membership revoked between compatibility checks cannot authorize premium");
+}
+using (var client = new AccountApiClient(new HttpClient(new Handler(request =>
+{
+    if (request.RequestUri!.AbsolutePath.EndsWith("login")) return Task.FromResult(Ok(Session()));
+    Check(request.RequestUri.PathAndQuery == "/api/v1/presets/all?page=2", "global shares request has no game ID or author filter");
+    return Task.FromResult(Ok(new Mu.Presets.PresetList([], 0, 2)));
+})), new MemoryStore()))
+{
+    await client.LoginAsync(account.Email, "password123", false, default);
+    Check((await client.GetPresetsAsync(default, 2)).Page == 2, "global shares preserve pagination");
+}
+using (var client = new AccountApiClient(new HttpClient(new Handler(request => Task.FromResult(
+    request.RequestUri!.AbsolutePath.EndsWith("login") ? Ok(Session()) : Error(HttpStatusCode.NotFound, "preset_not_found", "方案不存在。")))), new MemoryStore()))
+{
+    await client.LoginAsync(account.Email, "password123", false, default);
+    await Throws(() => client.GetPresetsAsync(default), e => e is IOException && e.Message.Contains("更新后台服务"), "old per-game backend reports a needed deployment instead of an invalid game ID");
+}
+
 Console.WriteLine($"Account tests passed: {passed}");
 
 sealed class MemoryStore : IAccountTokenStore

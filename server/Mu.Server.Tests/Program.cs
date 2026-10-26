@@ -76,6 +76,7 @@ sealed class Suite : IAsyncDisposable
     {
         await MembershipCodeTests.RunAsync(directory);
         await VerifyVersionOneUpgradeAsync();
+        assertions += await RemoteGuidanceMigrationTests.RunAsync(directory);
         await Scope(provider => DatabaseSetup.InitializeAsync(provider.GetRequiredService<AppDbContext>()));
         const string email = "tester@example.com";
         const string password = "first-passphrase";
@@ -118,7 +119,7 @@ sealed class Suite : IAsyncDisposable
         Assert(simultaneous.Count(x => x != null) == 1, "concurrent code use creates exactly one account and session");
         var session = simultaneous.Single(x => x != null)!;
         var userId = session.Account.Id;
-        Assert(session.Account.Membership.Tier == "standard" && session.Account.Features.Count == AccountService.InitialFeatures.Length && session.Account.Features.All(x => x.Allowed), "new account has standard initial permissions");
+        Assert(session.Account.Membership.Tier == "standard" && session.Account.Features.Count == AccountService.InitialFeatures.Length && session.Account.Features.All(x => x.Allowed == (x.MinimumTier == "standard")), "new account has standard initial permissions");
         Assert(session.Account.Features.All(x => x.Version == 1), "fresh feature snapshots start at version one");
         await Scope(async provider =>
         {
@@ -232,6 +233,15 @@ sealed class Suite : IAsyncDisposable
         var config = services.GetRequiredService<IConfiguration>();
         config["ManualPayment:Enabled"] = "true";
         config["ManualPayment:Instructions"] = "测试环境收款信息";
+        await Scope(p=>{
+            var details=JsonSerializer.SerializeToElement(p.GetRequiredService<ManualOrderService>().PaymentDetails);
+            var channels=details.GetProperty("channels").EnumerateArray().ToArray();
+            var resources=typeof(ManualOrderService).Assembly.GetManifestResourceNames();
+            var expected=new[]{"wechat","alipay"}.Where(id=>resources.Contains($"Mu.Server.Payment.{id}.jpg")).ToArray();
+            Assert(channels.Select(c=>c.GetProperty("id").GetString()).SequenceEqual(expected),"available private payment channels retain correct method IDs");
+            foreach(var channel in channels){var url=channel.GetProperty("qrImageUrl").GetString()!;Assert(url.StartsWith("data:image/jpeg;base64,") && Convert.FromBase64String(url.Split(',')[1])[0]==0xff,"payment QR is the original JPEG image");}
+            return Task.CompletedTask;
+        });
         var order = await Scope(provider => provider.GetRequiredService<ManualOrderService>().CreateAsync(userId, planId));
         Assert(order.Status == "pending" && order.AmountMinor == 1990, "manual order snapshots amount without granting membership");
         Assert((await Scope(provider => provider.GetRequiredService<ManualOrderService>().CreateAsync(userId, planId))).Id == order.Id,
@@ -250,6 +260,9 @@ sealed class Suite : IAsyncDisposable
         await Scope(provider => provider.GetRequiredService<ManualOrderService>().ConfirmAsync(
             order.Id, "receipt-1234", "independently verified receipt", "test-admin"));
         Assert((await Accounts(a => a.SnapshotAsync(userId))).Membership.Tier == "pro", "verified receipt grants Pro");
+        var ordinary = await Accounts(a => a.SnapshotAsync(userId));
+        Assert(ordinary.Membership.Kind == "advanced" && !ordinary.Features.Single(x => x.Key == "services.remote").Allowed,
+            "ordinary advanced membership does not grant remote service");
         await Error(() => Scope(provider => provider.GetRequiredService<ManualOrderService>().ConfirmAsync(
             order.Id, "receipt-1234", "repeat confirmation", "test-admin")), 409, "order_not_pending");
         var second = await Scope(provider => provider.GetRequiredService<ManualOrderService>().CreateAsync(userId, planId));
@@ -263,6 +276,74 @@ sealed class Suite : IAsyncDisposable
             Assert((await db.Orders.SingleAsync(x => x.Id == order.Id)).AmountMinor == 1990
                 && (await db.Orders.SingleAsync(x => x.Id == second.Id)).Status == "pending", "plan edits and failed confirmation preserve orders");
         });
+        var monthly = await Scope(p=>p.GetRequiredService<ManualOrderService>().CreateAsync(userId,"mu-pro-monthly"));
+        Assert(monthly.AmountMinor==990 && monthly.DurationDays==30 && monthly.ConfigurationSessions==0,"monthly plan is 9.9 for 30 days");
+        var assisted = await Scope(p=>p.GetRequiredService<ManualOrderService>().CreateAsync(userId,"mu-pro-assisted"));
+        Assert(assisted.AmountMinor==2990 && assisted.DurationDays==30 && assisted.ConfigurationSessions==1,"29.9 includes 30 days and one configuration");
+        Assert(!(await Accounts(a=>a.SnapshotAsync(userId))).Features.Single(x=>x.Key=="services.remote").Allowed,"unpaid Plus order does not grant service");
+        await Error(()=>Scope(p=>p.GetRequiredService<ManualOrderService>().CompleteConfigurationAsync(assisted.Id,"test service complete","test-admin")),409,"service_not_pending");
+        await Scope(async p=>{
+            var db=p.GetRequiredService<AppDbContext>();
+            var plan=await db.Plans.SingleAsync(x=>x.Id=="mu-pro-assisted");
+            plan.DurationDays=90;plan.ConfigurationSessions=0;plan.PriceMinor=9990;
+            await db.SaveChangesAsync();
+        });
+        await Scope(p=>p.GetRequiredService<ManualOrderService>().ConfirmAsync(assisted.Id,"receipt-assisted","verified assisted payment","test-admin"));
+        var plus = await Accounts(a=>a.SnapshotAsync(userId));
+        Assert(plus.Membership.Kind=="plus" && plus.Features.Single(x=>x.Key=="services.remote").Allowed,"paid Plus order grants remote entitlement");
+        Assert(plus.Membership.PlusExpiresAt?.ToUnixTimeSeconds()==clock.GetUtcNow().ToUnixTimeSeconds()+30*86400L,"Plus duration uses immutable paid order, not edited plan or accumulated ordinary membership");
+        await Scope(async p=>{
+            var db=p.GetRequiredService<AppDbContext>();
+            var saved=await db.Orders.SingleAsync(x=>x.Id==assisted.Id);
+            Assert(saved.ConfigurationServiceStatus=="pending" && saved.ConfigurationSessions==1 && saved.DurationDays==30 && saved.AmountMinor==2990,"order retains original service, price and duration after plan edits");
+        });
+        await Scope(p=>p.GetRequiredService<ManualOrderService>().CompleteConfigurationAsync(assisted.Id,"configuration delivered","test-admin"));
+        await Error(()=>Scope(p=>p.GetRequiredService<ManualOrderService>().CompleteConfigurationAsync(assisted.Id,"duplicate delivery","test-admin")),409,"service_not_pending");
+        var lifetime = await Scope(p=>p.GetRequiredService<ManualOrderService>().CreateAsync(userId,"mu-pro-lifetime"));
+        Assert(lifetime.AmountMinor==8880 && lifetime.DurationDays==0 && lifetime.GrantsMembership && lifetime.ConfigurationSessions==3,"88.8 lifetime includes permanent software access and three guidance sessions");
+        await Scope(p=>p.GetRequiredService<ManualOrderService>().ConfirmAsync(lifetime.Id,"receipt-lifetime","verified lifetime payment","test-admin"));
+        await Scope(p=>p.GetRequiredService<ManualOrderService>().ConfirmAsync(monthly.Id,"receipt-monthly","verified monthly payment","test-admin"));
+        await Scope(async p=>{
+            var db=p.GetRequiredService<AppDbContext>();
+            Assert((await db.Users.SingleAsync(x=>x.Id==userId)).ProExpiresAt==MembershipPlans.LifetimeExpiry,"monthly purchase never shortens lifetime or overflows expiry");
+            Assert((await db.Orders.SingleAsync(x=>x.Id==assisted.Id)).ConfigurationServiceStatus=="completed","service fulfillment persisted");
+            await DatabaseSetup.InitializeAsync(db);
+            Assert(await db.Plans.CountAsync(x=>x.Id.StartsWith("mu-pro-"))==3,"restart does not duplicate subscription catalogue");
+        });
+        clock.Advance(31*86400);
+        var lifetimeOnly = await Accounts(a=>a.SnapshotAsync(userId));
+        Assert(lifetimeOnly.Membership.Kind=="lifetime" && lifetimeOnly.Membership.Tier=="pro","Plus expiry preserves lifetime software membership");
+        Assert(new[]{"games.supported.view","schemes.premium.configure","schemes.game.view"}.All(key=>lifetimeOnly.Features.Single(x=>x.Key==key).Allowed),"lifetime keeps all advanced software content after Plus expires");
+        Assert(lifetimeOnly.Features.Single(x=>x.Key=="services.remote").Allowed && lifetimeOnly.Membership.RemoteSessionsRemaining==3,"lifetime retains its three guidance credits after Plus expires");
+        for(var used=0;used<3;used++)
+        {
+            await Scope(p=>p.GetRequiredService<ManualOrderService>().CompleteConfigurationAsync(lifetime.Id,"guidance delivered","test-admin",used));
+            await Error(()=>Scope(p=>p.GetRequiredService<ManualOrderService>().CompleteConfigurationAsync(lifetime.Id,"duplicate form submission","test-admin",used)),409,"service_not_pending");
+            Assert((await Accounts(a=>a.SnapshotAsync(userId))).Membership.RemoteSessionsRemaining==2-used,"one completed guidance consumes exactly one credit");
+        }
+        await Error(()=>Scope(p=>p.GetRequiredService<ManualOrderService>().CompleteConfigurationAsync(lifetime.Id,"fourth guidance rejected","test-admin",3)),409,"service_not_pending");
+        var exhausted=await Accounts(a=>a.SnapshotAsync(userId));
+        Assert(exhausted.Membership.Tier=="pro"&&!exhausted.Features.Single(x=>x.Key=="services.remote").Allowed,"using all guidance leaves permanent software membership intact");
+        await Scope(async p=>{
+            var db=p.GetRequiredService<AppDbContext>();
+            (await db.FeatureDefinitions.SingleAsync(x=>x.Key=="services.remote")).MinimumTier="standard";
+            await db.SaveChangesAsync();
+        });
+        Assert(!(await Accounts(a=>a.SnapshotAsync(userId))).Features.Single(x=>x.Key=="services.remote").Allowed,"feature minimum-tier edit cannot bypass Plus-only requirement");
+
+        var serviceUser=Guid.NewGuid().ToString("N");
+        await Scope(async p=>{var db=p.GetRequiredService<AppDbContext>();db.Users.Add(new(){Id=serviceUser,UserName="guidance-only",Email="guidance-only@example.test"});await db.SaveChangesAsync();});
+        var once=await Scope(p=>p.GetRequiredService<ManualOrderService>().CreateAsync(serviceUser,"mu-remote-once"));
+        Assert(once.AmountMinor==3000&&!once.GrantsMembership&&once.DurationDays==0&&once.ConfigurationSessions==1,"30 yuan guidance order is service-only");
+        Assert((await Accounts(a=>a.SnapshotAsync(serviceUser))).Membership.RemoteSessionsRemaining==0,"unpaid guidance order grants no credits");
+        await Scope(p=>p.GetRequiredService<ManualOrderService>().ConfirmAsync(once.Id,"receipt-guidance-only","verified service payment","test-admin"));
+        var serviceOnly=await Accounts(a=>a.SnapshotAsync(serviceUser));
+        Assert(serviceOnly.Membership.Tier=="standard"&&serviceOnly.Membership.ExpiresAt==null&&serviceOnly.Membership.RemoteSessionsRemaining==1,"paid guidance never turns zero days into lifetime membership");
+        Assert(serviceOnly.Features.Single(x=>x.Key=="services.remote").Allowed&&!serviceOnly.Features.Single(x=>x.Key=="schemes.premium.configure").Allowed,"service-only account can arrange guidance without unlocking software premium");
+        await Scope(async p=>Assert(!await p.GetRequiredService<AppDbContext>().MembershipChanges.AnyAsync(x=>x.UserId==serviceUser),"service payment creates no membership-change record"));
+        await Scope(p=>p.GetRequiredService<ManualOrderService>().CompleteConfigurationAsync(once.Id,"single guidance delivered","test-admin"));
+        Assert(!(await Accounts(a=>a.SnapshotAsync(serviceUser))).Features.Single(x=>x.Key=="services.remote").Allowed,"service-only contact access expires when the credit is consumed");
+
     }
 
     private async Task VerifyVersionOneUpgradeAsync()
@@ -276,19 +357,24 @@ sealed class Suite : IAsyncDisposable
         await using (var db = new AppDbContext(options))
         {
             await ExecuteFixtureAsync(db, fixture);
+            await db.Database.ExecuteSqlRawAsync("INSERT INTO Plans VALUES ('legacy-plan','历史套餐',60,1990,'CNY',1);");
+            await db.Database.ExecuteSqlRawAsync("INSERT INTO Orders (Id,UserId,PlanId,PlanName,DurationDays,Status,AmountMinor,Currency,CreatedAt,Provider) VALUES ('legacy-order','legacy-user','legacy-plan','历史套餐',60,'pending',1990,'CNY',1700000000,'manual');");
             Assert(await Scalar(db, "SELECT COUNT(*) FROM pragma_table_info('FeatureDefinitions') WHERE name='Version';") == 0, "frozen v1 fixture physically has no feature Version column");
             Assert(await Scalar(db, "SELECT Version FROM DatabaseSchemas WHERE Id=1;") == 1, "fixture starts at deployed schema one");
             await DatabaseSetup.InitializeAsync(db);
+            Assert(!(await db.Plans.SingleAsync(x=>x.Id=="legacy-plan")).Enabled,"catalogue upgrade retires old sales plans");
+            var legacyOrder=await db.Orders.SingleAsync(x=>x.Id=="legacy-order");
+            Assert(legacyOrder.DurationDays==60 && legacyOrder.AmountMinor==1990 && legacyOrder.ConfigurationSessions==0 && legacyOrder.Status=="pending","catalogue upgrade preserves existing orders and entitlements");
             var legacy = await db.Users.AsNoTracking().SingleAsync();
             Assert(legacy.Id == "legacy-user" && legacy.Email == "legacy@example.com" && legacy.ProExpiresAt == 1800000000
                 && legacy.PasswordHash == "fixture-password-hash" && legacy.SecurityStamp == "fixture-security-stamp", "upgrade preserves historical user, membership and credentials");
             var rule = await db.FeatureDefinitions.AsNoTracking().SingleAsync(x => x.Key == "library.manage");
             Assert(!rule.Enabled && rule.MinimumTier == "pro" && rule.UpdatedAt == 1700000001 && rule.Version == 1, "upgrade preserves operator rule and initializes its version");
-            var audit = await db.AuditEntries.AsNoTracking().SingleAsync();
+            var audit = await db.AuditEntries.AsNoTracking().SingleAsync(x=>x.Id=="legacy-audit");
             Assert(audit.Id == "legacy-audit" && audit.BeforeJson == "{\"legacy\":true}" && audit.AfterJson == "{\"enabled\":false}", "upgrade preserves historical audit payloads verbatim");
             Assert(await db.AuthSessions.CountAsync() == 1 && await db.MembershipChanges.CountAsync() == 1, "upgrade preserves sessions and membership history");
             Assert(await db.FeatureDefinitions.CountAsync() == AccountService.InitialFeatures.Length && await db.FeatureDefinitions.AllAsync(x => x.Version == 1), "newly seeded and migrated features both start at version one");
-            Assert(await Scalar(db, "SELECT Version FROM DatabaseSchemas WHERE Id=1;") == 4, "successful migration advances schema marker to four");
+            Assert(await Scalar(db, "SELECT Version FROM DatabaseSchemas WHERE Id=1;") == DatabaseSetup.CurrentVersion, "successful migration advances schema marker to four");
             Assert(await db.CompatibilityGames.CountAsync() >= 4 && !await db.CompatibilityTests.AnyAsync(), "upgrade seeds catalog without fabricated tests");
         }
         await using (var reopened = new AppDbContext(options))
@@ -297,7 +383,7 @@ sealed class Suite : IAsyncDisposable
             await DatabaseSetup.InitializeAsync(reopened);
             Assert(await Scalar(reopened, "SELECT COUNT(*) FROM pragma_table_info('FeatureDefinitions') WHERE name='Version';") == 1,
                 "repeated initialization does not repeat ALTER or duplicate column");
-            Assert(await reopened.Users.CountAsync() == 1 && await reopened.AuditEntries.CountAsync() == 1 && !(await reopened.FeatureDefinitions.SingleAsync(x => x.Key == "library.manage")).Enabled,
+            Assert(await reopened.Users.CountAsync() == 1 && await reopened.AuditEntries.CountAsync() == 2 && !(await reopened.FeatureDefinitions.SingleAsync(x => x.Key == "library.manage")).Enabled,
                 "reopening migrated database preserves users, audit and custom rules");
         }
 
@@ -319,7 +405,7 @@ sealed class Suite : IAsyncDisposable
                 "failed migration preserves historical data and rules");
             await check.Database.ExecuteSqlRawAsync("DROP TRIGGER fail_schema_update;");
             await DatabaseSetup.InitializeAsync(check);
-            Assert(await Scalar(check, "SELECT Version FROM DatabaseSchemas WHERE Id=1;") == 4, "migration can retry cleanly after failure is removed");
+            Assert(await Scalar(check, "SELECT Version FROM DatabaseSchemas WHERE Id=1;") == DatabaseSetup.CurrentVersion, "migration can retry cleanly after failure is removed");
         }
 
         var versionTwo = new DbContextOptionsBuilder<AppDbContext>().UseSqlite($"Data Source={Path.Combine(directory, "legacy-v2.sqlite")}").Options;
@@ -337,9 +423,9 @@ sealed class Suite : IAsyncDisposable
             Assert(await Scalar(db, "SELECT COUNT(*) FROM sqlite_master WHERE name='CompatibilityGames';") == 0, "failed v2 upgrade rolls back catalog table");
             await db.Database.ExecuteSqlRawAsync("DROP TRIGGER fail_schema_update;");
             await DatabaseSetup.InitializeAsync(db);
-            Assert((await db.DatabaseSchemas.SingleAsync()).Version == 4 && await db.CompatibilityGames.CountAsync() >= 4 && !await db.CompatibilityTests.AnyAsync() && !await db.GameTelemetry.AnyAsync(), "v2 retry creates v4 catalog with no reports");
+            Assert((await db.DatabaseSchemas.SingleAsync()).Version == DatabaseSetup.CurrentVersion && await db.CompatibilityGames.CountAsync() >= 4 && !await db.CompatibilityTests.AnyAsync() && !await db.GameTelemetry.AnyAsync(), "v2 retry creates v4 catalog with no reports");
             var user = await db.Users.SingleAsync();
-            Assert(user.Id == "legacy-user" && user.PasswordHash == "fixture-password-hash" && await db.AuthSessions.CountAsync() == 1 && await db.AuditEntries.CountAsync() == 1, "v2 upgrade preserves user credentials, sessions and audit");
+            Assert(user.Id == "legacy-user" && user.PasswordHash == "fixture-password-hash" && await db.AuthSessions.CountAsync() == 1 && await db.AuditEntries.CountAsync(x=>x.Id=="legacy-audit") == 1, "v2 upgrade preserves user credentials, sessions and audit");
             Assert((await db.FeatureDefinitions.SingleAsync(x => x.Key == "library.manage")).Version == 7, "v2 upgrade preserves feature configuration version");
             var catalogCount = await db.CompatibilityGames.CountAsync();
             await DatabaseSetup.InitializeAsync(db);

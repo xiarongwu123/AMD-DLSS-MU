@@ -1,0 +1,19 @@
+RX 7000 lmxxf integration
+
+AMDNR by 3zwr1
+https://github.com/3zwr1/AMD-NR---OptiScaler
+Copyright (c) 2026 3zwr1 (AMDNR).
+
+Neural network port, HIP kernels and runtime: lmxxf (Kien).
+https://github.com/lmxxf/dlss5-on-amd-9070xt-porting
+
+MU downloads the original AMDNR 0.3.5.8 release on demand and verifies the
+archive and each selected file by SHA-256. Its matched OptiScaler host,
+LmxxfNrRuntime.dll and authenticated LmxxfNrRuntime.pak remain unmodified.
+The optional launcher, Daniel runtime, Mochizuki components and optional
+third-party upscalers are not deployed by this route.
+
+Original licences, notices, the RDNA3 backend attribution and upstream
+README are installed in the game's Licenses directory. AMDNR's in-game
+menu and credits are retained. MU's integration is not an endorsement by
+the upstream authors, AMD or NVIDIA.

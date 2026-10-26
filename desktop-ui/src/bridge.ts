@@ -1,4 +1,4 @@
-import type { State } from "./types";
+import type { State, NeuralOptions } from "./types";
 interface Envelope {
   id?: string;
   ok?: boolean;
@@ -66,7 +66,7 @@ export async function rpc<T = void>(
         pending.delete(id);
         reject(new Error("操作仍未完成，请查看下载任务或诊断状态。"));
       },
-      command === "configure" || command === "applyPreset" || command === "update" || command === "magpie"
+      command === "recommendationApply" || command === "gameRecommendation" || command === "recommendationFeedback" || command === "recommendationVerify" || command === "configure" || command === "applyPreset" || command === "update" || command === "magpie" || command === "amdMagpie" || command === "daniel08"
         ? 3600000
         : 120000,
     );
@@ -76,7 +76,7 @@ export async function rpc<T = void>(
       if (!host.postMessageWithAdditionalObjects) {
         clearTimeout(timer);
         pending.delete(id);
-        reject(new Error("当前 WebView2 不支持拖入文件，请用添加游戏按钮。"));
+        reject(new Error("当前 WebView2 不支持传递文件，请更新 WebView2 后重试。"));
         return;
       }
       host.postMessageWithAdditionalObjects({ id, command, args }, files);
@@ -109,14 +109,14 @@ const previewState: State = {
     id: "preview",
     email: "preview@mu.local",
     membership: { tier: "free", expiresAt: null },
-    features: [],
-    paymentsEnabled: false,
+    features: [{key:"games.supported.view",enabled:true,minimumTier:"pro",allowed:false},{key:"dlss.configure",enabled:true,minimumTier:"standard",allowed:true}],
+    paymentsEnabled: true,
   },
   games: [
     {
       id: "preview-game",
       title: "我的游戏",
-      cover: "/artwork/mu-add-game-art.png",
+      cover: "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1091500/library_600x900.jpg",
       state: "Unconfigured",
       mode: null,
       steamAppId: null,
@@ -127,6 +127,15 @@ async function preview(
   command: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
+  if (command === "plans") return { paymentsEnabled:true,items:[
+    {id:"mu-pro-monthly",name:"高级会员",durationDays:30,configurationSessions:0,priceMinor:990,currency:"CNY"},
+    {id:"mu-pro-lifetime",name:"终身会员",durationDays:0,configurationSessions:3,priceMinor:8880,currency:"CNY"},
+    {id:"mu-pro-assisted",name:"高级 Plus 会员",durationDays:30,configurationSessions:1,priceMinor:2990,currency:"CNY"},
+    {id:"mu-remote-once",name:"远程指导服务",durationDays:0,grantsMembership:false,configurationSessions:1,priceMinor:3000,currency:"CNY"}
+  ]};
+  if (command === "orders") return {items:[],paymentsEnabled:true};
+  if (command === "refreshAccount") return;
+  if (command === "createOrder") throw new Error("浏览器仅预览套餐；请在 Windows 客户端创建真实付款申请。");
   if (command === "state") return structuredClone(previewState);
   if (command === "navigate") {
     previewState.page = args.page as State["page"];
@@ -154,15 +163,41 @@ async function preview(
       hipSetupPending: false,
     };
   }
+  if (["gameRecommendation","recommendationApply","recommendationVerify","recommendationFeedback"].includes(command)) throw new Error("智能推荐需要在 Windows 客户端进行真实检测，界面预览不模拟兼容结果。");
+  if (command === "neuralStatus") return null;
+  if (command === "neuralPlan") {
+    const options = args.neural as NeuralOptions;
+    const passes = options.passes ?? 1;
+    return { plan: { backend: options.backend === "auto" ? "lmxxf-rdna3" : options.backend,
+      graphicsApi: options.graphicsApi === "auto" ? "dx12" : options.graphicsApi,
+      proxy: options.proxy === "auto" ? "dxgi.dll" : options.proxy,
+      passes, modeLabel: passes === 1 ? "标准" : passes === 2 ? "增强" : passes === 3 ? "高质量" : "实验 / 压力测试",
+      statusLabel: "未验证", options, notices: ["界面预览：此处为示例匹配，真实安装与检测请使用 Windows 客户端。"] }, missingResources: [], installed: null };
+  }
   if (command === "checks")
     return [
-      {
-        title: "显卡",
-        detail: "预览示例，不代表本机检测结果。",
-        problem: false,
-        unknown: true,
-      },
-    ];
+      ["显卡", "示例：已识别 AMD Radeon RX 7900 XT。", false],
+      ["驱动", "示例：已读到驱动版本，需在 AMD 软件中核对。", true],
+      ["安装记录", "示例：已找到这款游戏的安装记录。", false],
+      ["安装文件完整性", "示例：MU 安装的文件与记录一致。", false],
+      ["帧率方案加载组件", "示例：已找到加载文件。", false],
+      ["方案设置", "示例：已找到 OptiScaler 设置。", false],
+      ["XeFG 组件", "示例：已找到帧生成组件。", false],
+      ["AMD HIP", "示例：已找到 HIP 运行组件。", false],
+      ["神经渲染模型组件", "示例：已找到模型组件。", false],
+      ["神经渲染运行组件 1", "示例：已找到运行组件。", false],
+      ["神经渲染运行组件 2", "示例：已找到运行组件。", false],
+      ["神经渲染运行组件 3", "示例：已找到运行组件。", false],
+      ["模型数据", "示例：已找到模型数据。", false],
+      ["神经渲染模型版本", "示例：组件版本符合安装要求。", false],
+      ["游戏加载组件", "示例：是否被游戏加载，需启动后验证。", true],
+      ["游戏图形接口", "示例：实际游戏接口需启动后验证。", true],
+    ].map(([title, detail, unknown]) => ({ title, detail, unknown, problem: false }));
+  if (command === "supportedGames")
+    return { asOf: "2026-10-14", games: [
+      { title: "赛博朋克 2077", canonicalName: "Cyberpunk 2077", steamAppId: "1091500", aliases: ["Cyberpunk 2077", "Cyberpunk2077"] },
+      { title: "极限竞速：地平线 5", canonicalName: "Forza Horizon 5", steamAppId: "1551360", aliases: ["ForzaHorizon5"] }
+    ] };
   if (command === "wishes")
     return { items: [], total: 0, page: 1, pageSize: 20, counts: {} };
   if (command === "presets")

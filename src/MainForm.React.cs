@@ -132,11 +132,13 @@ public sealed partial class MainForm
     {
         version = AutoUpdate.DisplayVersion, page = activePage switch { 1 => "library", 2 => "about", 3 => "downloads", 4 => "help", 5 => "settings", 6 => "account", 7 => "magpie", 8 => "wishes", _ => "home" },
         games = libraryGames.Select(g => new { id = ReactGameId(g.ExePath), g.Title,
+            searchTerms = GameSearch.Terms(g.Title, g.SteamAppId, g.InstallDirectory),
             cover = ReactCover(g), state = GetLibraryState(g).ToString(), mode = GameManagement.Read(g.ExePath)?.Mode, g.SteamAppId }).ToArray(),
         account = accountClient.Account, online = accountClient.IsOnline, reconnecting = accountClient.IsReconnecting, viewAvailable = accountClient.CanKeepVerifiedView,
-        busy, scanning = !scan.Enabled, status = ReactAccountStatus(status.Text), accountFeedback = ReactAccountStatus(accountFeedback),
+        busy=busy||smartApplying, scanning = !scan.Enabled, status = ReactAccountStatus(status.Text), accountFeedback = ReactAccountStatus(accountFeedback),
+        magpiePreparing,
         settings = new { dark = darkMode, english, autoUpdate = autoCheckUpdates, presentMon = presentMonPath ?? "" },
-        downloads = downloadRows.Select(r => new { id = r.Id, r.Title, r.State, r.Percent, r.Size, r.Detail, paused = r.Session.Paused }).ToArray(),
+        downloads = downloadRows.Select(r => new { id = r.Id, r.Title, r.State, r.Percent, r.Size, r.Detail, paused = r.Session.Paused, r.Independent }).ToArray(),
         magpieStatus = magpieStatus.Text
     };
     string ReactAccountStatus(string text) => accountClient.IsOnline && IsAccountConnectionFeedback(text)
@@ -169,16 +171,28 @@ public sealed partial class MainForm
         return "title:" + Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(title)))[..24];
     }
     string ReactPresetGameName(string exe) => libraryGames.First(g => g.ExePath.Equals(exe, StringComparison.OrdinalIgnoreCase)).Title;
-    static string CurrentPresetVersion(int mode) => mode switch
+    static string CurrentPresetVersion(int mode, string? backend = null) => mode switch
     {
         0 => Core.ReviewedTag,
         2 => "OptiScaler " + OptiInstaller.Version,
         4 => "DLSS5 + XeFG 2X (v1.10.3.1/v10.6)",
+        6 => backend == Mu.Neural.NeuralBackends.LmxxfRdna3 ? "AMDNR " + Mu.Neural.NeuralBackends.AmdNrVersion : NeuralRenderInstaller.Version,
+        8 => LegacyBridge.Version,
         _ => throw new IOException("未知图形方案。")
     };
     static string Arg(JsonElement args, string name, string fallback = "") => args.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? fallback : fallback;
     static bool Flag(JsonElement args, string name, bool fallback = false) => args.TryGetProperty(name, out var value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False ? value.GetBoolean() : fallback;
     static int Number(JsonElement args, string name, int fallback = 0) => args.TryGetProperty(name, out var value) && value.TryGetInt32(out var result) ? result : fallback;
+    NeuralOptions ReadNeuralOptions(JsonElement args)
+    {
+        var options = args.TryGetProperty("neural", out var element)
+            ? element.Deserialize<NeuralOptions>(reactJson) ?? throw new IOException("神经渲染参数为空。") : new();
+        NeuralRenderPlanner.Validate(options); return options;
+    }
+    static object? NeuralReceipt(GameRecord? record) => record is { Phase: "installed", Neural: { } n }
+        ? new { n.Backend, n.Passes, n.Proxy, n.GraphicsApi, n.Options, n.PackageVersion,
+            statusLabel = Mu.Neural.NeuralRules.StatusLabel(n.Verification),
+            modeLabel = n.Passes switch { 1 => "标准", 2 => "增强", 3 => "高质量", <= 8 => "实验", _ => "实验 / 压力测试" } } : null;
     void PublishReactState(bool force = false)
     {
         if (!reactReady) return;
@@ -271,43 +285,96 @@ public sealed partial class MainForm
             }
             case "presets":
             {
-                var exe = ReactGame(args);
-                return await accountClient.GetPresetsAsync(ReactPresetGameKey(exe), lifetime.Token);
+                var presetPage = int.TryParse(Arg(args, "page"), out var requestedPage) ? requestedPage : 1;
+                return await accountClient.GetPresetsAsync(lifetime.Token, presetPage);
             }
             case "preset": return await accountClient.GetPresetAsync(Arg(args, "id"), lifetime.Token);
             case "submitPreset":
             {
                 await ReactAuthorize("configuration.edit");
-                var exe = ReactGame(args);
-                var (record, settings) = CommunityPresetConfig.Capture(exe);
-                var goal = Arg(args, "goal");
-                if (goal is not ("quality" or "performance" or "custom") ||
-                    (goal == "quality" && record.Mode != 0) || (goal == "performance" && record.Mode != 4))
-                    throw new IOException("分享类型与实际安装方案不匹配。");
+                var includeConfiguration = !args.TryGetProperty("includeConfiguration", out _) || Flag(args, "includeConfiguration");
+                var scope = Arg(args, "scope") is "universal" ? "universal" : "game";
+                var exe = includeConfiguration || scope == "game" ? ReactGame(args) : null;
+                var mode = -1; var version = "resources-v1"; var vulkan = false;
+                PresetSetting[] settings = [];
+                var goal = "custom";
+                if (includeConfiguration)
+                {
+                    var captured = CommunityPresetConfig.Capture(exe!);
+                    mode = captured.Record.Mode; version = captured.Record.Version; settings = captured.Settings;
+                    vulkan = CommunityPresetConfig.UsesVulkan(captured.Record); goal = Arg(args, "goal");
+                    if (goal is not ("quality" or "performance" or "custom") ||
+                        (goal == "quality" && mode is not (0 or 6)) || (goal == "performance" && mode != 4))
+                        throw new IOException("分享类型与实际安装方案不匹配。");
+                }
+                PresetAttachmentUpload? attachment = null;
+                var files = (additionalObjects ?? Array.Empty<object>()).OfType<CoreWebView2File>().ToArray();
+                if (files.Length > 1) throw new IOException("每条分享最多上传一个附件，多文件请先打包。");
+                if (files.Length == 1)
+                {
+                    var path = files[0].Path; Core.RejectLinks(path);
+                    var info = new FileInfo(path);
+                    if (info.Length is < 1 or > PresetResources.MaxAttachmentBytes) throw new IOException("附件不能超过10 MB。");
+                    using var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    if (input.Length is < 1 or > PresetResources.MaxAttachmentBytes) throw new IOException("附件不能超过10 MB。");
+                    var bytes = new byte[checked((int)input.Length)];
+                    await input.ReadExactlyAsync(bytes, lifetime.Token);
+                    attachment = new(info.Name, Convert.ToBase64String(bytes)); PresetResources.ValidateAttachment(attachment);
+                }
                 return await accountClient.SubmitPresetAsync(new PresetSubmission(
-                    Arg(args, "submissionId"), ReactPresetGameKey(exe), ReactPresetGameName(exe),
-                    record.Mode, goal, CommunityPresetConfig.UsesVulkan(record),
-                    record.Version, Arg(args, "title"), Arg(args, "description"),
+                    Arg(args, "submissionId"), exe == null ? "universal" : ReactPresetGameKey(exe), exe == null ? "通用资源" : ReactPresetGameName(exe),
+                    mode, goal, vulkan, version, Arg(args, "title"), Arg(args, "description"),
                     Arg(args, "imageData") is { Length: > 0 } image ? image : null, settings,
-                    Arg(args, "thumbnailData") is { Length: > 0 } thumbnail ? thumbnail : null), lifetime.Token);
+                    Arg(args, "thumbnailData") is { Length: > 0 } thumbnail ? thumbnail : null, scope,
+                    Arg(args, "resourceUrl"), Arg(args, "resourceCode"), attachment), lifetime.Token);
+            }
+            case "presetAttachment":
+            {
+                var download = await accountClient.GetPresetAttachmentAsync(Arg(args, "id"), lifetime.Token);
+                var bytes = PresetResources.ValidateAttachment(new(download.Attachment.Name, download.Data));
+                if (bytes.Length != download.Attachment.Size || !Convert.ToHexString(SHA256.HashData(bytes)).Equals(download.Attachment.Sha256, StringComparison.OrdinalIgnoreCase))
+                    throw new IOException("附件校验失败，请重新下载。");
+                using var save = new SaveFileDialog { FileName = download.Attachment.Name, Filter = "附件文件|*.*", OverwritePrompt = true };
+                if (save.ShowDialog(this) != DialogResult.OK) return false;
+                Core.RejectLinks(save.FileName);
+                var temporary = save.FileName + ".mu-download-" + Guid.NewGuid().ToString("N");
+                try
+                {
+                    await File.WriteAllBytesAsync(temporary, bytes, lifetime.Token);
+                    Core.RejectLinks(save.FileName); File.Move(temporary, save.FileName, true);
+                }
+                finally { if (File.Exists(temporary)) File.Delete(temporary); }
+                return true;
+            }
+            case "presetResource":
+            {
+                var detail = await accountClient.GetPresetAsync(Arg(args, "id"), lifetime.Token);
+                var resourceLink = PresetResources.ValidateUrl(detail.Item.ResourceUrl) ?? throw new IOException("分享者未提供网盘链接。");
+                if (Flag(args, "copy")) Clipboard.SetText(resourceLink + (detail.Item.ResourceCode is { Length: > 0 } code ? "\r\n提取码：" + code : ""));
+                else Process.Start(new ProcessStartInfo(resourceLink) { UseShellExecute = true });
+                return null;
             }
             case "applyPreset":
             {
-                if (reactMutation || busy) throw new IOException("请等待当前操作完成。");
+                if (reactMutation || busy || smartApplying && !smartExecutingInstall) throw new IOException("请等待当前操作完成。");
                 reactMutation = true; reactFailure = null;
                 try
                 {
                     await ReactAuthorize("configuration.edit");
                     var exe = ReactGame(args);
                     var preset = await accountClient.GetPresetAsync(Arg(args, "id"), lifetime.Token);
-                    if (preset.Item.GameKey != ReactPresetGameKey(exe)) throw new IOException("该方案不属于当前游戏。");
+                    if (RenderSchemes.PremiumMode(preset.Item.Mode)) await ReactAuthorize("schemes.premium.configure");
+                    if (preset.Item.Mode == -1) throw new IOException("这条分享仅包含资源，请下载附件或打开网盘查看使用说明。");
+                    if (preset.Item.Scope != "universal" && preset.Item.GameKey != ReactPresetGameKey(exe)) throw new IOException("这是其他游戏的专用方案，请选择对应游戏或使用通用方案。");
                     PresetRules.Validate(preset.Item.Mode, preset.Settings);
-                    if (!CurrentPresetVersion(preset.Item.Mode).Equals(preset.Item.ComponentVersion, StringComparison.OrdinalIgnoreCase))
+                    if (preset.Item.Mode == 6) neuralOptions = CommunityPresetConfig.NeuralOptionsFromPreset(preset.Settings, preset.Item.ComponentVersion);
+                    if (!CurrentPresetVersion(preset.Item.Mode, preset.Item.Mode == 6 ? neuralOptions.Backend : null).Equals(preset.Item.ComponentVersion, StringComparison.OrdinalIgnoreCase))
                         throw new IOException("分享方案的组件版本与当前 MU 不同，暂不能一键复用。");
                     var installed = GameManagement.Read(exe);
                     if (installed is { Phase: "installed" } &&
                         (installed.Mode != preset.Item.Mode || !installed.Version.Equals(preset.Item.ComponentVersion, StringComparison.OrdinalIgnoreCase) ||
-                         installed.Mode == 2 && CommunityPresetConfig.UsesVulkan(installed) != preset.Item.Vulkan))
+                         installed.Mode == 2 && CommunityPresetConfig.UsesVulkan(installed) != preset.Item.Vulkan ||
+                         installed.Neural != null && installed.Neural.Backend != neuralOptions.Backend))
                     {
                         selectedGame = exe;
                         await RestoreAsync();
@@ -318,12 +385,14 @@ public sealed partial class MainForm
                     if (installed is not { Phase: "installed" })
                     {
                         selectedGame = exe;
-                        installMode.SelectedIndex = preset.Item.Mode switch { 0 => 0, 4 => 2, _ => 1 };
+                        installMode.SelectedIndex = preset.Item.Mode switch { 0 => 0, 4 => 2, 6 => 4, _ => 1 };
                         optiVulkan = preset.Item.Vulkan; optiFgInput = "nofg";
                         await InstallAsync();
                         if (reactFailure != null) throw new IOException(reactFailure);
                     }
-                    await Task.Run(() => CommunityPresetConfig.Apply(exe, preset), lifetime.Token);
+                    if(preset.Item.Mode==6)await ValidateExistingSmartSettingsAsync(exe,CommunityPresetConfig.NeuralOptionsFromPreset(preset.Settings,preset.Item.ComponentVersion));
+                    var localPreset = preset with { Item = preset.Item with { GameKey = ReactPresetGameKey(exe), GameName = ReactPresetGameName(exe) } };
+                    await Task.Run(() => CommunityPresetConfig.Apply(exe, localPreset), lifetime.Token);
                     status.Text = "已应用社区方案：" + preset.Item.Title + "。效果请在游戏中确认。";
                     libraryStateCache.Clear();
                     return null;
@@ -353,10 +422,16 @@ public sealed partial class MainForm
                 ReactEvent("detection",new {gameId=Arg(args,"gameId"),stage="正在读取显卡与专用显存"});
                 var gpu=SmartRenderAdvisor.SelectGpu(await new CompatibilityEnvironmentReader().ReadGpusAsync(lifetime.Token));
                 if(gpu==null)throw new IOException("没有读取到显卡，可以重新检测或选择自定义方案。");
+                neuralGpuRead=Task.FromResult<Mu.Compatibility.CompatibilityGpu?>(gpu); neuralGpuReadAt=DateTime.UtcNow;
                 ReactEvent("detection",new {gameId=Arg(args,"gameId"),stage="正在检查 HIP 和游戏组件"});
                 var checks=await Task.Run(()=> {var rx=GameManagement.HasRx6000([gpu.Name]);var hip=rx?HipRuntime.HasVersion72():SmartRenderDiagnostics.HasHipRuntime(); return (quality:(hip||rx)&&!GameManagement.Check(target,true,true,0).Blocked,combined:(hip||rx)&&!GameManagement.Check(target,true,true,4).Blocked,hipPending:rx&&!hip);},lifetime.Token);
                 var screen=Screen.FromControl(this).Bounds;
-                return new {gpu,width=screen.Width,height=screen.Height,recommendation=SmartRenderAdvisor.Recommend(gpu,checks.quality,checks.combined),hipSetupPending=checks.hipPending};
+                var is32Bit=Core.IsX86(target);
+                var graphicsApi="unknown";
+                if(is32Bit)try{graphicsApi=X86Bridge.DetectApi(target);}catch(Exception e)when(e is IOException or BadImageFormatException){ }
+                return new {gpu,width=screen.Width,height=screen.Height,recommendation=SmartRenderAdvisor.Recommend(gpu,checks.quality,checks.combined),hipSetupPending=checks.hipPending,is32Bit,graphicsApi};
+            case "supportedGames": return await accountClient.GetSupportedGamesAsync(lifetime.Token);
+            case "remoteService": await ReactAuthorize("services.remote"); return true;
             case "checks": await ReactAuthorize("diagnostics.use"); var checkExe=ReactGame(args); return await Task.Run(()=>SmartRenderDiagnostics.Check(checkExe),lifetime.Token);
             case "inspect": await ReactAuthorize("diagnostics.use"); var inspectExe=ReactGame(args); return await Task.Run(()=>new {check=GameManagement.Check(inspectExe,false),record=GameManagement.Read(inspectExe),runtime=GameManagement.Runtime(inspectExe)},lifetime.Token);
             case "exportDiagnostic":
@@ -364,33 +439,96 @@ public sealed partial class MainForm
                 if (!Flag(args,"save")) return text;
                 using(var save=new SaveFileDialog {Filter="诊断文件 (*.json)|*.json",FileName="MU-diagnostic-"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+".json"}) if(save.ShowDialog(this)==DialogResult.OK){await ReactAuthorize("diagnostics.use");await File.WriteAllTextAsync(save.FileName,text,lifetime.Token);} return null;
             case "launch": await LaunchGameAsync(ReactGame(args)); return null;
-            case "configure": case "restore": case "magpie": case "update":
-                if (reactMutation || busy) throw new IOException("请等待当前操作完成。");
+            case "gameRecommendation": return await BuildSmartRecommendationAsync(args);
+            case "recommendationApply": return await ApplySmartRecommendationAsync(args);
+            case "recommendationVerify":
+            {
+                await ReactAuthorize("schemes.game.view");var observed=VerifySmart(ReactGame(args),Arg(args,"feedback","unknown"));
+                return new{verification=observed.Result,fallback=observed.Advice};
+            }
+            case "recommendationFeedback": await SubmitSmartFeedbackAsync(ReactGame(args),args); return true;
+            case "neuralStatus": return NeuralReceipt(GameManagement.Read(ReactGame(args)));
+            case "neuralPlan":
+            {
+                await ReactAuthorize("schemes.premium.configure"); var exe = ReactGame(args);
+                var plan = await BuildNeuralPlanAsync(exe, ReadNeuralOptions(args));
+                return new { plan, missingResources = await Task.Run(() => NeuralRenderInstaller.MissingResources(exe, plan), lifetime.Token),
+                    resourcePreparation = await Task.Run(() => NeuralRenderInstaller.ResourcePreparation(exe, plan), lifetime.Token),
+                    installed = NeuralReceipt(GameManagement.Read(exe)) };
+            }
+            case "neuralResources":
+            {
+                if (busy || reactMutation) throw new IOException("请等待当前操作完成。");
+                await ReactAuthorize("schemes.premium.configure");
+                using var picker = new FolderBrowserDialog { Description = "选择你有权使用的模型与运行资源目录。MU 只导入模型、已核验 Runtime 和 NVIDIA DLL，不运行目录中的安装器。", UseDescriptionForTitle = true };
+                if (picker.ShowDialog(this) != DialogResult.OK) return false;
+                reactMutation = true;
+                try { await Task.Run(() => NeuralRenderInstaller.ImportResources(picker.SelectedPath), lifetime.Token); return true; }
+                finally { reactMutation = false; }
+            }
+            case "neuralUpdate":
+            {
+                if (busy || reactMutation) throw new IOException("请等待当前操作完成。");
+                reactMutation = true;
+                try
+                {
+                    await ReactAuthorize("schemes.premium.configure"); var exe = ReactGame(args);
+                    var record = GameManagement.Read(exe);
+                    if (record is not { Phase: "installed", Neural: not null }) throw new IOException("请先完成神经渲染配置。");
+                    var options = ReadNeuralOptions(args);
+                    await ValidateExistingSmartSettingsAsync(exe,options with{Backend=record.Neural.Backend});
+                    var plan = await BuildNeuralPlanAsync(exe, options with { Backend = record.Neural.Backend, Proxy = record.Neural.Proxy, GraphicsApi = record.Neural.GraphicsApi });
+                    using var transaction = BeginAccountTransaction();
+                    await Task.Run(() => NeuralRenderInstaller.UpdateSettings(exe, plan), lifetime.Token);
+                    return NeuralReceipt(GameManagement.Read(exe));
+                }
+                finally { reactMutation = false; libraryStateCache.Clear(); }
+            }
+            case "magpie": await StartMagpieAsync(); return null;
+            case "amdMagpie": return await StartAmdMagpieAsync();
+            case "configure": case "restore": case "daniel08": case "update":
+                if (reactMutation || busy || smartApplying && !smartExecutingInstall) throw new IOException("请等待当前操作完成。");
                 reactMutation=true; reactFailure=null;
                 try
                 {
                     if(command=="configure")
                     {
-                        var mode=Number(args,"mode",-1); if(mode is not (0 or 2 or 4))throw new IOException("未知图形方案。");
-                        var configureExe = ReactGame(args); selectedGame=configureExe; installMode.SelectedIndex=mode==0?0:mode==4?2:1;
+                        var mode=Number(args,"mode",-1); if(mode is not (0 or 2 or 4 or 5 or 6 or 8))throw new IOException("未知图形方案。");
+                        var configureExe = ReactGame(args);
+                        RenderSchemes.Validate(Arg(args,"scheme"), mode, Core.IsX86(configureExe));
+                        var manualScheme=Arg(args,"scheme");
+                        if(manualScheme.Length==0||manualScheme=="game")manualScheme=mode switch{4=>"fps",5 or 8=>"legacy",2=>"standard",_=>"compat"};
+                        await ManualSmartPreflightAsync(configureExe,manualScheme,args);
+                        if (RenderSchemes.PremiumMode(mode)) await ReactAuthorize("schemes.premium.configure");
+                        selectedGame=configureExe; installMode.SelectedIndex=mode==8?5:mode==6?4:mode==0?0:mode==4?2:mode==5?3:1;
+                        neuralOptions = ReadNeuralOptions(args);
+                        if(neuralOptions.Backend=="auto"&&smartPreflightBackend!=null)neuralOptions=neuralOptions with{Backend=smartPreflightBackend};
+                        x86GraphicsApi=InstallationContext.BridgeApi(mode,Arg(args,"x86Api","auto"));
                         optiVulkan=Flag(args,"vulkan");optiFgInput=Arg(args,"fgInput","nofg"); if(optiFgInput is not ("nofg" or "fsrfg" or "dlssg"))throw new IOException("未知帧生成入口。");
-                        await InstallAsync();
+                        var installedSuccessfully=await InstallAsync(InstallationContext.Read(args));
                         if(reactFailure!=null)throw new IOException(reactFailure);
-                        if(!IsConfigured(configureExe))throw new IOException(status.Text);
+                        if(!installedSuccessfully||!IsConfigured(configureExe))throw new IOException(status.Text);
+                        if(mode==6) return NeuralReceipt(GameManagement.Read(configureExe));
                     }
-                    else if(command=="restore"){selectedGame=ReactGame(args);await RestoreAsync();}
-                    else if(command=="magpie")await StartMagpieAsync();
+                    else if(command=="restore")
+                    {
+                        selectedGame=ReactGame(args);await RestoreAsync();
+                        if(GameManagement.Read(selectedGame) is {Phase:not "restored"})throw new IOException(status.Text);
+                    }
+                    else if(command=="daniel08")return await StartDaniel08Async();
                     else await CheckAppUpdateAsync(false);
                     return null;
                 }
-                finally { reactMutation=false; libraryStateCache.Clear(); }
+                finally { reactMutation=false; smartPreflightExe=null; smartPreflightBackend=null; libraryStateCache.Clear(); }
             case "downloadAction":
                 var row=downloadRows.FirstOrDefault(r=>r.Id==Arg(args,"id")) ?? throw new IOException("下载任务不存在。");
                 switch(Arg(args,"action"))
                 {
                     case "pause": if(row.Pause.Enabled){if(row.Session.Paused)await ReactAuthorize(row.FeatureKey);row.Session.TogglePause();}break;
                     case "cancel": row.Session.Cancel();break;
-                    case "retry": if(reactMutation||busy)throw new IOException("请等待当前操作完成。");reactMutation=true;try{await row.RetryAction();}finally{reactMutation=false;}break;
+                    case "retry":
+                        if(row.Independent){await row.RetryAction();break;}
+                        if(reactMutation||busy)throw new IOException("请等待当前操作完成。");reactMutation=true;try{await row.RetryAction();}finally{reactMutation=false;}break;
                     default:throw new IOException("未知下载操作。");
                 }
                 return null;
@@ -425,12 +563,12 @@ public sealed partial class MainForm
         }
     }
 
-    async Task<DialogResult> UiMessageAsync(string text, string title, MessageBoxButtons buttons=MessageBoxButtons.OK)
+    async Task<DialogResult> UiMessageAsync(string text, string title, MessageBoxButtons buttons=MessageBoxButtons.OK, string? confirmLabel=null, MessageBoxDefaultButton defaultButton=MessageBoxDefaultButton.Button1)
     {
-        if (!reactReady) return MessageBox.Show(this,text,title,buttons);
+        if (!reactReady) return MessageBox.Show(this,text,title,buttons,MessageBoxIcon.None,defaultButton);
         var id=Guid.NewGuid().ToString("N");
         var completion=new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        reactPrompts.Add(id,completion);ReactEvent("prompt",new {id,title,text,confirm=buttons==MessageBoxButtons.YesNo});
+        reactPrompts.Add(id,completion);ReactEvent("prompt",new {id,title,text,confirm=buttons==MessageBoxButtons.YesNo,confirmLabel});
         using var registration=lifetime.Token.Register(()=>completion.TrySetResult(false));
         try {return await completion.Task?buttons==MessageBoxButtons.YesNo?DialogResult.Yes:DialogResult.OK:DialogResult.No;}
         finally {reactPrompts.Remove(id);}

@@ -11,6 +11,23 @@ public static class ApiEndpoints
     public static void MapAccountApi(this WebApplication app)
     {
         var api = app.MapGroup("/api/v1");
+        api.MapGet("/render-rules", async (string gameId, int? format, NeuralRuleStore rules, HttpContext context, ClaimsPrincipal user, AccountService accounts, AppDbContext db) =>
+        {
+            if (!System.Text.RegularExpressions.Regex.IsMatch(gameId, "^[a-z0-9:_-]{1,100}$")) return Results.BadRequest();
+            context.Response.Headers.CacheControl = "no-store";
+            var account = await accounts.SnapshotAsync(UserId(user));
+            if (account.Membership.Tier != "pro" || !account.Features.Any(f => f.Key == "schemes.game.view" && f.Allowed))
+                return Results.Json(new { code = "pro_required", message = "游戏专属推荐需要有效的高级会员。", account }, statusCode: 403);
+            try
+            {
+                var document = rules.Read();
+                if(format==2)return Results.Ok(await RecommendationEvidence.AttachAsync(document with {Rules=document.Rules.Where(r=>r.GameId==gameId).ToArray()},gameId,db,DateTimeOffset.UtcNow));
+                // Keep strict older clients compatible: no new fields on the legacy response.
+                return Results.Ok(new {document.SchemaVersion,document.Revision,document.ExpiresUtc,Rules=document.Rules.Where(r=>r.GameId==gameId).ToArray()});
+            }
+            catch (Exception e) when (e is IOException or InvalidDataException or System.Text.Json.JsonException)
+            { return Results.Json(new { message = "兼容规则暂不可用。" }, statusCode: 503); }
+        }).RequireAuthorization("Client");
         api.MapPost("/auth/code", async (CodeRequest input, AccountService accounts, CancellationToken ct) =>
         {
             await accounts.RequestCodeAsync(input, ct);
@@ -47,19 +64,32 @@ public static class ApiEndpoints
             var account = await accounts.SnapshotAsync(UserId(user));
             var feature = account.Features.SingleOrDefault(x => x.Key == input.FeatureKey);
             var allowed = feature?.Allowed == true;
-            var reason = feature == null ? "unknown_feature" : !feature.Enabled ? "feature_disabled" : !allowed ? "pro_required" : "allowed";
+            var reason = feature == null ? "unknown_feature" : !feature.Enabled ? "feature_disabled" : !allowed ? input.FeatureKey == "services.remote" ? "remote_service_required" : "pro_required" : "allowed";
             return Results.Json(new { allowed, reason, account, code = allowed ? null : reason,
-                message = allowed ? null : reason == "pro_required" ? "此功能需要有效的 Pro 会员。" : "该功能暂不可用。" }, statusCode: allowed ? 200 : 403);
+                message = allowed ? null : reason == "remote_service_required" ? "需要有效的 Plus 权益或剩余远程指导次数。" : reason == "pro_required" ? "此功能需要有效的 Pro 会员。" : "该功能暂不可用。" }, statusCode: allowed ? 200 : 403);
+        });
+        authenticated.MapGet("/catalog/supported-games", async (ClaimsPrincipal user, AccountService accounts, HttpContext context) =>
+        {
+            context.Response.Headers.CacheControl = "no-store";
+            var account = await accounts.SnapshotAsync(UserId(user));
+            if (account.Membership.Tier != "pro")
+                return Results.Json(new { code = "pro_required", message = "支持游戏库需要有效的高级会员。", account }, statusCode: 403);
+            if (!account.Features.Any(f => f.Key == "games.supported.view" && f.Allowed))
+                return Results.Json(new { code = "feature_disabled", message = "支持游戏库暂不可用。", account }, statusCode: 403);
+            using var stream = typeof(ApiEndpoints).Assembly.GetManifestResourceStream("Mu.Server.SupportedGames")
+                ?? throw new ApiException(503, "catalog_unavailable", "支持游戏库暂未配置，请联系管理员。");
+            using var document = await System.Text.Json.JsonDocument.ParseAsync(stream);
+            return Results.Ok(new { catalog = document.RootElement.Clone(), account });
         });
         api.MapGet("/plans", async (AppDbContext db, ManualOrderService orders) => Results.Ok(new
         {
-            items = await db.Plans.AsNoTracking().Where(x => x.Enabled).Select(x => new { x.Id, x.Name, x.DurationDays, x.PriceMinor, x.Currency }).ToArrayAsync(),
+            items = await db.Plans.AsNoTracking().Where(x => x.Enabled).OrderBy(x=>x.Id=="mu-pro-monthly" ? 0 : x.Id=="mu-pro-lifetime" ? 1 : x.Id=="mu-pro-assisted" ? 2 : 3).ThenBy(x=>x.PriceMinor).Select(x => new { x.Id, x.Name, x.DurationDays, x.GrantsMembership, x.ConfigurationSessions, x.PriceMinor, x.Currency }).ToArrayAsync(),
             paymentsEnabled = await orders.AvailableAsync(), paymentMethod = await orders.AvailableAsync() ? "manual" : null
         }));
         authenticated.MapPost("/orders", async (CreateOrderRequest input, ClaimsPrincipal user, ManualOrderService orders, CancellationToken ct) =>
         {
             var order = await orders.CreateAsync(UserId(user), input.PlanId, ct);
-            return Results.Ok(new { order.Id, order.PlanId, order.PlanName, order.DurationDays, order.Status,
+            return Results.Ok(new { order.Id, order.PlanId, order.PlanName, order.DurationDays, order.GrantsMembership, order.ConfigurationSessions, order.ConfigurationSessionsUsed, order.ConfigurationServiceStatus, order.Status,
                 order.AmountMinor, order.Currency, order.CreatedAt, payment = orders.PaymentDetails });
         });
         authenticated.MapPost("/orders/{orderId}/review", async (string orderId, ClaimsPrincipal user, ManualOrderService orders, CancellationToken ct) =>
@@ -71,15 +101,15 @@ public static class ApiEndpoints
         {
             var id = UserId(user);
             return Results.Ok(new { items = await db.Orders.AsNoTracking().Where(x => x.UserId == id).OrderByDescending(x => x.CreatedAt).Take(100)
-                .Select(x => new { x.Id, x.PlanId, x.PlanName, x.DurationDays, x.Status, x.AmountMinor, x.Currency, x.CreatedAt, x.PaidAt }).ToArrayAsync(), paymentsEnabled = await orders.AvailableAsync() });
+                .Select(x => new { x.Id, x.PlanId, x.PlanName, x.DurationDays, x.GrantsMembership, x.ConfigurationSessions, x.ConfigurationSessionsUsed, x.ConfigurationServiceStatus, x.Status, x.AmountMinor, x.Currency, x.CreatedAt, x.PaidAt }).ToArrayAsync(), paymentsEnabled = await orders.AvailableAsync() });
         });
         authenticated.MapGet("/orders/{orderId}", async (string orderId, ClaimsPrincipal user, AppDbContext db, ManualOrderService orders) =>
         {
             var id = UserId(user);
             var order = await db.Orders.AsNoTracking().Where(x => x.Id == orderId && x.UserId == id)
-                .Select(x => new { x.Id, x.PlanId, x.PlanName, x.DurationDays, x.Status, x.AmountMinor, x.Currency, x.CreatedAt, x.PaidAt }).SingleOrDefaultAsync();
+                .Select(x => new { x.Id, x.PlanId, x.PlanName, x.DurationDays, x.GrantsMembership, x.ConfigurationSessions, x.ConfigurationSessionsUsed, x.ConfigurationServiceStatus, x.Status, x.AmountMinor, x.Currency, x.CreatedAt, x.PaidAt }).SingleOrDefaultAsync();
             return order == null ? Results.NotFound(new ApiError("order_not_found", "订单不存在。"))
-                : Results.Ok(new { order.Id, order.PlanId, order.PlanName, order.DurationDays, order.Status,
+                : Results.Ok(new { order.Id, order.PlanId, order.PlanName, order.DurationDays, order.GrantsMembership, order.ConfigurationSessions, order.ConfigurationSessionsUsed, order.ConfigurationServiceStatus, order.Status,
                     order.AmountMinor, order.Currency, order.CreatedAt, order.PaidAt,
                     payment = (order.Status is "pending" or "review_requested") && await orders.AvailableAsync() ? orders.PaymentDetails : null });
         });

@@ -92,7 +92,7 @@ public sealed partial class MainForm
         games.DragEnter += (_, e) => e.Effect = accountClient.CanKeepVerifiedView && !busy && e.Data?.GetDataPresent(DataFormats.FileDrop) == true ? DragDropEffects.Copy : DragDropEffects.None;
         games.DragDrop += async (_, e) => { if (!busy && e.Data?.GetData(DataFormats.FileDrop) is string[] paths && paths.Length > 0) await AddPathAsync(paths[0]); };
         games.ClientSizeChanged += (_, _) => LayoutGameCards();
-        installMode.Items.AddRange(new[] { "模式一 · DLSS 5 神经渲染", "模式二 · OptiScaler", "帧率优先 · DLSS 5 + XeFG 2X" }); installMode.SelectedIndex = 0;
+        installMode.Items.AddRange(new[] { "模式一 · DLSS 5 神经渲染", "模式二 · OptiScaler", "帧率优先 · DLSS 5 + XeFG 2X", "32位游戏 · 神经渲染桥接（实验性）", "DLSS 5 神经渲染（多后端）", "老游戏专用 · ReShade64" }); installMode.SelectedIndex = 0;
         installMode.BackColor = Surface; installMode.ForeColor = ink;
         var gridHost = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
         emptyLibrary.Dock = DockStyle.Fill; gridHost.Controls.Add(games); gridHost.Controls.Add(emptyLibrary); emptyLibrary.BringToFront();
@@ -209,6 +209,9 @@ public sealed partial class MainForm
         installMode.Items.Add(en ? "Mode 1 — DLSS 5 neural" : "模式一 — DLSS 5 神经渲染");
         installMode.Items.Add(en ? "Mode 2 — OptiScaler (upscaling / FG)" : "模式二 — OptiScaler 标准版（超分/帧生成）");
         installMode.Items.Add(en ? "Performance — DLSS 5 + XeFG 2X" : "帧率优先 — DLSS 5 + XeFG 2X");
+        installMode.Items.Add(en ? "32-bit neural bridge (experimental)" : "32位游戏 · 神经渲染桥接（实验性）");
+        installMode.Items.Add(en ? "DLSS 5 neural rendering (multi-backend)" : "DLSS 5 神经渲染（多后端）");
+        installMode.Items.Add(en ? "Legacy games / ReShade64" : "老游戏专用 · ReShade64");
         installMode.SelectedIndex = Math.Max(0, selectedIndex);
         RefreshHome();
     }

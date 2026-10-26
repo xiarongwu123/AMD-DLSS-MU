@@ -10,8 +10,10 @@ public sealed class PlansModel(AppDbContext db) : AdminPageModel
 {
     [BindProperty] public string? Id { get; set; }
     [BindProperty, Required, StringLength(80)] public string Name { get; set; } = "";
-    [BindProperty, Range(1, 3650)] public int DurationDays { get; set; }
+    [BindProperty, Range(0, 3650)] public int DurationDays { get; set; }
     [BindProperty, Range(typeof(decimal), "0", "1000000")] public decimal Price { get; set; }
+    [BindProperty, Range(0, 100)] public int ConfigurationSessions { get; set; }
+    [BindProperty] public bool GrantsMembership { get; set; } = true;
     [BindProperty] public bool Enabled { get; set; }
     [BindProperty] public string Reason { get; set; } = "";
     public List<Plan> Items { get; private set; } = [];
@@ -21,6 +23,7 @@ public sealed class PlansModel(AppDbContext db) : AdminPageModel
         ValidateReason(Reason);
         if (Price * 100 != decimal.Truncate(Price * 100)) ModelState.AddModelError("", "价格最多保留两位小数。");
         if (string.IsNullOrWhiteSpace(Name)) ModelState.AddModelError("", "请输入套餐名称。");
+        if (!GrantsMembership && (DurationDays != 0 || ConfigurationSessions < 1)) ModelState.AddModelError("", "纯指导服务须不含会员、期限为0，并至少包含1次指导。");
         if (!ModelState.IsValid) { await OnGetAsync(); return Page(); }
         await using var transaction = await db.Database.BeginTransactionAsync();
         var isNew = string.IsNullOrEmpty(Id);
@@ -29,6 +32,8 @@ public sealed class PlansModel(AppDbContext db) : AdminPageModel
         var before = isNew ? "{}" : JsonSerializer.Serialize(plan);
         plan.Name = Name.Trim();
         plan.DurationDays = DurationDays;
+        plan.ConfigurationSessions = ConfigurationSessions;
+        plan.GrantsMembership = GrantsMembership;
         plan.PriceMinor = decimal.ToInt64(Price * 100);
         plan.Currency = "CNY";
         plan.Enabled = !isNew && Enabled;

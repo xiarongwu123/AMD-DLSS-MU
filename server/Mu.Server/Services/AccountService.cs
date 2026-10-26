@@ -13,7 +13,8 @@ public sealed class AccountService(AppDbContext db, UserManager<ApplicationUser>
     public const string TermsVersion = "2026-09-26";
     public static readonly string[] InitialFeatures = ["library.manage", "dlss.configure", "optiscaler.configure",
         "magpie.launch", "game.launch", "game.restore", "configuration.edit", "diagnostics.use", "app.update",
-        "compatibility.read", "compatibility.submit", "compatibility.public.read"];
+        "compatibility.read", "compatibility.submit", "compatibility.public.read", "games.supported.view",
+        "schemes.premium.configure", "schemes.game.view", "services.remote"];
     public long Now => clock.GetUtcNow().ToUnixTimeSeconds();
     public static string HashToken(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
     private static string Token() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
@@ -225,12 +226,20 @@ public sealed class AccountService(AppDbContext db, UserManager<ApplicationUser>
     private async Task<AccountSnapshot> SnapshotAsync(ApplicationUser user)
     {
         var pro = user.ProExpiresAt > Now;
+        var plusExpiry = pro ? await MembershipPlans.PlusExpiresAtAsync(db, user.Id) : null;
+        var plus = plusExpiry > Now;
+        var remoteRemaining = await MembershipPlans.RemoteSessionsRemainingAsync(db, user.Id);
+        var kind = !pro ? "standard" : plus ? "plus" : user.ProExpiresAt == MembershipPlans.LifetimeExpiry ? "lifetime" : "advanced";
         var features = await db.FeatureDefinitions.AsNoTracking().OrderBy(x => x.Key).ToListAsync();
-        return new(user.Id, user.Email!, new(pro ? "pro" : "standard", user.ProExpiresAt is long expiry ? DateTimeOffset.FromUnixTimeSeconds(expiry) : null),
-            features.Select(f => new FeatureSnapshot(f.Key, f.Enabled, f.MinimumTier, f.Enabled && (f.MinimumTier == "standard" || pro && f.MinimumTier == "pro"), f.Version)).ToArray(),
+        return new(user.Id, user.Email!, new(pro ? "pro" : "standard", user.ProExpiresAt is long expiry ? DateTimeOffset.FromUnixTimeSeconds(expiry) : null,
+                kind, plusExpiry is long plusUntil ? DateTimeOffset.FromUnixTimeSeconds(plusUntil) : null, remoteRemaining),
+            features.Select(f => new FeatureSnapshot(f.Key, f.Enabled, f.MinimumTier,
+                f.Enabled && (f.Key == "services.remote" ? plus || remoteRemaining > 0 :
+                    (f.MinimumTier == "standard" || pro && f.MinimumTier == "pro") &&
+                    (f.Key is not ("schemes.premium.configure" or "schemes.game.view") || pro)), f.Version)).ToArray(),
             config.GetValue<bool>("ManualPayment:Enabled") && !string.IsNullOrWhiteSpace(config["ManualPayment:Instructions"])
                 && features.Any(f => f.Enabled && f.MinimumTier == "pro")
-                && await db.Plans.AnyAsync(x => x.Enabled && x.DurationDays >= 1 && x.DurationDays <= 3650
+                && await db.Plans.AnyAsync(x => x.Enabled && x.DurationDays >= 0 && x.DurationDays <= 3650
                     && x.PriceMinor > 0 && x.Currency == "CNY"));
     }
 

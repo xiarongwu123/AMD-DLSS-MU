@@ -21,6 +21,12 @@ internal static class HttpTests
 
     public static async Task Main(string[] args)
     {
+        if (args.SequenceEqual(new[] { "--guidance" })) { await RemoteGuidanceHttpTests.RunAsync(); return; }
+        if (args.SequenceEqual(new[] { "--community" }))
+        {
+            await CommunitySharingHttpTests.RunAsync();
+            return;
+        }
         if (args.SequenceEqual(new[] { "--smtp" }))
         {
             await SmtpEmailTests.RunAsync();
@@ -36,6 +42,12 @@ internal static class HttpTests
             await WishHttpTests.RunAsync();
             return;
         }
+        if (args.SequenceEqual(new[] { "--supported-games" }))
+        {
+            await SupportedGamesHttpTests.RunAsync();
+            return;
+        }
+        if (args.SequenceEqual(new[] { "--neural-rules" })) { await NeuralRulesHttpTests.RunAsync(); return; }
         using var factory = new AccountFactory();
         using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
         { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
@@ -117,6 +129,7 @@ internal sealed class AccountFactory(Func<IServiceProvider, IVerificationEmailSe
         Directory.CreateDirectory(directory);
         builder.UseEnvironment("Testing");
         builder.UseSetting("Database:Path", Path.Combine(directory, "accounts.sqlite"));
+        builder.UseSetting("NeuralRendering:RulesFile", Path.Combine(directory, "neural-rules.json"));
         builder.UseSetting("DataProtection:Path", Path.Combine(directory, "keys"));
         builder.UseSetting("Auth:CodePepper", "integration-test-only-pepper-with-at-least-32-bytes");
         builder.UseSetting("Registration:Enabled", "true");
