@@ -53,8 +53,8 @@ internal static class HttpTests
         { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
         Check((await client.GetAsync("/api/health")).IsSuccessStatusCode, "HTTP readiness");
         Check((await client.GetAsync("/api/v1/account/me")).StatusCode == HttpStatusCode.Unauthorized, "Anonymous account blocked");
-        Check((await client.PostAsJsonAsync("/api/v1/account/authorize", new { featureKey = "game.launch" })).StatusCode == HttpStatusCode.Unauthorized,
         Check((await client.PostAsJsonAsync("/api/v1/account/redeem", new { code = "test" })).StatusCode == HttpStatusCode.Unauthorized, "Anonymous CDK redemption blocked");
+        Check((await client.PostAsJsonAsync("/api/v1/account/authorize", new { featureKey = "game.launch" })).StatusCode == HttpStatusCode.Unauthorized,
             "Anonymous business authorization blocked");
         const string email = "http-test@example.test";
         const string password = "correct horse battery";
