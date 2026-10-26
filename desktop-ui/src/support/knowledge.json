@@ -1,0 +1,543 @@
+{
+  "reviewedAt": "2026-10-26",
+  "baseVersion": "2.2.4",
+  "entries": [
+    {
+      "id": "MU-003",
+      "title": "MU支持Windows10吗？",
+      "keywords": "Win10，Win11，系统构建",
+      "answer": "需要按方案判断。v2.2.4客户端为Windows x64。N/A喜鹊要求Windows10 2004（19041）或更新的x64系统。AMDNR RDNA3和标准OptiScaler预检最低构建为19041；其他若干NR路线仍按Windows11（22000）门槛检查。能打开MU不等于所选方案支持当前系统。",
+      "steps": [
+        "Win+R输入winver，记录系统构建。",
+        "提供具体方案和完整报错，核对该路线要求。"
+      ],
+      "escalate_when": "满足门槛仍报OS_VERSION或系统组合未验证时。",
+      "source": "src/Recommendation/HardConstraintEvaluator.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-004",
+      "title": "能保证提高多少FPS、所有游戏都有效吗？",
+      "keywords": "帧率，效果，稳定，已验证",
+      "answer": "不能在没有同条件实测时提供保证。效果取决于显卡、驱动、游戏构建、接口和组件组合。已验证、社区验证、实验性、未验证分别代表不同证据；工具打开、面板出现都不能替代实际NR输出验证。",
+      "steps": [
+        "确认完整硬件与游戏组合。",
+        "查看本次日志、实际画面和同版本验证记录。"
+      ],
+      "escalate_when": "要求性能承诺、或日志与画面矛盾时。",
+      "source": "src/Recommendation/VerificationService.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-006",
+      "title": "RX7000怎样使用新的lmxxf后端？",
+      "keywords": "7900XT，7800XT，AMDNR，lmxxf-rdna3",
+      "answer": "兼容版新增lmxxf · RX7000（AMDNR），内部标识lmxxf-rdna3。无远程规则覆盖时，兼容版对RX7000自动选择该路线。配套AMDNR Alpha0.3.5.8宿主、Runtime及pak，支持1–3 Pass，默认Fast mode与网络尺寸分档。当前为实验性。",
+      "steps": [
+        "选择兼容版。",
+        "高级设置选自动或lmxxf · RX7000（AMDNR）。",
+        "首次联网准备约1GB配套组件，完成校验后进入游戏验证。"
+      ],
+      "escalate_when": "部署通过但闪退、黑屏或效果异常时。",
+      "source": "docs/AMDNR-RDNA3.md",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-007",
+      "title": "RX6000或6750能用Mochizuki和AMDNR RDNA3吗？",
+      "keywords": "6750GRE，6700XT，6800，RDNA2",
+      "answer": "当前MU集成的原版Mochizuki/lmxxf限定RDNA4，新AMDNR RDNA3路线限定RX7000。不能据此宣称支持RX6000。RX6000可继续核对Daniel或适用老游戏路线，仍需匹配资源、系统及运行库。喜鹊能打开不证明6750上的NR效果兼容。",
+      "steps": [
+        "提供完整型号、方案和后端。",
+        "不要用RDNA3或RDNA4选项绕过RX6000提示。",
+        "按所选路线核对HIP等依赖。"
+      ],
+      "escalate_when": "需要未验证架构组合、或型号识别异常时。",
+      "source": "src/Recommendation/HardConstraintEvaluator.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-008",
+      "title": "Daniel0.8官方入口和多后端Daniel有何区别？",
+      "keywords": "NeuralHub，0.6.0，基础稳定版",
+      "answer": "Daniel0.8入口只下载并打开官方NeuralHub安装器，用户在NeuralHub内导入自己的DLL、选择游戏并完成设置。MU不会因此标记游戏已配置。多后端Daniel仍固定匹配0.6.0 Runtime和权重，不接受直接替换0.8文件。",
+      "steps": [
+        "确认是官方入口还是MU多后端Daniel。",
+        "NeuralHub配置由其自身管理；MU配置按MU安装记录恢复。"
+      ],
+      "escalate_when": "两套安装混用或需要判断NeuralHub内部报错时。",
+      "source": "docs/SCHEME-CATALOG.md",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-009",
+      "title": "作者调校版与30 Pass是什么？",
+      "keywords": "30层，MochizukiPasses，最高画质",
+      "answer": "作者调校版使用当前集成Mochizuki实验路线。没有该游戏实测预设时，不能声称已经专属调校。1 Pass标准、2增强、3高质量；4–8实验；9–30实验/压力测试。30不等于默认最高画质推荐，会增加计算与显存开销。RX7000 AMDNR支持1–3 Pass。",
+      "steps": [
+        "确认显卡和实际后端。",
+        "先从自动或低Pass开始验证。",
+        "MochizukiUnlockPasses解除限制，MochizukiPasses控制实际数量；旧LayerMode不用于30 Pass。"
+      ],
+      "escalate_when": "性能恶化、显存不足或要求未知参数时。",
+      "source": "src/NeuralRenderPlanner.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-010",
+      "title": "32位老游戏能用吗？",
+      "keywords": "x32，x86，ReShade，老游戏",
+      "answer": "老游戏专用版按EXE位数选择：x86模式5实验桥接，x64模式8 ReShade64路线。32位桥接不提供XeFG帧生成；仍需要匹配接口、依赖和游戏验证。移除一条位数检查不代表任意组件支持32位。",
+      "steps": [
+        "确认实际游戏EXE位数。",
+        "选择老游戏专用版并核对实际图形接口。",
+        "在游戏内按Home查看ReShade，热键以对应面板为准。"
+      ],
+      "escalate_when": "特殊启动器、接口未知或桥接不能输出时。",
+      "source": "src/X86Bridge.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-011",
+      "title": "网游适配版保证不封号吗？",
+      "keywords": "燕云十六声，反作弊，ANTI_CHEAT",
+      "answer": "不保证。网游适配不等于绕过反作弊或官方授权。不同安装路径有不同检查；当前智能预检收到ANTI_CHEAT时，表示缺少明确允许修改的有效规则而停止注入。知悉风险也不保证所有路径放行。",
+      "steps": [
+        "核对游戏、模式、方案及完整反作弊提示。",
+        "出现ANTI_CHEAT交人工确认规则与可用路线。",
+        "不指导关闭、伪装或绕过反作弊。"
+      ],
+      "escalate_when": "所有反作弊阻断和联机账号风险问题。",
+      "source": "src/Recommendation/HardConstraintEvaluator.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-012",
+      "title": "多后端Daniel缺少哪些文件？",
+      "keywords": "version.dll，dlssnr_amd_pass1.dll，weights",
+      "answer": "需要匹配0.6.0的version.dll或dlssnr_amd_pass1.dll，以及dlssnr_on_amd_weights.bin。Runtime有固定校验，不能用任意同名DLL。nvngx_dlssnr.dll源文件已内置，Daniel配置流程会准备它。导入资源后仍需执行游戏配置。",
+      "steps": [
+        "把匹配且有权使用的Runtime和权重放在专用目录顶层。",
+        "通过高级设置“准备本机资源”或“导入所需资源”选择该目录。",
+        "重新检查并配置；校验不匹配时保留错误。"
+      ],
+      "escalate_when": "资源版本或来源不清、正确文件仍校验失败时。",
+      "source": "src/NeuralRenderInstaller.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-013",
+      "title": "原版RX9000 lmxxf需要什么？",
+      "keywords": "native-game-tiled-assets，block0-ffn.f16",
+      "answer": "需要完整native-game-tiled-assets目录和配套文件，不能只提供LmxxfNrRuntime.dll。安装器查找block0-ffn.f16或.f32并做类型、大小及非空检查；这不证明任意模型都可正确执行。与RX7000 AMDNR的pak路线不同。",
+      "steps": [
+        "确认后端为原版lmxxf且显卡符合。",
+        "保留完整native-game-tiled-assets目录。",
+        "导入时选择包含这个文件夹的父目录。"
+      ],
+      "escalate_when": "模型不完整、版本不明或运行输出异常时。",
+      "source": "src/NeuralRenderInstaller.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-014",
+      "title": "Mochizuki提示缺dlssnr.bin怎么办？",
+      "keywords": "缺用户模型，310.8.0，模型提取",
+      "answer": "v2.2.4支持从内置310.8.0源文件自动提取并校验模型，首次仍需联网准备固定组件及提取工具。预期模型147756560字节。实际提取和哈希验证曾通过，但不代表所有Windows显卡及游戏实测通过。",
+      "steps": [
+        "先确认MU版本，区分旧截图与新版提示。",
+        "确认资源面板显示可自动准备，再执行一键配置。",
+        "反复校验失败先定位具体模型并备份，不清空整个缓存或备份目录。"
+      ],
+      "escalate_when": "自动提取失败或准备后反复缺模型时。",
+      "source": "src/NeuralRenderInstaller.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-015",
+      "title": "RX7000 AMDNR为什么下载约1GB？",
+      "keywords": "大文件，LmxxfNrRuntime.pak，下载大小",
+      "answer": "固定Alpha0.3.5.8原始ZIP为1008053921字节，包含匹配宿主、Runtime和pak。MU按需下载、校验并复用缓存。MU客户端EXE约206MB，是另一个文件。不要用其他项目DLL替换这套配套资源。",
+      "steps": [
+        "先查看任务标题，区分MU更新、AMDNR与喜鹊。",
+        "等待下载及校验完成，失败使用重试。"
+      ],
+      "escalate_when": "包大小/哈希持续不一致或空间不足时。",
+      "source": "assets/amdnr-rdna3-0.3.5.8.json",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-016",
+      "title": "缺少HIP运行时怎么办？",
+      "keywords": "HIP7.2，amdhip64_7.dll，MISSING_RESOURCE",
+      "answer": "部分路线依赖AMD HIP。RX6000专门检查HIP7.2，MU提供官方安装引导及签名核对。具体要求随路线变化，不能对所有后端统一忽略或统一要求。",
+      "steps": [
+        "提供显卡、系统构建、方案及缺项名称。",
+        "按MU对应路线准备官方运行时。",
+        "完成后重启相关程序并重新检测。"
+      ],
+      "escalate_when": "官方安装或签名异常、安装后仍不识别时。",
+      "source": "src/HipRuntime.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-017",
+      "title": "能直接换成310.9.16或最新DLL吗？",
+      "keywords": "更新Runtime，替换模型，换DLL",
+      "answer": "不同路线固定匹配不同版本。Mochizuki提取对应310.8.0，多后端Daniel固定0.6.0；AMD喜鹊和AMDNR有各自配套组合。同名、更高版本都不代表接口和模型兼容。",
+      "steps": [
+        "先确定路线、已有版本和要替换的文件。",
+        "升级或切换应按安装记录恢复后重新部署匹配组合。"
+      ],
+      "escalate_when": "跨项目替换、未知来源DLL或需更新固定版本时。",
+      "source": "src/NeuralRenderInstaller.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-018",
+      "title": "API_CONFIRM_REQUIRED是什么意思？",
+      "keywords": "API静态推断，检测DX12仍报错，确认接口",
+      "answer": "检查只取得静态推断或未知接口，缺少用户已确认实际接口标记。即使显示检测到DX12仍可能触发。不能只凭此错误确定游戏实际是DX12。",
+      "steps": [
+        "展开上方“确认游戏实际设置”。",
+        "按游戏实际设置或启动选项选择“游戏实际图形接口”；高级设置里的接口也应一致。",
+        "再次配置，仍报同一错误时保留确认后的截图。"
+      ],
+      "escalate_when": "接口无法确认或确认值没有传入检查时。",
+      "source": "desktop-ui/src/SmartRecommendationPanel.tsx",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-019",
+      "title": "ARCH_INCOMPATIBLE是什么意思？",
+      "keywords": "架构不兼容，仅RDNA4，7000拦截",
+      "answer": "所选后端与识别架构不匹配。原版Mochizuki/lmxxf为RDNA4；lmxxf-rdna3为RX7000。原版lmxxf的RDNA4提示不等于7000完全没有lmxxf路线。独立喜鹊启动与游戏推荐检查也不是同一流程。",
+      "steps": [
+        "记录完整型号、MU版本、方案及后端。",
+        "RX7000在兼容版选择lmxxf · RX7000（AMDNR）。",
+        "RX6000按当前其他合适路线核对。"
+      ],
+      "escalate_when": "硬件识别错误或要求未验证组合时。",
+      "source": "src/Recommendation/HardConstraintEvaluator.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-020",
+      "title": "MISSING_RESOURCE如何处理？",
+      "keywords": "缺资源，缺Runtime，缺模型",
+      "answer": "必须先看缺项名称，例如hip、daniel-runtime、daniel-weights、lmxxf-model、mochizuki-model、amd-magpie-resources。不同缺项处理不同，不是统一重装MU。",
+      "steps": [
+        "查看完整错误和资源状态面板。",
+        "可自动准备的走对应入口，自供资源的走导入入口。",
+        "旧版截图先核对当前运行版本。"
+      ],
+      "escalate_when": "缺项不明或资源齐全仍报缺失时。",
+      "source": "src/Recommendation/HardConstraintEvaluator.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-021",
+      "title": "API_INCOMPATIBLE或接口未知怎么办？",
+      "keywords": "DX11，DX12，Vulkan，桥接接口",
+      "answer": "API_INCOMPATIBLE表示当前路径不支持检测/确认的接口；API_CONFIRM_REQUIRED表示未确认。现代多后端、原有模式、32位桥接、64位桥接不能套同一接口列表。",
+      "steps": [
+        "确认是实际游戏EXE而非启动器。",
+        "按启动选项核对接口，再选合适路线。",
+        "v2.2.4已修复部分现代接口误走桥接检查问题。"
+      ],
+      "escalate_when": "多接口或特殊启动器仍无法确认时。",
+      "source": "src/InstallationContext.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-022",
+      "title": "DLL_CONFLICT或OptiScaler/ReShade冲突怎么办？",
+      "keywords": "dxgi.dll，winmm.dll，代理冲突",
+      "answer": "可能存在旧组件、其他MOD或外部改动。同名dxgi.dll可能属于其他工具，不能直接删除。MU依据安装记录、哈希和备份确认文件所有权。",
+      "steps": [
+        "退出游戏，先尝试MU恢复之前配置。",
+        "其他工具部署的MOD按那个工具流程处理。",
+        "保留冲突文件、记录和备份，导出诊断。"
+      ],
+      "escalate_when": "文件来源不明、多MOD共用代理或恢复被阻断时。",
+      "source": "src/GameManagement.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-023",
+      "title": "GAME_RUNNING或要求关闭游戏怎么办？",
+      "keywords": "进程占用，游戏未退出",
+      "answer": "安装和恢复前需要退出游戏，避免写入正在使用的DLL/配置。窗口关闭后游戏或启动器可能仍在后台。",
+      "steps": [
+        "正常退出游戏与相关启动器。",
+        "在任务管理器确认实际游戏进程结束。",
+        "不确定进程时先提供名称和路径核对。"
+      ],
+      "escalate_when": "已确认退出仍被判断运行中时。",
+      "source": "src/GameManagement.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-024",
+      "title": "恢复后仍有OptiScaler目录、不能重装怎么办？",
+      "keywords": "RESTORE_REQUIRED，残留，恢复不干净",
+      "answer": "切换配置应按manifest恢复。v2.2.4修复未修改文件阻断恢复，但剩余目录可能包含其他MOD或用户文件。不能把整个目录全部视为MU残留。",
+      "steps": [
+        "关闭游戏并执行MU恢复，记录结果。",
+        "仍拦截时提供残留清单、完整错误及安装记录。",
+        "只处理已确认所有权的项目。"
+      ],
+      "escalate_when": "缺记录、备份异常或文件归属不明确时。",
+      "source": "src/NeuralRenderInstaller.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-025",
+      "title": "文件被其他程序修改或备份校验失败怎么办？",
+      "keywords": "INTEGRITY_FAILED，恢复失败，备份损坏",
+      "answer": "当前文件与安装记录不同，或恢复备份不匹配，MU停止恢复以保护原文件。游戏更新、外部MOD、手动替换或磁盘问题均可能导致，不能直接确定原因。",
+      "steps": [
+        "停止反复覆盖安装。",
+        "保留当前文件、记录和备份并导出诊断。",
+        "提供具体文件名及近期更新/MOD变动。"
+      ],
+      "escalate_when": "此类冲突保留资料后转人工。",
+      "source": "src/GameManagement.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-026",
+      "title": "'0x00' is an invalid start of a value是什么？",
+      "keywords": "JSON，空字节，BytePositionInLine:0",
+      "answer": "JSON解析器开头读到0x00。配置/缓存损坏、编码问题、读错文件或异常接口响应都可能导致。错误本身没有指出具体文件/接口，不能直接断言CDK或喜鹊故障。",
+      "steps": [
+        "先确认触发阶段：启动、账户/CDK、喜鹊、安装或恢复。",
+        "收集完整错误、时间、版本及对应日志。",
+        "确定具体文件后先备份再处理，不清空所有配置。"
+      ],
+      "escalate_when": "来源不明、安装记录受损或接口异常时。",
+      "source": "src/AccountApiClient.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-027",
+      "title": "下载失败或SHA256校验失败怎么办？",
+      "keywords": "哈希，断流，下载重试",
+      "answer": "MU固定核对版本、大小及SHA256。截断、缓存损坏、错误响应或上游资产变化均可能导致失败。不能为绕过报错关闭校验或用其他版本同名包替代。",
+      "steps": [
+        "核对任务标题和失败阶段，先用重试。",
+        "检查网络及可用空间。",
+        "持续失败提供完整错误和时间，交人工核对资源。"
+      ],
+      "escalate_when": "同一固定资源反复失败或上游发生变化时。",
+      "source": "src/DownloadSources.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-028",
+      "title": "首次模型准备或编译为什么很久？",
+      "keywords": "卡住，编译数分钟，提取慢",
+      "answer": "下载、模型提取、游戏内网络编译是不同阶段。Mochizuki安装提取进程有15分钟超时，游戏内首次编译以面板和日志为准。耗时或面板出现不代表效果已生效。",
+      "steps": [
+        "确认卡在MU准备还是游戏内编译。",
+        "观察任务和日志是否继续更新，记录最后状态。",
+        "对应Mochizuki游戏内可按Insert查看面板。"
+      ],
+      "escalate_when": "长期无更新、超时或异常退出时。",
+      "source": "src/NeuralRenderInstaller.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-029",
+      "title": "A卡和N卡喜鹊一样吗？",
+      "keywords": "两个版本，AMD，NVIDIA",
+      "answer": "不是。A卡固定A-ENTROPY项目v0.6.8.5-amd-rdna3完整包，约221MB；N卡固定SAOG0721项目v0.6.8-experimental.1，约490MB。目录与配置分开。界面和效果组相似不代表相同，勿混用Runtime和模型。",
+      "steps": [
+        "确认点击的是A卡还是N卡。",
+        "核对实际Magpie.exe的目录和版本。"
+      ],
+      "escalate_when": "无法确认版本、组件混用时。",
+      "source": "src/AmdMagpieIntegration.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-030",
+      "title": "喜鹊下载在哪个文件夹？",
+      "keywords": "下载位置，Magpie.exe，安装目录",
+      "answer": "A卡：%LOCALAPPDATA%\\AMD-NR-Assistant\\tools\\AmdMagpie，ZIP是magpie-dlss5-amd-rdna3-full.zip，安装在其下v0.6.8.5-amd-rdna3。N卡：%LOCALAPPDATA%\\AMD-NR-Assistant\\tools\\Magpie，安装在其下v0.6.8-experimental.1。实际exe可能位于包内子目录。",
+      "steps": [
+        "按Win+R粘贴对应%LOCALAPPDATA%路径回车。",
+        "进入版本目录查找Magpie.exe。"
+      ],
+      "escalate_when": "目录不存在、下载未完成或运行了其他位置的程序时。",
+      "source": "src/MagpieIntegration.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-031",
+      "title": "MU · DLSSNR AI Filter效果组加了什么？",
+      "keywords": "预设，Lanczos，默认效果",
+      "answer": "这是MU创建的默认效果组，只添加上游DLSSNR\\DLSSNR_AI_Filter。没有额外叠加锐化、调色、补帧或写入专属画质参数，沿用上游默认。另有独立Lanczos备选组，没有叠加进AI Filter。选中效果组不代表NR已执行。",
+      "steps": [
+        "查看当前选中效果组和组内效果。",
+        "对目标窗口启用，再验证实际输出。"
+      ],
+      "escalate_when": "需要验证NR实际运行或自定义参数时。",
+      "source": "src/MagpieIntegration.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-032",
+      "title": "目标窗口权限高于Magpie怎么办？",
+      "keywords": "管理员，权限不匹配",
+      "answer": "提示说明目标窗口权限高于Magpie，常见于游戏管理员启动而Magpie普通启动。只能确认权限层级问题，不能据此判断模型/NR兼容。",
+      "steps": [
+        "从系统托盘彻底退出当前Magpie。",
+        "找到正确版本Magpie.exe，右键以管理员身份运行。",
+        "切回符合要求的窗口化/无边框游戏，按主页热键启用。"
+      ],
+      "escalate_when": "相同权限仍报错或出现新错误时。",
+      "source": "src/MainForm.Magpie.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-033",
+      "title": "喜鹊开了但没有效果怎么办？",
+      "keywords": "快捷键，Alt+Shift+A，窗口模式",
+      "answer": "启动工具后还要选择效果、目标窗口并启用。初始快捷键通常Alt+Shift+A，实际以当前工具主页为准。权限、窗口模式、显卡及依赖都会影响效果。",
+      "steps": [
+        "确认正确A/N版本与效果组。",
+        "核对目标窗口、窗口模式和当前热键。",
+        "查看最近问题的详细内容，按具体错误继续排查。"
+      ],
+      "escalate_when": "设置正确仍无输出、黑屏或设备未验证时。",
+      "source": "src/MainForm.AmdMagpie.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-034",
+      "title": "为什么不能重复打开或切换A卡/N卡版？",
+      "keywords": "已运行，托盘，单实例",
+      "answer": "MU检查运行中的Magpie，避免两版混用。v2.2.4还阻止N/A同时准备。关闭主窗口可能只收到托盘。",
+      "steps": [
+        "从系统托盘退出旧版Magpie。",
+        "确认进程结束再选所需版本。",
+        "准备期间查看下载任务，勿重复点。"
+      ],
+      "escalate_when": "无进程仍提示已运行或进程残留时。",
+      "source": "src/MainForm.Magpie.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-035",
+      "title": "下载喜鹊时游戏库按钮变灰怎么办？",
+      "keywords": "busy，后台下载，不能开启DLSS",
+      "answer": "v2.2.4已拆开喜鹊独立下载和游戏全局锁，下载时可浏览、启动、配置和排查。真正写入/恢复游戏时仍保留冲突保护。喜鹊进度也不应串到游戏配置卡片。",
+      "steps": [
+        "核对运行的是v2.2.4。",
+        "查看是否还有游戏安装、恢复、扫描或更新。",
+        "只有喜鹊下载仍锁住时记录入口和任务。"
+      ],
+      "escalate_when": "v2.2.4单独喜鹊任务仍稳定复现时。",
+      "source": "src/MainForm.React.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-036",
+      "title": "搜不到神力科莎怎么办？",
+      "keywords": "Assetto Corsa，244210，acs.exe",
+      "answer": "v2.2.4支持中文、英文和Steam ID别名搜索已扫描条目。搜索不会把未扫描的游戏自动加入。AssettoCorsa.exe为菜单启动器，MU可解析同目录实际游戏acs.exe。",
+      "steps": [
+        "确认在我的游戏而非支持游戏。",
+        "重新扫描Steam库，搜中文、英文或244210。",
+        "仍没有时提供安装盘、Steam库及EXE位置。"
+      ],
+      "escalate_when": "实际安装但扫描不到、启动器异常时。",
+      "source": "src/GameSearch.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-037",
+      "title": "支持游戏库为什么被模糊锁住？",
+      "keywords": "100+，名单，高级权限",
+      "answer": "支持游戏库属于高级会员权限，与本机我的游戏不同。名单不是所有显卡/后端/游戏新版本均兼容的保证。完整付费名单与私有参数须通过受授权接口获取，不由通用知识库向无权限用户公开。",
+      "steps": [
+        "确认登录、会员有效期和games.supported.view。",
+        "刷新状态并核对客户端与后台。"
+      ],
+      "escalate_when": "会员有效但授权仍拒绝时。",
+      "source": "desktop-ui/src/membership.ts",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-038",
+      "title": "玩家方案是通用列表吗，能传文件和网盘吗？",
+      "keywords": "所有分享，附件，MOD，通用配置",
+      "answer": "当前列表查询所有上传分享，支持通用或游戏范围，可附配置、一个附件或网盘链接。通用不等于任何游戏有效。外部MOD和网盘资源不代表MU已审核或支持自动部署。附件最多一个、最大10MB。",
+      "steps": [
+        "查看说明、适用范围和组件版本。",
+        "多文件先打包；保持游戏与硬件条件一致。",
+        "应用前保留现有安装记录与恢复能力。"
+      ],
+      "escalate_when": "游戏标识无效、附件校验失败或版本冲突时。",
+      "source": "src/CommunityPresetModels.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-040",
+      "title": "高级会员为什么打不开一对一服务？",
+      "keywords": "services.remote，剩余次数，Plus",
+      "answer": "普通高级软件权限不自动包含远程服务。入口核对services.remote、可用次数或有效Plus权益。终身、Plus及单独购买次数按服务端已确认订单计算。",
+      "steps": [
+        "刷新并核对会员种类、有效期、剩余次数。",
+        "有权益仍打不开时交管理员查授权与订单。",
+        "联系微信xrwCoder。"
+      ],
+      "escalate_when": "次数争议或已确认订单缺权益时。",
+      "source": "desktop-ui/src/membership.ts",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-041",
+      "title": "会员有效但方案没解锁怎么办？",
+      "keywords": "权限，锁住，开通不生效",
+      "answer": "软件方案、专属推荐、支持名单与远程服务是不同权限。客户端兼容部分旧后台新软件键缺失，但明确拒绝、到期或停用仍影响使用。客户端升级不能替代后台部署。",
+      "steps": [
+        "刷新账户，核对购买账户。",
+        "记录被锁入口、会员类型、到期及MU版本。",
+        "管理员核对订单、功能开关和后台版本。"
+      ],
+      "escalate_when": "有效会员仍拒绝或后台落后时；不要求重新付款修复授权。",
+      "source": "src/AccountApiClient.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-042",
+      "title": "账户超时或正在重试怎么办？",
+      "keywords": "账户连接波动，心跳，登录",
+      "answer": "MU有登录授权和周期性检查。超时可能是网络或账户服务异常，不能直接断言账号失效或到期。保留页面和具体操作授权分别判断，部分写入/启动前再次授权。",
+      "steps": [
+        "记录完整错误、时间和影响范围。",
+        "网络恢复后刷新账户。",
+        "持续失败由管理员查看服务日志。"
+      ],
+      "escalate_when": "多人同时异常、持续失败或账户订单矛盾时。",
+      "source": "src/MainForm.Access.cs",
+      "version": "MU v2.2.4"
+    },
+    {
+      "id": "MU-047",
+      "title": "什么情况需要人工，如何联系？",
+      "keywords": "xrwCoder，微信，工单",
+      "answer": "反复失败、未知组件组合、备份/安装记录异常、外部MOD冲突、反作弊、付款/CDK争议及无实测依据的组合应转人工。微信xrwCoder。联系作者不代表远程免费，按套餐和剩余权益确认。",
+      "steps": [
+        "整理MU版本、Windows构建、完整显卡/驱动、游戏构建、方案/后端。",
+        "附完整错误、时间、已尝试操作及各步骤结果和脱敏诊断。",
+        "核对服务权益和安排后再远程。"
+      ],
+      "escalate_when": "所有证据不足且可能损害原文件或涉及人工权限的问题。",
+      "source": "src/Diagnostics.cs",
+      "version": "MU v2.2.4"
+    }
+  ]
+}
