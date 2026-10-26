@@ -56,6 +56,7 @@ internal static class AdminConsoleTests
         }
 
         Check((await client.GetAsync("/admin/users")).StatusCode == HttpStatusCode.Redirect, "Anonymous administrator access blocked");
+        Check((await client.GetAsync("/admin/codes")).StatusCode == HttpStatusCode.Redirect, "Anonymous CDK management blocked");
         Check((await client.GetAsync("/admin/mail")).StatusCode == HttpStatusCode.Redirect, "Anonymous mail logs blocked");
         Check((await client.GetAsync("/admin/telemetry")).StatusCode == HttpStatusCode.Redirect, "Anonymous telemetry report blocked");
         Check((await client.GetAsync("/admin/wishes")).StatusCode == HttpStatusCode.Redirect, "Anonymous wish management blocked");
@@ -80,6 +81,19 @@ internal static class AdminConsoleTests
         var enrollmentCode = Totp(key);
         var setupPost = await Post(client, "/admin/setup", new() { ["Code"] = enrollmentCode }, ExtractToken(setupHtml));
         Check(setupPost.StatusCode == HttpStatusCode.Redirect && setupPost.Headers.Location?.OriginalString == "/admin", "TOTP enrollment grants full admin session");
+        var codeFields = new Dictionary<string, string> { ["DurationDays"] = "30", ["Count"] = "2", ["ValidDays"] = "90", ["Reason"] = "test CDK generation" };
+        Check((await Post(client, "/admin/codes", codeFields)).StatusCode == HttpStatusCode.BadRequest, "CDK generation requires CSRF");
+        var codeResponse = await Form(client, "/admin/codes", null, codeFields);
+        var codeHtml = WebUtility.HtmlDecode(await codeResponse.Content.ReadAsStringAsync());
+        Check(codeResponse.IsSuccessStatusCode && Regex.Matches(codeHtml, @"\b[A-F0-9]{4}(?:-[A-F0-9]{4}){7}\b").Count == 2, "Admin sees generated CDKs once");
+        Check(!Regex.IsMatch(WebUtility.HtmlDecode(await (await client.GetAsync("/admin/codes")).Content.ReadAsStringAsync()), @"\b[A-F0-9]{4}(?:-[A-F0-9]{4}){7}\b"), "CDK plaintext not recoverable on GET");
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var codeId = await db.MembershipCodes.Select(x => x.Id).FirstAsync();
+            Check((await Form(client, "/admin/codes", "Revoke", new() { ["id"] = codeId, ["Reason"] = "test CDK revocation" })).StatusCode == HttpStatusCode.Redirect, "Admin revokes unused CDK");
+            Check(await db.MembershipCodes.AnyAsync(x => x.Id == codeId && x.RevokedAt != null), "CDK revocation persisted");
+        }
         using (var scope = factory.Services.CreateScope())
             await WishPoolSchema.SeedAsync(scope.ServiceProvider.GetRequiredService<AppDbContext>());
         var wishHtml = WebUtility.HtmlDecode(await (await client.GetAsync("/admin/wishes")).Content.ReadAsStringAsync());

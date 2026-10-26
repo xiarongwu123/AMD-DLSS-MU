@@ -25,6 +25,42 @@ afterEach(() => {
   vi.resetAllMocks();
 });
 describe("账户页保留原有操作", () => {
+  it("兑换提交修剪后的 CDK，成功清空输入并反馈", async () => {
+    vi.mocked(rpc).mockResolvedValue(null);
+    const notify = vi.fn();
+    render(
+      <AccountPage
+        state={{ ...emptyState, account, online: true }}
+        notify={notify}
+      />,
+    );
+    const input = screen.getByRole("textbox", { name: "CDK 兑换会员" });
+    fireEvent.change(input, { target: { value: " ABCD-1234 " } });
+    fireEvent.click(screen.getByRole("button", { name: "兑换会员" }));
+    await waitFor(() =>
+      expect(rpc).toHaveBeenCalledWith("redeemMembership", {
+        code: "ABCD-1234",
+      }),
+    );
+    await waitFor(() => expect((input as HTMLInputElement).value).toBe(""));
+    expect(notify).toHaveBeenCalledWith("兑换成功，会员状态已更新。");
+  });
+  it("兑换失败保留输入并显示服务端错误", async () => {
+    vi.mocked(rpc).mockRejectedValue(new Error("兑换码已使用"));
+    render(
+      <AccountPage
+        state={{ ...emptyState, account, online: true }}
+        notify={() => {}}
+      />,
+    );
+    const input = screen.getByRole("textbox", { name: "CDK 兑换会员" });
+    fireEvent.change(input, { target: { value: "ABCD-1234" } });
+    fireEvent.click(screen.getByRole("button", { name: "兑换会员" }));
+    await waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toContain("兑换码已使用"),
+    );
+    expect((input as HTMLInputElement).value).toBe("ABCD-1234");
+  });
   it("进入首页与刷新会员是两个独立按钮，并调用对应命令", async () => {
     vi.mocked(rpc).mockResolvedValue(null);
     render(

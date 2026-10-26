@@ -41,6 +41,21 @@ using (var client = new AccountApiClient(new HttpClient(new Handler(async reques
 }
 
 store = new MemoryStore { Value = "old" };
+using (var client = new AccountApiClient(new HttpClient(new Handler(async request =>
+{
+    if (request.RequestUri!.AbsolutePath.EndsWith("login")) return Ok(Session());
+    Check(request.Method == HttpMethod.Post && request.RequestUri.AbsolutePath == "/api/v1/account/redeem"
+        && request.Headers.Authorization?.Parameter == "access-1", "CDK uses authenticated POST");
+    var body = await request.Content!.ReadFromJsonAsync<JsonElement>();
+    Check(body.GetProperty("code").GetString() == "test-cdk", "CDK passed to server");
+    return Ok(account with { Membership = new("pro", DateTimeOffset.UtcNow.AddDays(30)) });
+})), new MemoryStore()))
+{
+    await client.LoginAsync(account.Email, "password123", false, default);
+    await client.RedeemMembershipAsync("test-cdk", default);
+    Check(client.Account?.Membership.Tier == "pro" && client.IsOnline, "CDK refreshes local membership immediately");
+}
+
 using (var client = new AccountApiClient(new HttpClient(new Handler(request => Task.FromResult(Ok(Session())))), store))
 {
     await client.LoginAsync("player@example.com", "password123", false, default);

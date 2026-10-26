@@ -22,6 +22,7 @@ export function AccountPage({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [purchase, setPurchase] = useState(false),
+    [cdk, setCdk] = useState(""),
     [cooldown, setCooldown] = useState(0);
   useEffect(() => {
     if (!cooldown) return;
@@ -37,6 +38,9 @@ export function AccountPage({
       if (command === "sendCode") {
         setCooldown(result.retryAfterSeconds);
         notify("验证码已发送");
+      } else if (command === "redeemMembership") {
+        setCdk("");
+        notify("兑换成功，会员状态已更新。");
       } else if (command === "resetPassword" || command === "changePassword") {
         setMode(signed ? "profile" : "login");
         setPassword("");
@@ -129,6 +133,35 @@ export function AccountPage({
                 申请 Pro · 人工核对到账
               </Button>
             )}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!busy && !state.busy && cdk.trim())
+                  void run("redeemMembership", { code: cdk.trim() });
+              }}
+            >
+              <label>
+                CDK 兑换会员
+                <input
+                  value={cdk}
+                  onChange={(e) => setCdk(e.target.value)}
+                  placeholder="输入会员兑换码"
+                  maxLength={80}
+                  required
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </label>
+              <p className="muted">
+                每个兑换码限用一次，会员时长将叠加至当前有效期。
+              </p>
+              <Button
+                type="submit"
+                disabled={busy || state.busy || !cdk.trim()}
+              >
+                {busy ? "正在处理…" : "兑换会员"}
+              </Button>
+            </form>
             <Button
               onClick={() => {
                 setMode("password");

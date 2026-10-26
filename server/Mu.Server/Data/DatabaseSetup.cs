@@ -35,6 +35,7 @@ public static class DatabaseSetup
         }
         await WishPoolSchema.InitializeAsync(db);
         await CommunityPresetSchema.InitializeAsync(db);
+        await MembershipCodeSchema.InitializeAsync(db);
         var present = await db.FeatureDefinitions.Select(x => x.Key).ToListAsync();
         foreach (var key in AccountService.InitialFeatures.Except(present))
             db.FeatureDefinitions.Add(new() { Key = key, Enabled = true, MinimumTier = "standard", UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds() });

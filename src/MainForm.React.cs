@@ -227,7 +227,7 @@ public sealed partial class MainForm
                 var page = Arg(args, "page") switch { "home" => 0, "library" => 1, "about" => 2, "downloads" => 3, "help" => 4, "settings" => 5, "account" => 6, "magpie" => 7, "wishes" => 8, _ => throw new IOException("未知页面。") };
                 if (!CanNavigateToPage(page)) throw new IOException("请先登录 MU 账户。");
                 SwitchPage(page); return null;
-            case "login": case "register": case "resetPassword": case "changePassword": case "logout": case "sendCode": case "refreshAccount": case "enterHome":
+            case "login": case "register": case "resetPassword": case "changePassword": case "logout": case "sendCode": case "refreshAccount": case "enterHome": case "redeemMembership":
                 if (reactAccountMutation || accountRequestBusy) throw new IOException("账户请求正在处理中。");
                 reactAccountMutation = true; accountRequestBusy = true;
                 try
@@ -241,6 +241,7 @@ public sealed partial class MainForm
                         case "changePassword": await accountClient.ChangePasswordAsync(Arg(args,"current"),Arg(args,"password"),lifetime.Token); break;
                         case "logout": if (busy || accountTransactionDepth > 0) throw new IOException("请先等待安装或恢复操作完成。"); await accountClient.LogoutAsync(lifetime.Token); SwitchPage(6); break;
                         case "refreshAccount": await accountClient.HeartbeatAsync(lifetime.Token); accountFeedback = "会员状态已更新。"; status.Text = accountFeedback; break;
+                        case "redeemMembership": await accountClient.RedeemMembershipAsync(Arg(args,"code"),lifetime.Token); accountFeedback = "兑换成功，会员状态已更新。"; status.Text = accountFeedback; break;
                         case "enterHome":
                             await accountClient.HeartbeatAsync(lifetime.Token); accountFeedback = "账户状态已更新。"; status.Text = accountFeedback;
                             await ReactAuthorize("library.manage"); SwitchPage(0);

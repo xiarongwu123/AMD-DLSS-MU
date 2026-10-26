@@ -74,6 +74,7 @@ sealed class Suite : IAsyncDisposable
 
     public async Task RunAsync()
     {
+        await MembershipCodeTests.RunAsync(directory);
         await VerifyVersionOneUpgradeAsync();
         await Scope(provider => DatabaseSetup.InitializeAsync(provider.GetRequiredService<AppDbContext>()));
         const string email = "tester@example.com";

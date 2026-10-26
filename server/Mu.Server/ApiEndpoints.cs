@@ -26,6 +26,11 @@ public static class ApiEndpoints
         }).RequireRateLimiting("auth");
 
         var authenticated = api.MapGroup("").RequireAuthorization("Client");
+        authenticated.MapPost("/account/redeem", async (RedeemMembershipRequest input, ClaimsPrincipal user, MembershipCodeService codes, AccountService accounts) =>
+        {
+            await codes.RedeemAsync(UserId(user), input.Code);
+            return Results.Ok(await accounts.SnapshotAsync(UserId(user)));
+        }).RequireRateLimiting("auth");
         authenticated.MapGet("/account/me", async (ClaimsPrincipal user, AccountService accounts) => Results.Ok(await accounts.SnapshotAsync(UserId(user))));
         authenticated.MapPost("/auth/logout", async (ClaimsPrincipal user, AccountService accounts) =>
         {

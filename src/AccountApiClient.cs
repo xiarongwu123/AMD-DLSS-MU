@@ -128,6 +128,9 @@ public sealed partial class AccountApiClient : IDisposable
         return await AuthenticatedAsync<AccountSnapshot>(HttpMethod.Get, "account/me", null, token);
     }
 
+    public Task<AccountSnapshot> RedeemMembershipAsync(string code, CancellationToken token) =>
+        AuthenticatedAsync<AccountSnapshot>(HttpMethod.Post, "account/redeem", new { code }, token);
+
     public async Task<bool> AuthorizeAsync(string featureKey, CancellationToken token)
     {
         var response = await AuthenticatedAsync<AuthorizationResponse>(HttpMethod.Post, "account/authorize", new { featureKey }, token);

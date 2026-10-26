@@ -14,6 +14,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
     public DbSet<MembershipChange> MembershipChanges => Set<MembershipChange>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
+    public DbSet<MembershipCode> MembershipCodes => Set<MembershipCode>();
     public DbSet<CompatibilityGameEntry> CompatibilityGames => Set<CompatibilityGameEntry>();
     public DbSet<CompatibilityTestEntry> CompatibilityTests => Set<CompatibilityTestEntry>();
     public DbSet<GameTelemetryEntry> GameTelemetry => Set<GameTelemetryEntry>();
@@ -25,6 +26,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        builder.Entity<MembershipCode>().HasIndex(x => x.CodeHash).IsUnique();
+        builder.Entity<MembershipCode>().HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.RedeemedBy).OnDelete(DeleteBehavior.Restrict);
         builder.Entity<WishEntry>().HasIndex(x => new { x.UserId, x.SubmissionId }).IsUnique();
         builder.Entity<WishEntry>().HasIndex(x => x.CreatedAt);
         builder.Entity<WishEntry>().HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
