@@ -97,7 +97,6 @@ internal static class HttpTests
         Check(login.IsSuccessStatusCode, "Login after family revocation");
         var current = (await login.Content.ReadFromJsonAsync<SessionResponse>())!;
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", current.AccessToken);
-        Check((await client.PostAsJsonAsync("/api/v1/account/password", new { currentPassword = password, newPassword = "another correct password" })).StatusCode == HttpStatusCode.NoContent,
         string cdk;
         using (var scope = factory.Services.CreateScope())
             cdk = (await scope.ServiceProvider.GetRequiredService<MembershipCodeService>().GenerateAsync(30, 1, 90, "test-admin", "HTTP CDK test"))[0];
@@ -105,6 +104,7 @@ internal static class HttpTests
         Check(redemption.IsSuccessStatusCode, "Authenticated CDK redemption succeeds");
         Check((await redemption.Content.ReadFromJsonAsync<AccountSnapshot>())?.Membership.Tier == "pro", "CDK response contains updated membership");
         Check((await client.PostAsJsonAsync("/api/v1/account/redeem", new { code = cdk })).StatusCode == HttpStatusCode.Conflict, "CDK replay rejected through HTTP");
+        Check((await client.PostAsJsonAsync("/api/v1/account/password", new { currentPassword = password, newPassword = "another correct password" })).StatusCode == HttpStatusCode.NoContent,
             "Password change endpoint");
         Check((await client.GetAsync("/api/v1/account/me")).StatusCode == HttpStatusCode.Unauthorized, "Password change revokes session immediately");
         Check((await client.GetAsync("/legal/terms")).IsSuccessStatusCode && (await client.GetAsync("/legal/privacy")).IsSuccessStatusCode,
