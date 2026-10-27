@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Windows.Forms;
 
 namespace AmdNrAssistant;
@@ -8,150 +7,47 @@ public sealed partial class MainForm
     async Task ShowManualPurchaseDialogAsync()
     {
         var plans = await accountClient.GetPurchasePlansAsync(lifetime.Token);
-        if (!plans.PaymentsEnabled || plans.PaymentMethod != "manual" || plans.Items.Length == 0)
-            throw new InvalidOperationException("人工购买申请尚未开放，或暂无上架套餐。");
-        var orders = await accountClient.GetPurchaseOrdersAsync(lifetime.Token);
-
-        using var dialog = new Form
+        if (!plans.CdkPlanMatching || plans.Items.Length == 0)
+            throw new InvalidOperationException("后台尚不支持套餐 CDK 校验，或暂无上架套餐，请联系 xrwCoder。");
+        using var dialog = new Form { Text="MU · 套餐 CDK 兑换", BackColor=Surface, ForeColor=Ink,
+            StartPosition=FormStartPosition.CenterParent, FormBorderStyle=FormBorderStyle.FixedDialog,
+            MaximizeBox=false, MinimizeBox=false, ShowInTaskbar=false, ClientSize=new Size(560,650), Font=Font };
+        var layout = new FlowLayoutPanel { Dock=DockStyle.Fill, Padding=new Padding(24), FlowDirection=FlowDirection.TopDown,
+            WrapContents=false, AutoScroll=true, BackColor=Surface };
+        var selector = new ComboBox { Width=490, DropDownStyle=ComboBoxStyle.DropDownList };
+        foreach (var plan in plans.Items) selector.Items.Add($"{plan.Name} · ¥{plan.PriceMinor/100m:0.00}");
+        var guide = new Label { Width=490, Height=95, ForeColor=Ink,
+            Text="支付成功后添加微信 xrwCoder，发送付款凭证和所选套餐，获取会员 CDK。\n付款不会自动开通；兑换码必须与所选套餐匹配。" };
+        var qr = new PictureBox { Width=220, Height=220, SizeMode=PictureBoxSizeMode.Zoom };
+        var image = plans.Payment?.Channels?.FirstOrDefault()?.QrImageUrl ?? plans.Payment?.QrImageUrl;
+        if (image?.StartsWith("data:image/",StringComparison.Ordinal)==true && image.Contains("base64,"))
         {
-            Text = "MU Pro · 购买申请", BackColor = Surface, ForeColor = Ink,
-            StartPosition = FormStartPosition.CenterParent, FormBorderStyle = FormBorderStyle.FixedDialog,
-            MaximizeBox = false, MinimizeBox = false, ShowInTaskbar = false,
-            ClientSize = new Size(560, 600), Font = new Font(Font.FontFamily, 10f)
-        };
-        var layout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill, Padding = new Padding(28, 22, 28, 20), ColumnCount = 1,
-            RowCount = 10, BackColor = Surface
-        };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        foreach (var height in new[] { 48, 48, 26, 42, 40, 108, 23, 40, 50, 56 })
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, height));
-        Label Label(string value, Color color, float size = 10, bool bold = false) => new()
-        {
-            Text = value, ForeColor = color, Font = new Font(Font.FontFamily, size, bold ? FontStyle.Bold : FontStyle.Regular),
-            TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill, AutoEllipsis = false
-        };
-        var title = Label("申请 MU Pro", Ink, 21, true);
-        var note = Label("选套餐 → 人工付款 → 管理员核对到账并开通。请保留付款凭证。", Muted);
-        var planCaption = Label("会员套餐", Muted, 9);
-        var selector = new ComboBox
-        {
-            Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList, BackColor = Base,
-            ForeColor = Ink, FlatStyle = FlatStyle.Flat, Font = new Font(Font.FontFamily, 11)
-        };
-        foreach (var plan in plans.Items)
-            selector.Items.Add($"{plan.Name} · {(!plan.GrantsMembership ? "单次指导，不含会员" : plan.DurationDays==0 ? "终身" : plan.DurationDays+" 天")} · ¥{plan.PriceMinor / 100m:0.00}");
-        selector.SelectedIndex = 0;
-        var amount = Label("", Ink, 12, true);
-        void UpdateAmount()
-        {
-            var plan = plans.Items[selector.SelectedIndex];
-            amount.Text = $"应付 ¥{plan.PriceMinor / 100m:0.00} · {(!plan.GrantsMembership ? "仅服务" : plan.DurationDays==0 ? "终身会员" : plan.DurationDays+" 天会员")} · 指导{plan.ConfigurationSessions}次";
+            try { using var bytes=new MemoryStream(Convert.FromBase64String(image[(image.IndexOf("base64,",StringComparison.Ordinal)+7)..])); using var raw=Image.FromStream(bytes); qr.Image=new Bitmap(raw); }
+            catch (Exception e) when(e is ArgumentException or FormatException) { guide.Text+="\n收款码暂不可用，请联系作者核对付款方式。"; }
         }
-        selector.SelectedIndexChanged += (_, _) => UpdateAmount();
-        UpdateAmount();
-        var instructions = Label("提交申请后显示收款说明。", Muted);
-        var orderCaption = Label("订单编号", Muted, 9);
-        var orderId = new TextBox
+        qr.Visible = qr.Image != null;
+        var input = new TextBox { Width=490, PlaceholderText="输入所选套餐对应的 CDK", MaxLength=80, Visible=false };
+        var status = new Label { Width=490, Height=55, ForeColor=Muted };
+        var action = new Button { Width=250, Height=44, Text="支付完成 校验CDK" };
+        var copy = new Button { Width=200, Height=38, Text="复制微信 xrwCoder" };
+        copy.Click+=(_,_)=>Clipboard.SetText("xrwCoder");
+        var processing=false;
+        action.Click+=async(_,_)=>
         {
-            Dock = DockStyle.Fill, ReadOnly = true, BackColor = Base, ForeColor = Ink,
-            BorderStyle = BorderStyle.FixedSingle, Font = new Font("Consolas", 10)
-        };
-        var qrLink = new LinkLabel
-        {
-            Text = "", Dock = DockStyle.Fill, LinkColor = Acid, ActiveLinkColor = Acid,
-            VisitedLinkColor = Acid, TextAlign = ContentAlignment.MiddleLeft
-        };
-        var state = Label("付款不会自动开通；只有核对到账后，会员状态才会更新。", Muted, 9);
-        var actions = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, BackColor = Surface };
-        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
-        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
-        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
-        RoundedButton Button(string text, bool primary = false) => new()
-        {
-            Text = text, Dock = DockStyle.Fill, Margin = new Padding(4), Radius = 12,
-            BackColor = primary ? Acid : Sidebar, ForeColor = primary ? OnAccent : Ink
-        };
-        var copy = Button("复制订单号");
-        var refresh = Button("刷新状态");
-        var create = Button("提交申请", true);
-        copy.Enabled = refresh.Enabled = false;
-        actions.Controls.Add(copy, 0, 0); actions.Controls.Add(refresh, 1, 0); actions.Controls.Add(create, 2, 0);
-        layout.Controls.Add(title, 0, 0); layout.Controls.Add(note, 0, 1);
-        layout.Controls.Add(planCaption, 0, 2); layout.Controls.Add(selector, 0, 3);
-        layout.Controls.Add(amount, 0, 4); layout.Controls.Add(instructions, 0, 5);
-        layout.Controls.Add(orderCaption, 0, 6); layout.Controls.Add(orderId, 0, 7);
-        layout.Controls.Add(qrLink, 0, 8); layout.Controls.Add(state, 0, 9);
-        dialog.Controls.Add(layout);
-        // Keep actions in a separate bottom bar so narrow DPI scaling cannot hide them.
-        actions.Dock = DockStyle.Bottom;
-        actions.Height = 58;
-        dialog.Controls.Add(actions);
-        actions.BringToFront();
-
-        PurchaseOrder? current = null;
-        void ShowOrder(PurchaseOrder order)
-        {
-            current = order;
-            var planIndex = Array.FindIndex(plans.Items, x => x.Id == order.PlanId);
-            if (planIndex >= 0) selector.SelectedIndex = planIndex;
-            var used = order.ConfigurationSessionsUsed ?? (order.ConfigurationServiceStatus=="completed" ? order.ConfigurationSessions : 0);
-            amount.Text = $"本单 ¥{order.AmountMinor / 100m:0.00} · {(!order.GrantsMembership ? "仅服务" : order.DurationDays==0 ? "终身会员" : order.DurationDays+" 天会员")} · 指导剩余{order.ConfigurationSessions-used}次";
-            orderId.Text = order.Id;
-            selector.Enabled = order.Status is not ("pending" or "review_requested");
-            create.Enabled = order.Status != "review_requested";
-            create.Text = order.Status switch
-            {
-                "pending" => "我已付款，提交核对",
-                "review_requested" => "等待核对",
-                "paid" => "再次购买",
-                _ => "提交申请"
-            };
-            copy.Enabled = true;
-            refresh.Enabled = true;
-            var payment = order.Payment;
-            instructions.Text = order.Status is "pending" or "review_requested"
-                ? $"待核对 · 应付 ¥{order.AmountMinor / 100m:0.00}\n{payment?.Instructions ?? "收款信息暂不可用，请联系管理员。"}"
-                : order.Status == "paid" ? "已确认到账，订单对应的会员/指导权益已发放。" : "订单已结束。";
-            state.Text = order.Status == "pending" ? "付款后点击“我已付款”；管理员核对到账后再刷新。"
-                : order.Status == "review_requested" ? "已提交核对；尚未开通，请保留付款凭证。"
-                : order.Status == "paid" ? "已开通，可关闭窗口并刷新账户状态。" : "可重新选择套餐提交申请。";
-            qrLink.Text = (order.Status is "pending" or "review_requested") && Uri.TryCreate(payment?.QrImageUrl, UriKind.Absolute, out var uri)
-                && uri.Scheme == Uri.UriSchemeHttps ? "打开收款二维码 ↗" : "";
-        }
-        qrLink.LinkClicked += (_, _) =>
-        {
-            if (Uri.TryCreate(current?.Payment?.QrImageUrl, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps)
-                try { Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true }); }
-                catch (Exception e) { state.Text = e.Message; }
-        };
-        copy.Click += (_, _) => { if (current != null) Clipboard.SetText(current.Id); };
-        refresh.Click += async (_, _) =>
-        {
-            if (current == null) return;
-            refresh.Enabled = false;
-            try { ShowOrder(await accountClient.GetPurchaseOrderAsync(current.Id, lifetime.Token)); }
-            catch (Exception e) { state.Text = AccountError(e); }
-            finally { refresh.Enabled = true; }
-        };
-        create.Click += async (_, _) =>
-        {
-            create.Enabled = false;
-            state.Text = current?.Status == "pending" ? "正在提交核对…" : "正在提交申请…";
+            if(!input.Visible){input.Visible=true;selector.Enabled=false;action.Text="校验 CDK · 兑换权益";input.Focus();return;}
+            if(string.IsNullOrWhiteSpace(input.Text)){status.Text="请输入会员 CDK。";return;}
+            processing=true;action.Enabled=false;input.Enabled=false;status.Text="正在校验…";
             try
             {
-                if (current?.Status == "pending")
-                {
-                    await accountClient.SubmitPurchaseForReviewAsync(current.Id, lifetime.Token);
-                    ShowOrder(await accountClient.GetPurchaseOrderAsync(current.Id, lifetime.Token));
-                }
-                else ShowOrder(await accountClient.CreatePurchaseOrderAsync(plans.Items[selector.SelectedIndex].Id, lifetime.Token));
+                await accountClient.RedeemMembershipAsync(input.Text.Trim(),lifetime.Token,plans.Items[selector.SelectedIndex].Id);
+                input.Clear();status.Text="兑换成功，会员及服务权益已更新。";action.Text="已兑换";
             }
-            catch (Exception e) { state.Text = AccountError(e); create.Enabled = true; }
+            catch(Exception e){status.Text=AccountError(e);action.Enabled=true;input.Enabled=true;}
+            finally{processing=false;}
         };
-        var pending = orders.Items.FirstOrDefault(x => x.Status is "pending" or "review_requested");
-        if (pending != null) ShowOrder(await accountClient.GetPurchaseOrderAsync(pending.Id, lifetime.Token));
+        dialog.FormClosing+=(_,e)=>{if(processing)e.Cancel=true;};
+        dialog.FormClosed+=(_,_)=>qr.Image?.Dispose();
+        layout.Controls.AddRange([selector,guide,qr,copy,input,action,status]);dialog.Controls.Add(layout);selector.SelectedIndex=0;
         dialog.ShowDialog(this);
     }
 }

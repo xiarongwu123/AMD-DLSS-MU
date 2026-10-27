@@ -48,11 +48,12 @@ using (var client = new AccountApiClient(new HttpClient(new Handler(async reques
         && request.Headers.Authorization?.Parameter == "access-1", "CDK uses authenticated POST");
     var body = await request.Content!.ReadFromJsonAsync<JsonElement>();
     Check(body.GetProperty("code").GetString() == "test-cdk", "CDK passed to server");
+    Check(body.GetProperty("planId").GetString() == "mu-pro-lifetime", "selected CDK plan passed to server");
     return Ok(account with { Membership = new("pro", DateTimeOffset.UtcNow.AddDays(30)) });
 })), new MemoryStore()))
 {
     await client.LoginAsync(account.Email, "password123", false, default);
-    await client.RedeemMembershipAsync("test-cdk", default);
+    await client.RedeemMembershipAsync("test-cdk", default, "mu-pro-lifetime");
     Check(client.Account?.Membership.Tier == "pro" && client.IsOnline, "CDK refreshes local membership immediately");
 }
 

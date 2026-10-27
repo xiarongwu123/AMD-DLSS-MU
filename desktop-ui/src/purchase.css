@@ -76,3 +76,10 @@
 .payment-methods { display:flex;gap:10px;margin:18px 0; }.payment-methods button { padding:10px 22px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--muted); }.payment-methods button.active.wechat { color:#55e494;border-color:#55e494;background:#55e49115; }.payment-methods button.active.alipay { color:#69b2ff;border-color:#69b2ff;background:#69b2ff15; }.payment-methods button.active { color:var(--acid);border-color:var(--acid); }
 .payment-code-content { display:grid;grid-template-columns:320px minmax(0,1fr);gap:28px;align-items:start; }.payment-code-image { background:white;border-radius:14px;overflow:hidden; }.payment-code-image img { width:100%;height:auto;display:block; }.payment-code-image > p { padding:20px;color:#222; }.payment-code-guide h3 { font-size:24px; }.payment-code-guide ol { padding-left:20px;color:var(--muted);line-height:1.8; }.payment-code-guide li { margin-bottom:14px; }.payment-code-guide > p { display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px; }
 @media(max-width:650px) { .payment-code-content { grid-template-columns:1fr; }.payment-code-image { max-width:320px;margin:auto; } }
+
+.purchase-cdk { display:flex; flex-direction:column; gap:16px; max-width:640px; margin:20px auto; }
+.purchase-cdk h3 { font-size:25px; }
+.purchase-cdk p { color:var(--muted); line-height:1.8; }
+.purchase-cdk label { color:var(--ink); font-weight:700; }
+.purchase-cdk input { width:100%; min-height:54px; letter-spacing:1px; font:inherit; }
+.purchase-cdk .button { align-self:flex-start; }

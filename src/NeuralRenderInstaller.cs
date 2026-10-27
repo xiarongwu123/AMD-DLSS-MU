@@ -100,7 +100,9 @@ public static class NeuralRenderInstaller
         if (!File.Exists(zip) || new FileInfo(zip).Length != pin.Size || Core.Hash(zip) != pin.Sha256)
         {
             using var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
-            await DownloadSources.DownloadAsync(http, pin.Url, null, pin.Sha256, pin.Size, zip,
+            await DownloadSources.DownloadAsync(http, pin.Url,
+                backend == NeuralBackends.LmxxfRdna3 ? null : "https://api.github.com/repos/TheAutomatic/dlss-5-amd-project/releases/assets/643822225",
+                pin.Sha256, pin.Size, zip,
                 new Progress<int>(n => progress.Report($"神经渲染资源下载 {n}%")), token, progress.Report);
         }
         token.ThrowIfCancellationRequested(); progress.Report("正在校验神经渲染文件…");
@@ -179,11 +181,16 @@ public static class NeuralRenderInstaller
         // The matched AMDNR pak is acquired and verified with its host at install
         // time. Never ask the player for the incompatible RDNA4 loose assets.
         if (plan.Backend == NeuralBackends.LmxxfRdna3) return [];
-        if (plan.Backend == "mochizuki" && Find(Resources, Path.GetDirectoryName(exe)!, "dlssnr-amd/dlssnr.bin", "dlssnr.bin") == null)
-            return typeof(NeuralRenderInstaller).Assembly.GetManifestResourceInfo("AmdNrAssistant.nvngx_dlssnr.dll") != null
-                ? [] : ["内置 DLSS 5 资源缺失，请重新安装完整版本的 MU。"];
+        if (plan.Backend == "mochizuki") return MissingMochizukiResources(exe, CanPrepareMochizukiModel);
         try { UserFiles(Resources, Path.GetDirectoryName(exe)!, plan.Backend); return []; }
         catch (IOException error) { return [error.Message]; }
+    }
+    internal static string[] MissingMochizukiResources(string exe, bool canPrepare)
+    {
+        // Invalid or incomplete cached/user models are recoverable using the pinned
+        // bundled source. Preflight must allow the installer to prepare a replacement.
+        if (HasVerifiedMochizukiModel(exe) || canPrepare) return [];
+        return ["Mochizuki 模型缺失或校验失败，且 MU 内置 DLSS 5 资源不可用。请重新安装完整版本的 MU，或导入配套的 310.8.0 模型。"];
     }
     public static bool HasVerifiedMochizukiModel(string exe)
     {
@@ -230,16 +237,16 @@ public static class NeuralRenderInstaller
     }
     public static async Task PrepareModelAsync(string package, IProgress<string> progress, CancellationToken token)
     {
+        token.ThrowIfCancellationRequested();
         var existing = Find(Resources, Resources, "dlssnr-amd/dlssnr.bin", "dlssnr.bin");
-        if (existing != null)
-        {
-            if (new FileInfo(existing).Length != 147756560 || Core.Hash(existing) != MochizukiModelHash)
-                throw new IOException("已有模型校验失败，请删除损坏的 dlssnr.bin 后重试。");
-            return;
-        }
+        if (existing != null && new FileInfo(existing).Length == 147756560 && Core.Hash(existing) == MochizukiModelHash) return;
+        if (existing != null) progress.Report("已有模型校验未通过，正在自动重新提取；原缓存将在新模型校验成功后备份。 ");
         await Task.Run(() => ValidatePackage(package), token);
         progress.Report("正在从 MU 内置资源准备神经渲染模型，首次运行可能需要几分钟…");
-        var output = Path.Combine(Resources, "dlssnr-amd/dlssnr.bin"); Core.RejectLinks(output);
+        // Extract into a private stage, never truncate a cached or game-owned model.
+        var modelStage = Path.Combine(Resources, "model-stage-" + Guid.NewGuid().ToString("N"));
+        Core.RejectLinks(modelStage); Directory.CreateDirectory(modelStage);
+        var output = Path.Combine(modelStage, "dlssnr.bin");
         var nv = Path.Combine(package, "mu-model-source", "nvngx_dlssnr.dll");
         var script = Path.Combine(package, "mu-mochizuki-model.py");
         try
@@ -263,13 +270,30 @@ public static class NeuralRenderInstaller
             await Task.WhenAll(stdout, stderr);
             if (process.ExitCode != 0 || !File.Exists(output) || new FileInfo(output).Length != 147756560 || Core.Hash(output) != MochizukiModelHash)
                 throw new IOException("模型自动提取或校验失败，游戏文件尚未修改。" + (await stderr).Trim().Split('\n').LastOrDefault());
+            token.ThrowIfCancellationRequested();
+            PromoteMochizukiModel(output);
+            progress.Report("Mochizuki 模型已自动准备并通过校验。");
         }
         finally
         {
             if (File.Exists(script)) File.Delete(script);
             if (File.Exists(nv)) File.Delete(nv);
-            if (File.Exists(output) && Core.Hash(output) != MochizukiModelHash) File.Delete(output);
+            if (Directory.Exists(modelStage)) Directory.Delete(modelStage, true);
         }
+    }
+    internal static void PromoteMochizukiModel(string output)
+    {
+        Core.RejectLinks(output);
+        if (!File.Exists(output) || new FileInfo(output).Length != 147756560 || Core.Hash(output) != MochizukiModelHash)
+            throw new IOException("新模型校验失败，保留现有缓存与游戏文件。");
+        var destination = Path.Combine(Resources, "dlssnr-amd/dlssnr.bin"); Core.RejectLinks(destination);
+        Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+        if (File.Exists(destination))
+        {
+            var backup = destination + ".bak-" + Guid.NewGuid().ToString("N");
+            Core.RejectLinks(backup); File.Copy(destination, backup, false);
+        }
+        AtomicCopy(output, destination, MochizukiModelHash);
     }
     static async Task<string> PreparePythonAsync(IProgress<string> progress, CancellationToken token)
     {

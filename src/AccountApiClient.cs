@@ -12,7 +12,7 @@ public sealed record SessionResponse(string AccessToken, string RefreshToken, Da
 public sealed record CodeResponse(string Message, int RetryAfterSeconds);
 public sealed record AuthorizationResponse(bool Allowed, string? Reason, AccountSnapshot Account);
 public sealed record PurchasePlan(string Id, string Name, int DurationDays, long PriceMinor, string Currency, int ConfigurationSessions = 0, bool GrantsMembership = true);
-public sealed record PurchasePlans(PurchasePlan[] Items, bool PaymentsEnabled, string? PaymentMethod);
+public sealed record PurchasePlans(PurchasePlan[] Items, bool PaymentsEnabled, string? PaymentMethod, bool CdkPlanMatching = false, ManualPaymentDetails? Payment = null);
 public sealed record PurchasePaymentChannel(string Id, string Name, string QrImageUrl);
 public sealed record ManualPaymentDetails(string Method, string Instructions, string? QrImageUrl, PurchasePaymentChannel[]? Channels = null);
 public sealed record PurchaseOrder(string Id, string PlanId, string PlanName, int DurationDays, string Status,
@@ -142,8 +142,8 @@ public sealed partial class AccountApiClient : IDisposable
         return await AuthenticatedAsync<AccountSnapshot>(HttpMethod.Get, "account/me", null, token);
     }
 
-    public Task<AccountSnapshot> RedeemMembershipAsync(string code, CancellationToken token) =>
-        AuthenticatedAsync<AccountSnapshot>(HttpMethod.Post, "account/redeem", new { code }, token);
+    public Task<AccountSnapshot> RedeemMembershipAsync(string code, CancellationToken token, string? planId = null) =>
+        AuthenticatedAsync<AccountSnapshot>(HttpMethod.Post, "account/redeem", new { code, planId }, token);
 
     public async Task<bool> AuthorizeAsync(string featureKey, CancellationToken token)
     {

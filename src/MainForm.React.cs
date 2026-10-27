@@ -255,7 +255,7 @@ public sealed partial class MainForm
                         case "changePassword": await accountClient.ChangePasswordAsync(Arg(args,"current"),Arg(args,"password"),lifetime.Token); break;
                         case "logout": if (busy || accountTransactionDepth > 0) throw new IOException("请先等待安装或恢复操作完成。"); await accountClient.LogoutAsync(lifetime.Token); SwitchPage(6); break;
                         case "refreshAccount": await accountClient.HeartbeatAsync(lifetime.Token); accountFeedback = "会员状态已更新。"; status.Text = accountFeedback; break;
-                        case "redeemMembership": await accountClient.RedeemMembershipAsync(Arg(args,"code"),lifetime.Token); accountFeedback = "兑换成功，会员状态已更新。"; status.Text = accountFeedback; break;
+                        case "redeemMembership": await accountClient.RedeemMembershipAsync(Arg(args,"code"),lifetime.Token,Arg(args,"planId")); accountFeedback = "兑换成功，会员状态已更新。"; status.Text = accountFeedback; break;
                         case "enterHome":
                             await accountClient.HeartbeatAsync(lifetime.Token); accountFeedback = "账户状态已更新。"; status.Text = accountFeedback;
                             await ReactAuthorize("library.manage"); SwitchPage(0);
@@ -524,7 +524,7 @@ public sealed partial class MainForm
                 var row=downloadRows.FirstOrDefault(r=>r.Id==Arg(args,"id")) ?? throw new IOException("下载任务不存在。");
                 switch(Arg(args,"action"))
                 {
-                    case "pause": if(row.Pause.Enabled){if(row.Session.Paused)await ReactAuthorize(row.FeatureKey);row.Session.TogglePause();}break;
+                    case "pause": if(row.Session.IsTransferActive){if(row.Session.Paused)await ReactAuthorize(row.FeatureKey);row.Session.TogglePause();}break;
                     case "cancel": row.Session.Cancel();break;
                     case "retry":
                         if(row.Independent){await row.RetryAction();break;}

@@ -25,6 +25,29 @@ internal static class NeuralRenderTests
         var decoded = ManagedIni.Decode(unicode);
         Check(ManagedIni.Encode(decoded.Text, decoded.Encoding).SequenceEqual(unicode), "UTF16 BOM not preserved");
         Check(NeuralRenderPlanner.ApiFromImports(["d3d11.dll"]) == "dx11" && NeuralRenderPlanner.ApiFromImports(["d3d11.dll", "d3d12.dll"]) == "unknown", "Ambiguous graphics API guessed");
+        var modelTestRoot = Path.Combine(Directory.GetCurrentDirectory(), "mu-model-preflight-" + Guid.NewGuid().ToString("N"));
+        var previousResources = NeuralRenderInstaller.ResourcesOverride;
+        try
+        {
+            NeuralRenderInstaller.ResourcesOverride = Path.Combine(modelTestRoot, "resources");
+            var game = Path.Combine(modelTestRoot, "game"); Directory.CreateDirectory(game);
+            var exe = Path.Combine(game, "game.exe");
+            Check(NeuralRenderInstaller.MissingMochizukiResources(exe, true).Length == 0, "Missing model blocked automatic preparation");
+            var cache = Path.Combine(NeuralRenderInstaller.Resources, "dlssnr-amd", "dlssnr.bin");
+            Directory.CreateDirectory(Path.GetDirectoryName(cache)!); File.WriteAllText(cache, "interrupted download");
+            Check(!NeuralRenderInstaller.HasVerifiedMochizukiModel(exe), "Broken model accepted as verified");
+            Check(NeuralRenderInstaller.MissingMochizukiResources(exe, true).Length == 0, "Broken model blocked automatic repair");
+            Check(NeuralRenderInstaller.MissingMochizukiResources(exe, false).Length == 1, "Unavailable bundled source did not explain missing dependency");
+            Check(File.ReadAllText(cache) == "interrupted download", "Preflight modified user resources");
+            var failed = Path.Combine(modelTestRoot, "failed-model.bin"); File.WriteAllText(failed, "failed extraction");
+            Reject(() => NeuralRenderInstaller.PromoteMochizukiModel(failed), "Unverified extraction replaced cached model");
+            Check(File.ReadAllText(cache) == "interrupted download", "Failed extraction destroyed previous cache");
+            Check(!Directory.EnumerateFiles(Path.GetDirectoryName(cache)!, "*.bak-*").Any(), "Failed extraction moved cache before verification");
+            File.Delete(cache); File.WriteAllText(Path.Combine(game, "dlssnr.bin"), "other model");
+            Check(NeuralRenderInstaller.MissingMochizukiResources(exe, true).Length == 0, "Game-owned incompatible model prevented staging a private replacement");
+            Check(File.ReadAllText(Path.Combine(game, "dlssnr.bin")) == "other model", "Preflight modified game files");
+        }
+        finally { NeuralRenderInstaller.ResourcesOverride = previousResources; if (Directory.Exists(modelTestRoot)) Directory.Delete(modelTestRoot, true); }
         var now = DateTimeOffset.UtcNow;
         var mochi = NeuralRenderPlanner.Select("steam:1", "AMD Radeon RX 9070 XT", "dx12", null, new(), now);
         Check(mochi.Backend == "daniel" && mochi.Passes == 1 && mochi.Status == "unverified", "GPU generation alone must not choose Mochizuki");

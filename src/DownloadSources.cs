@@ -80,6 +80,7 @@ public static class DownloadSources
                             status?.Invoke(detail);
                             progress.Report(Percent(total, size));
                             session?.Report("连接中", Percent(total, size), size, detail);
+                            if (session != null) await session.WaitAsync(token).ConfigureAwait(false);
                             using var overall = CancellationTokenSource.CreateLinkedTokenSource(token);
                             overall.CancelAfter(TimeSpan.FromMinutes(30));
                             using var headers = CancellationTokenSource.CreateLinkedTokenSource(overall.Token);
@@ -215,6 +216,8 @@ public sealed class DownloadSession : IDisposable
     TaskCompletionSource? resume;
     DownloadSnapshot current = new("连接中", 0, 0, "");
     bool disposed;
+    string transferState = "连接中";
+    public bool IsTransferActive { get { lock (gate) return !disposed && current.State is ("连接中" or "下载中" or "已暂停"); } }
     public Action<DownloadSnapshot>? Changed { get; set; }
     public event Action? Disposed;
     public CancellationToken Token => cancel.Token;
@@ -225,7 +228,8 @@ public sealed class DownloadSession : IDisposable
         DownloadSnapshot snapshot;
         lock (gate)
         {
-            snapshot = new(resume != null && state == "下载中" ? "已暂停" : state, percent, size, detail);
+            if (state is "连接中" or "下载中") transferState = state;
+            snapshot = new(resume != null && state is ("连接中" or "下载中") ? "已暂停" : state, percent, size, detail);
             if (snapshot == current) return;
             current = snapshot;
         }
@@ -236,10 +240,10 @@ public sealed class DownloadSession : IDisposable
         DownloadSnapshot snapshot;
         lock (gate)
         {
-            if (current.State is not ("下载中" or "已暂停")) return;
+            if (disposed || current.State is not ("连接中" or "下载中" or "已暂停")) return;
             if (resume == null) resume = new(TaskCreationOptions.RunContinuationsAsynchronously);
             else { resume.TrySetResult(); resume = null; }
-            snapshot = current = current with { State = resume == null ? "下载中" : "已暂停" };
+            snapshot = current = current with { State = resume == null ? transferState : "已暂停" };
         }
         Changed?.Invoke(snapshot);
     }

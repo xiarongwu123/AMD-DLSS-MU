@@ -1,26 +1,27 @@
-# Membership CDK
+# 套餐 CDK 兑换
 
-Administrators with an MFA session can open `/admin/codes` to generate Pro
-membership codes (1-3650 membership days, 1-100 codes per batch, 1-3650 days
-to redeem). Copy the codes immediately: plaintext is displayed only in the
-generation response. The database stores SHA-256 hashes of random 128-bit codes.
-Unused codes can be revoked from the same page; the latest 100 records show
-redemption status and the redeeming user ID.
+## 用户流程
 
-Signed-in desktop users enter a code on the account page. The client posts
-`{ "code": "..." }` to `POST /api/v1/account/redeem` with its bearer token.
-The response is the refreshed account snapshot. Codes are case-insensitive;
-outer whitespace and hyphens are ignored. Manual payment availability does
-not affect CDK redemption.
+选择套餐并扫码付款 → 点击「支付完成 校验CDK」→ 添加微信 `xrwCoder`，发送付款凭证和所选套餐，人工核对后获取 CDK → 输入兑换码 → 服务端核对所选套餐 → 发放权益并返回最新账户状态。
 
-Each code grants membership exactly once. The new expiry is
-`max(current_expiry, now) + duration_days * 86400`. Consumption, expiry update,
-membership history and audit are committed in one SQLite transaction. Concurrent
-redemptions cannot both claim a code. Invalid, used, expired or revoked codes
-return `409/code_unavailable`; malformed codes return `400/invalid_code`.
-The endpoint requires client authentication and uses the existing auth rate limit.
+付款按钮不代表已核实到账，也不会生成或自动批准人工付款订单。固定收款码不自动填金额。CDK 由管理员核对真实付款后发放，不由客户端生成。兑换不依赖当前是否开放人工收款；没有收款码时仍允许兑换已有的码。
 
-Startup adds the `MembershipCodes` table and indexes to existing account databases.
-Back up the account database using the existing operational procedure before
-deploying the server. Deploy the server and an updated Windows client to expose
-the complete flow. This change does not deploy or publish either component.
+## 发码
+
+管理员以 MFA 会话进入 `/admin/codes`，选择绑定套餐后生成。四档套餐权益均按生成时的快照固定：月会员、终身会员及3次指导、Plus会员及1次指导、单次指导。后续修改套餐不会改变已发兑换码的权益。
+
+也可继续生成自定义天数的普通高级会员码。旧码继续可用，但不能冒充终身、Plus或远程指导套餐。完整码仅在生成响应中显示，数据库只存随机128位码的SHA256，不存明文。每批1–100个，兑换有效期1–3650天。
+
+## 服务端匹配与事务
+
+`POST /api/v1/account/redeem` 接受 `{ "code": "...", "planId": "..." }`，需登录Bearer认证并使用现有频率限制。省略planId时，账户页按兑换码的真实权益兑换。套餐页必须传planId；服务端匹配失败返回`409/code_plan_mismatch`，事务回滚，码仍可用。
+
+每码仅使用一次。消费、会员期限、指导次数履约记录、会员历史和审计在同一SQLite事务内提交。并发兑换仅一个成功；无效/使用/过期/停用返回`409/code_unavailable`。月会员从max(当前期限,当前时间)续期；已有终身不因续期溢出或降级。
+
+套餐码建立provider=`cdk`的已履约订单快照，用于现有Plus有效期及远程次数统计，金额记为0以免把CDK兑换再次记为一笔收款。单次指导不发会员。原人工订单与服务次数继续保留。
+
+## 部署
+
+先按现有运维规程备份账户数据库，再部署新后台。启动时幂等追加`MembershipCodes.PlanSnapshotJson`列，保留旧码；应只让一个后台实例执行升级。客户端通过`GET /plans`的`cdkPlanMatching=true`确认后台已支持套餐匹配，旧后台不会静默把套餐兑换成普通天数。
+
+客户端从 v2.2.6 起使用新套餐兑换流程。后台包单独交付，GitHub 客户端 Release 不会自动部署后台；必须配套更新后台后再使用套餐兑换。

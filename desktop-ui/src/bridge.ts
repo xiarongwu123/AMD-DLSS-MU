@@ -127,7 +127,7 @@ async function preview(
   command: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  if (command === "plans") return { paymentsEnabled:true,items:[
+  if (command === "plans") return { paymentsEnabled:true,cdkPlanMatching:true,items:[
     {id:"mu-pro-monthly",name:"高级会员",durationDays:30,configurationSessions:0,priceMinor:990,currency:"CNY"},
     {id:"mu-pro-lifetime",name:"终身会员",durationDays:0,configurationSessions:3,priceMinor:8880,currency:"CNY"},
     {id:"mu-pro-assisted",name:"高级 Plus 会员",durationDays:30,configurationSessions:1,priceMinor:2990,currency:"CNY"},

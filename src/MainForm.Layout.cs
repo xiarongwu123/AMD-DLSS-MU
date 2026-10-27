@@ -32,6 +32,7 @@ public sealed partial class MainForm
         var b = Localize(new RoundedButton { Size = new Size(134, 40), BackColor = Surface, ForeColor = ink, Cursor = Cursors.Hand, Radius = 10, Margin = new Padding(0, 0, 10, 0) }, zh, en);
         b.Click += click; return b;
     }
+    bool waitingForDownloadClose;
     public MainForm()
     {
         LoadPreferences();
@@ -54,7 +55,29 @@ public sealed partial class MainForm
         BuildLibrary(); BuildV2Home(); BuildAbout(); BuildProductPages(); BuildAccountPage(); BuildMagpiePage(); BuildWishesPage(); SwitchPage(6); ApplyTheme(darkMode, false); ApplyAccountGate();
         Shown += async (_, _) => { await InitializeReactAsync(); await RestoreAccountAsync(); };
         Shown += (_, _) => telemetryMonitor?.Start();
-        FormClosing += (_, e) => { if (busy && !lifetime.IsCancellationRequested) { e.Cancel = true; ShowProductToast("请等待当前操作完成，或先在下载任务中取消下载。", false); } };
+        FormClosing += async (_, e) =>
+        {
+            if ((!busy && !reactMutation && !smartApplying) || lifetime.IsCancellationRequested) return;
+            e.Cancel = true;
+            if (waitingForDownloadClose) return;
+            var transfers = activeAccountDownloads.Keys.Where(d => d.IsTransferActive).ToArray();
+            if (transfers.Length == 0)
+            {
+                ShowProductToast("正在校验或写入配置，待安全完成后再关闭；可先最小化窗口。", false);
+                return;
+            }
+            waitingForDownloadClose = true;
+            foreach (var transfer in transfers) transfer.Cancel();
+            status.Text = "正在取消下载并安全结束，随后关闭窗口…";
+            try
+            {
+                var until = DateTime.UtcNow.AddSeconds(30);
+                while (!IsDisposed && (busy || reactMutation || smartApplying) && DateTime.UtcNow < until) await Task.Delay(100);
+                if (!IsDisposed && !busy && !reactMutation && !smartApplying) Close();
+                else if (!IsDisposed) ShowProductToast("下载已请求取消，正在安全收尾，请稍后再关闭。", false);
+            }
+            finally { waitingForDownloadClose = false; }
+        };
         FormClosed += (_, _) => { telemetryMonitor?.Dispose(); accountHeartbeat.Stop(); accountHeartbeat.Dispose(); accountClient.Changed -= AccountStateChanged; productToastTimer?.Stop(); productToastTimer?.Dispose(); controlPanel?.Close(); lifetime.Cancel(); accountClient.Dispose(); };
     }
 

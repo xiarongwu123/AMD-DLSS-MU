@@ -7,6 +7,7 @@ public sealed class MembershipCode
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string CodeHash { get; set; } = "";
     public int DurationDays { get; set; }
+    public string PlanSnapshotJson { get; set; } = "";
     public long CreatedAt { get; set; }
     public long ExpiresAt { get; set; }
     public long? RedeemedAt { get; set; }
@@ -16,7 +17,9 @@ public sealed class MembershipCode
 
 public static class MembershipCodeSchema
 {
-    public static Task InitializeAsync(AppDbContext db) => db.Database.ExecuteSqlRawAsync("""
+    public static async Task InitializeAsync(AppDbContext db)
+    {
+        await db.Database.ExecuteSqlRawAsync("""
         CREATE TABLE IF NOT EXISTS "MembershipCodes" (
             "Id" TEXT NOT NULL PRIMARY KEY, "CodeHash" TEXT NOT NULL,
             "DurationDays" INTEGER NOT NULL, "CreatedAt" INTEGER NOT NULL, "ExpiresAt" INTEGER NOT NULL,
@@ -25,4 +28,21 @@ public static class MembershipCodeSchema
         CREATE UNIQUE INDEX IF NOT EXISTS "IX_MembershipCodes_CodeHash" ON "MembershipCodes" ("CodeHash");
         CREATE INDEX IF NOT EXISTS "IX_MembershipCodes_RedeemedBy" ON "MembershipCodes" ("RedeemedBy");
         """);
+        var connection = db.Database.GetDbConnection();
+        var close = connection.State != System.Data.ConnectionState.Open;
+        if (close) await db.Database.OpenConnectionAsync();
+        try
+        {
+            var columns = new List<string>();
+            await using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "PRAGMA table_info('MembershipCodes')";
+                await using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync()) columns.Add(reader.GetString(1));
+            }
+            if (!columns.Contains("PlanSnapshotJson"))
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE MembershipCodes ADD COLUMN PlanSnapshotJson TEXT NOT NULL DEFAULT ''");
+        }
+        finally { if (close) await db.Database.CloseConnectionAsync(); }
+    }
 }

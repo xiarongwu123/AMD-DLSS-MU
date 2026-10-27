@@ -49,6 +49,36 @@ static class MembershipCodeTests
         Check(results.Count(x => x) == 1, "one concurrent redemption wins");
         Check(await db.MembershipChanges.CountAsync() == 4, "one membership record per redemption");
         Check(await db.AuditEntries.CountAsync(x => x.Action == "membership_code.redeem") == 4, "redemption audit recorded");
+        db.Plans.AddRange(
+            new Plan { Id="monthly", Name="高级会员", DurationDays=30, Enabled=true, PriceMinor=990 },
+            new Plan { Id="life", Name="终身会员", DurationDays=0, ConfigurationSessions=3, Enabled=true, PriceMinor=8880 },
+            new Plan { Id="plus", Name="高级Plus", DurationDays=30, ConfigurationSessions=1, Enabled=true, PriceMinor=2990 },
+            new Plan { Id="remote", Name="单次指导", GrantsMembership=false, DurationDays=0, ConfigurationSessions=1, Enabled=true, PriceMinor=3000 });
+        db.Users.AddRange(new ApplicationUser {Id="life-user"},new ApplicationUser {Id="plus-user"},new ApplicationUser {Id="remote-user"});
+        await db.SaveChangesAsync();
+        var lifeCode=(await service.GenerateAsync(30,1,90,"admin","lifetime test","life"))[0];
+        try { await service.RedeemAsync("life-user",lifeCode,"plus"); throw new Exception("mismatched plan accepted"); }
+        catch(ApiException e) when(e.Error.Code=="code_plan_mismatch") { }
+        await service.RedeemAsync("life-user",lifeCode,"life");
+        Check((await db.Users.SingleAsync(u=>u.Id=="life-user")).ProExpiresAt==MembershipPlans.LifetimeExpiry,"lifetime code grants permanent access");
+        Check(await MembershipPlans.RemoteSessionsRemainingAsync(db,"life-user")==3,"lifetime code grants three service sessions");
+        var plusCode=(await service.GenerateAsync(30,1,90,"admin","plus test","plus"))[0];
+        // Snapshot grants remain fixed if the mutable catalogue is edited later.
+        await db.Plans.Where(p=>p.Id=="plus").ExecuteUpdateAsync(x=>x.SetProperty(p=>p.ConfigurationSessions,20));
+        await service.RedeemAsync("plus-user",plusCode,"plus");
+        Check(await MembershipPlans.RemoteSessionsRemainingAsync(db,"plus-user")==1,"Plus code keeps generated service snapshot");
+        Check(await MembershipPlans.PlusExpiresAtAsync(db,"plus-user")>=now+30*86400L,"Plus code grants Plus membership time");
+        var remoteCode=(await service.GenerateAsync(30,1,90,"admin","remote test","remote"))[0];
+        await service.RedeemAsync("remote-user",remoteCode,"remote");
+        Check((await db.Users.SingleAsync(u=>u.Id=="remote-user")).ProExpiresAt==null,"remote code does not grant membership");
+        Check(await MembershipPlans.RemoteSessionsRemainingAsync(db,"remote-user")==1,"remote code grants one session");
+        var oldCode=(await service.GenerateAsync(30,1,90,"admin","legacy mismatch"))[0];
+        try { await service.RedeemAsync("b",oldCode,"life"); throw new Exception("old days code granted lifetime"); }
+        catch(ApiException e) when(e.Error.Code=="code_plan_mismatch") { }
+        await service.RedeemAsync("b",oldCode,"monthly");
+        var lifeRenew=(await service.GenerateAsync(30,1,90,"admin","lifetime renewal"))[0];
+        await service.RedeemAsync("life-user",lifeRenew);
+        Check((await db.Users.SingleAsync(u=>u.Id=="life-user")).ProExpiresAt==MembershipPlans.LifetimeExpiry,"legacy renewal preserves lifetime");
         Console.WriteLine("Membership CDK tests passed (extension, replay, disabled rollback, revoked/expired, concurrency, audit).");
     }
     private static void Check(bool value, string description)

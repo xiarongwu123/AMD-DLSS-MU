@@ -382,7 +382,7 @@ public sealed partial class MainForm
                     .Controls.OfType<DlssCoverAction>().FirstOrDefault();
                 if (!independent && activeCover is { IsDisposed: false, Loading: true })
                     activeCover.Progress = 4 + (int)Math.Round(snapshot.Percent * .82);
-                row.Pause.Enabled = snapshot.State is "下载中" or "已暂停"; row.Pause.Text = session.Paused ? "继续" : "暂停";
+                row.Pause.Enabled = snapshot.State is "连接中" or "下载中" or "已暂停"; row.Pause.Text = session.Paused ? "继续" : "暂停";
                 row.Cancel.Enabled = snapshot.State is "下载中" or "已暂停" or "连接中";
                 row.Retry.Visible = snapshot.State is "下载失败" or "已取消";
                 RenderDownloads();

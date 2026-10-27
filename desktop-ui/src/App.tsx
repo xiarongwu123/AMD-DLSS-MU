@@ -739,7 +739,7 @@ export default function App() {
                       <p className="muted">{d.detail.split("\n")[0]}</p>
                       <div className="actions">
                         <Button
-                          disabled={!["下载中", "已暂停"].includes(d.state)}
+                          disabled={!["连接中", "下载中", "已暂停"].includes(d.state)}
                           onClick={() =>
                             run("downloadAction", { id: d.id, action: "pause" })
                           }

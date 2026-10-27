@@ -80,6 +80,28 @@ public static class DownloadResumeTests
 
     public static async Task Run(string root, Action<bool, string> assert)
     {
+        using (var control = new DownloadSession())
+        {
+            assert(control.IsTransferActive, "new connecting session is cancellable");
+            control.TogglePause();
+            assert(control.Paused, "can pause before response headers arrive");
+            var waiting = control.WaitAsync(CancellationToken.None);
+            assert(!waiting.IsCompleted, "paused connection waits before sending");
+            control.Report("连接中", 0, 100, "retrying");
+            assert(control.Paused, "connection retry retains pause");
+            control.TogglePause(); await waiting;
+            assert(!control.Paused, "resume releases pending connection");
+            control.Report("下载中", 10, 100, "streaming"); control.TogglePause();
+            using var cancelled = CancellationTokenSource.CreateLinkedTokenSource(control.Token);
+            var cancelledWait = control.WaitAsync(cancelled.Token); control.Cancel();
+            try { await cancelledWait; throw new Exception("cancelled paused download continued"); }
+            catch (OperationCanceledException) { assert(true, "cancel interrupts a paused transfer"); }
+        }
+        using (var validation = new DownloadSession())
+        {
+            validation.Report("正在校验", 100, 100, "hashing"); validation.TogglePause();
+            assert(!validation.Paused && !validation.IsTransferActive, "file verification cannot be mistaken for a paused transfer");
+        }
         var bytes = "verified resumable package"u8.ToArray();
         var hash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
         const string direct = "https://download.example/package.zip";

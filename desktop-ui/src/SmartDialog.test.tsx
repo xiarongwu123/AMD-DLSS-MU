@@ -253,3 +253,23 @@ describe("推荐目标与真实配置命令", () => {
   });
 
 });
+
+it.each([['连接中',false],['已暂停',true]])('配置中可控制%s的下载，并收起窗口',async(state,paused)=>{
+ let finish!:()=>void;
+ vi.mocked(rpc).mockImplementation(async command=>{
+   if(command==='recommend')return recommendation;
+   if(command==='configure')return new Promise<void>(resolve=>{finish=resolve;});
+   return undefined;
+ });
+ const close=vi.fn();
+ render(<SmartDialog game={game} state={{...emptyState,downloads:[{id:'installation',title:'神经渲染组件',state,paused,percent:10,size:100,detail:'',independent:false}]}} onClose={close} onComplete={()=>{}}/>);
+ await screen.findByText('AMD RX 7900 XT');
+ fireEvent.click(screen.getByRole('button',{name:/高帧率版/}));fireEvent.click(screen.getByRole('button',{name:'一键配置'}));
+ await screen.findByRole('button',{name:paused?'继续下载':'暂停下载'});
+ fireEvent.click(screen.getByRole('button',{name:paused?'继续下载':'暂停下载'}));
+ await waitFor(()=>expect(rpc).toHaveBeenCalledWith('downloadAction',{id:'installation',action:'pause'}));
+ fireEvent.click(screen.getByRole('button',{name:'取消下载'}));
+ await waitFor(()=>expect(rpc).toHaveBeenCalledWith('downloadAction',{id:'installation',action:'cancel'}));
+ fireEvent.click(screen.getByRole('button',{name:'收起并后台继续'}));expect(close).toHaveBeenCalledOnce();
+ finish();
+});

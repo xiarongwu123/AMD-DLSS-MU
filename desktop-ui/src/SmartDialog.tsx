@@ -173,9 +173,16 @@ export function SmartDialog({
     } catch (e) { setError((e as Error).message); }
     finally { setWorking(false); }
   };
-  const close = useCallback(() => {
-    if (!working) onClose();
-  }, [working, onClose]);
+  const close = useCallback(() => onClose(), [onClose]);
+  const activeDownload = working ? state.downloads.find(d => !d.independent && ["连接中", "下载中", "已暂停"].includes(d.state)) : undefined;
+  const [downloadActionBusy, setDownloadActionBusy] = useState(false);
+  async function controlDownload(action: "pause" | "cancel") {
+    if (!activeDownload || downloadActionBusy) return;
+    setDownloadActionBusy(true);
+    try { await rpc("downloadAction", { id: activeDownload.id, action }); }
+    catch (e) { setError((e as Error).message); }
+    finally { setDownloadActionBusy(false); }
+  }
   return (
     <><Modal
       wide
@@ -194,11 +201,11 @@ export function SmartDialog({
         <>
           <p className="footer-note">
             {working
-              ? "正在配置，请等待或到下载任务取消。"
+              ? "可收起窗口，任务在后台继续；下载时可暂停或取消。"
               : "MU 配置所需文件；实际效果请进游戏确认。"}
           </p>
-          <Button disabled={working} onClick={close}>
-            返回游戏库
+          <Button onClick={close}>
+            {working ? "收起并后台继续" : "返回游戏库"}
           </Button>
           {tab === "recommend" && !completion && <Button
             primary
@@ -206,7 +213,7 @@ export function SmartDialog({
             data-guide="configure"
             disabled={
               checking ||
-              working ||
+              working || state.busy ||
               missingNeuralResources ||
               (game.state === "Configured" && scheme !== "base" && scheme !== "amd-magpie") ||
               (!result && goal !== "custom")
@@ -385,11 +392,16 @@ export function SmartDialog({
       {working && (
         <div className="operation">
           <p role="status">{state.status || "正在准备组件…"}</p>
+          {activeDownload && <div className="actions">
+            <Button disabled={downloadActionBusy} onClick={() => void controlDownload("pause")}>{activeDownload.paused ? "继续下载" : "暂停下载"}</Button>
+            <Button disabled={downloadActionBusy} onClick={() => void controlDownload("cancel")}>取消下载</Button>
+            <span role="status">{activeDownload.state}</span>
+          </div>}
           <Progress
-            percent={state.downloads[0]?.percent || 0}
+            percent={activeDownload?.percent || 0}
             unknown={
-              !state.downloads[0] ||
-              ["连接中", "校验中"].includes(state.downloads[0].state)
+              !activeDownload ||
+              ["连接中", "校验中"].includes(activeDownload.state)
             }
           />
         </div>

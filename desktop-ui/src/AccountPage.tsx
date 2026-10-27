@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Eye, EyeOff, Mail, LockKeyhole, Check } from "lucide-react";
 import { Button, Modal, Loading } from "./components";
 import { rpc } from "./bridge";
@@ -177,7 +177,7 @@ export function AccountPage({
                 />
               </label>
               <p className="muted">
-                每个兑换码限用一次，会员时长将叠加至当前有效期。
+                每个兑换码限用一次，按对应套餐开通会员或服务权益。
               </p>
               <Button
                 type="submit"
@@ -426,145 +426,64 @@ export function PurchaseDialog({
   onClose: () => void;
   notify: (s: string) => void;
 }) {
-  const [available,setAvailable]=useState(false);
-  const [plans, setPlans] = useState<Plan[] | null>(null),
-    [orders, setOrders] = useState<Order[]>([]),
-    [order, setOrder] = useState<Order | null>(null),
-    [plan, setPlan] = useState(initialPlanId),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+  const cdkFormId = useId();
+  const [plans, setPlans] = useState<Plan[] | null>(null);
+  const [plan, setPlan] = useState(initialPlanId);
+  const [payment, setPayment] = useState<Order["payment"]>(null);
+  const [matching, setMatching] = useState(false);
+  const [redeeming, setRedeeming] = useState(false);
+  const [cdk, setCdk] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [busy, setBusy] = useState(false);
   const refresh = async () => {
-    setBusy(true);
-    setError("");
+    setBusy(true); setError("");
     try {
-      const p = await rpc<{ items: Plan[]; paymentsEnabled: boolean }>("plans");
-      setPlans(p.items);
-      setAvailable(p.paymentsEnabled);
-      setPlan(v=>p.items.some(item=>item.id===v) ? v : p.items[0]?.id || "");
-      if (!p.paymentsEnabled) setError("人工收款暂未开放，请联系微信 xrwCoder。");
-      const o = await rpc<{ items: Order[] }>("orders");
-      setOrders(o.items);
-      if (order) setOrder(await rpc<Order>("order", { id: order.id }));
+      const data = await rpc<{ items: Plan[]; cdkPlanMatching?: boolean; payment?: Order["payment"] }>("plans");
+      setPlans(data.items); setMatching(data.cdkPlanMatching === true); setPayment(data.payment ?? null);
+      setPlan(value => data.items.some(p => p.id === value) ? value : data.items[0]?.id ?? "");
       await rpc("refreshAccount");
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
+    } catch (e) { setError((e as Error).message); }
+    finally { setBusy(false); }
   };
-  useEffect(() => {
-    void refresh();
-  }, []);
-  const act = async (command: string, args: Record<string, unknown>) => {
-    setBusy(true);
-    setError("");
+  useEffect(() => { void refresh(); }, []);
+  const selected = plans?.find(p => p.id === plan);
+  async function redeem() {
+    if (busy || success || !matching || !selected || !cdk.trim()) return;
+    setBusy(true); setError("");
     try {
-      const o = await rpc<Order>(command, args);
-      if (command === "createOrder") setOrder(o);
-      else {
-        notify("已提交，管理员核对到账后开通。");
-        if (order) setOrder(await rpc<Order>("order", { id: order.id }));
-      }
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <Modal
-      title="开通高级会员"
-      wide
-      className="purchase-modal"
-      onClose={onClose}
-      footer={
-        <>
-          <Button onClick={refresh} disabled={busy}>
-            刷新状态
-          </Button>
-          <Button
-            primary
-            charge={!order}
-            disabled={
-              busy ||
-              (!order && (!plan || !available)) ||
-              (!!order && !["pending","review_requested","paid"].includes(order.status)) ||
-              order?.status === "paid" ||
-              order?.status === "review_requested"
-            }
-            onClick={() =>
-              order
-                ? act("reviewOrder", { id: order.id })
-                : act("createOrder", { planId: plan })
-            }
-          >
-            {order
-              ? order.status === "paid"
-                ? "已开通"
-                : order.status === "review_requested"
-                  ? "待核对到账"
-                  : "我已付款 · 提交核对"
-              : "确认套餐 · 创建付款申请"}
-          </Button>
-        </>
-      }
-    >
-      {!plans && !error ? (
-        <Loading />
-      ) : order ? (
-        <>
-          <h3>{order.planName}</h3>
-          <p className="price">¥{(order.amountMinor / 100).toFixed(2)}</p>
-          <p>订单号：{order.id}</p>
-          <Button
-            onClick={() =>
-              navigator.clipboard
-                .writeText(order.id)
-                .then(() => notify("订单号已复制"))
-                .catch(() => setError("复制失败，可选中订单号手动复制。"))
-            }
-          >
-            复制订单号
-          </Button>
-          <p className="preserve">{order.payment?.instructions}</p>
-          {order.payment && order.status==="pending" && <PaymentCodes payment={order.payment} amountMinor={order.amountMinor}/>}
-
-          <p className="muted">{order.status === "paid" ? "管理员已确认到账，点击刷新状态可更新会员信息。" : order.status==="review_requested" ? "已提交付款声明，请勿重复付款，等待管理员核对到账。" : "付款时备注订单号；提交付款声明不会自动开通。"}</p>
-          <p>{order.grantsMembership===false ? "单次远程指导 · 不附带会员" : order.durationDays === 0 ? "终身会员 · 终身有效" : order.durationDays ? `${order.configurationSessions ? "高级 Plus 会员" : "高级会员"} · ${order.durationDays} 天` : "期限以订单为准"}</p>
-          {order.grantsMembership!==false && order.durationDays===0 && <div className="purchase-service">
-            <strong>终身专属权益</strong>
-            <p>终身享用所有付费软件功能，包含专属功能定制与专属优化。</p>
-            <p>{order.status==="paid" ? "添加微信 xrwCoder，发送订单号和你的定制或优化需求，由我人工提供服务。" : "核对到账后，添加微信 xrwCoder 提交定制或优化需求。"}</p>
-            <Button onClick={()=>navigator.clipboard.writeText("xrwCoder").then(()=>notify("微信号已复制")).catch(()=>setError("复制失败，微信号：xrwCoder"))}>复制联系微信</Button>
-          </div>}
-          {(order.configurationSessions || 0)>0 && <div className="purchase-service">
-            <strong>{order.configurationSessions} 次远程指导</strong>
-            <p>已用 {order.configurationSessionsUsed ?? (order.configurationServiceStatus === "completed" ? order.configurationSessions : 0)} 次 · 剩余 {Math.max(0,(order.configurationSessions || 0)-(order.configurationSessionsUsed ?? (order.configurationServiceStatus === "completed" ? order.configurationSessions || 0 : 0)))} 次</p>
-            <p>{order.configurationServiceStatus === "completed" ? "本订单远程指导已全部完成" : order.status === "paid" ? "已可预约：添加微信 xrwCoder，发送订单号预约指导。" : "核对到账后，添加微信 xrwCoder 预约指导。"}</p>
-            <Button onClick={()=>navigator.clipboard.writeText("xrwCoder").then(()=>notify("微信号已复制")).catch(()=>setError("复制失败，微信号：xrwCoder"))}>复制联系微信</Button>
-          </div>}
-          <Button disabled={busy} onClick={()=>setOrder(null)}>返回套餐选择</Button>
-        </>
-      ) : (
-        <>
-          <PlanWall plans={plans || []} selected={plan} onSelect={setPlan} features={state.account?.features || []} disabled={busy}/>
-          {!plans?.length && !busy && <p>暂无可购买的套餐，请联系微信 xrwCoder。</p>}
-          <p className="purchase-manual-note">人工收款 · 核对到账后开通 · 不自动续费或扣款</p>
-          {orders
-            .filter((o) => ["pending", "review_requested"].includes(o.status) || (o.status === "paid" && ((o.configurationSessions || 0)>0 || o.durationDays===0)))
-            .map((o) => (
-              <Button key={o.id} disabled={busy} onClick={async()=>{
-                setBusy(true);setError("");
-                try { setOrder(await rpc<Order>("order",{id:o.id})); }
-                catch(e){setError((e as Error).message);}
-                finally{setBusy(false);}
-              }}>
-                {o.status==="paid" ? "查看权益" : "继续处理"} {o.planName} · {o.id.slice(-8)}
-              </Button>
-            ))}
-        </>
-      )}
-      {error && <p className="error">{error}</p>}
-    </Modal>
-  );
+      await rpc("redeemMembership", { code: cdk.trim(), planId: selected!.id });
+      // Redemption response already refreshes the native account. Never submit a
+      // used code again if the optional subsequent heartbeat fails.
+      setSuccess(true); setCdk(""); notify("CDK 校验成功，会员及服务权益已更新。");
+      try { await rpc("refreshAccount"); } catch { setError("兑换已成功，账户刷新暂未完成，请点击刷新状态；无需再次兑换。"); }
+    } catch (e) { setError((e as Error).message); }
+    finally { setBusy(false); }
+  }
+  return <Modal title="开通高级会员" wide className="purchase-modal" onClose={() => { if (!busy) onClose(); }} footer={<>
+    <Button onClick={refresh} disabled={busy}>刷新状态</Button>
+    {success ? <Button primary onClick={onClose}>完成</Button> : redeeming
+      ? <Button primary type="submit" form={cdkFormId} disabled={busy || !cdk.trim() || !selected || !matching}>{busy ? "正在校验…" : "校验 CDK · 兑换权益"}</Button>
+      : <Button primary disabled={busy || !selected || !matching} onClick={() => { setRedeeming(true); setError(""); }}>支付完成 校验CDK</Button>}
+  </>}>
+    {!plans && !error ? <Loading/> : <>
+      {!redeeming && !success && <>
+        <PlanWall plans={plans || []} selected={plan} onSelect={value => { setPlan(value); setError(""); }} features={state.account?.features || []} disabled={busy}/>
+        {selected && payment && <PaymentCodes payment={payment} amountMinor={selected.priceMinor} cdk/>}
+        {selected && !payment && <p className="muted">当前未提供在线收款码，请联系微信 xrwCoder 获取付款方式；已有 CDK 可直接校验。</p>}
+        <p className="purchase-manual-note">支付成功后添加微信 <strong>xrwCoder</strong>，发送付款凭证和所选套餐，获取会员 CDK。付款不会自动开通，不自动续费或扣款。</p>
+      </>}
+      {redeeming && !success && <form id={cdkFormId} className="purchase-cdk" onSubmit={event => { event.preventDefault(); void redeem(); }}>
+        <h3>{selected?.name} · CDK 兑换</h3>
+        <p>支付成功后添加 xrwCoder 获取会员 CDK。兑换码需与所选套餐匹配；验证成功后自动刷新会员及服务权益。</p>
+        <label htmlFor="purchase-cdk">会员 CDK</label>
+        <input id="purchase-cdk" autoFocus autoComplete="off" maxLength={80} value={cdk} disabled={busy} onChange={e => setCdk(e.target.value)} placeholder="粘贴与此套餐对应的 CDK"/>
+        <Button type="button" disabled={busy} onClick={() => { setRedeeming(false); setCdk(""); setError(""); }}>返回套餐选择</Button>
+      </form>}
+      {success && <div className="purchase-service"><Check/><h3>兑换成功，权益已更新</h3><p>{selected?.name}已兑换。请在账户页面查看会员有效期与剩余远程指导次数。</p></div>}
+      {!matching && plans && <p role="alert">当前后台尚不支持套餐 CDK 校验，请先联系管理员更新后台。已有会员身份不受影响，请勿重复付款。</p>}
+      <Button disabled={busy} onClick={() => navigator.clipboard.writeText("xrwCoder").then(() => notify("微信号已复制")).catch(() => setError("复制失败，请手动添加微信 xrwCoder。"))}>复制微信 xrwCoder</Button>
+    </>}
+    {error && <p role="alert" className="error">{error}</p>}
+  </Modal>;
 }

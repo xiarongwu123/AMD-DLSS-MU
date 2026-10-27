@@ -87,6 +87,13 @@ internal static class AdminConsoleTests
         var codeHtml = WebUtility.HtmlDecode(await codeResponse.Content.ReadAsStringAsync());
         Check(codeResponse.IsSuccessStatusCode && Regex.Matches(codeHtml, @"\b[A-F0-9]{4}(?:-[A-F0-9]{4}){7}\b").Count == 2, "Admin sees generated CDKs once");
         Check(!Regex.IsMatch(WebUtility.HtmlDecode(await (await client.GetAsync("/admin/codes")).Content.ReadAsStringAsync()), @"\b[A-F0-9]{4}(?:-[A-F0-9]{4}){7}\b"), "CDK plaintext not recoverable on GET");
+        var planCodeResponse = await Form(client, "/admin/codes", null, new() { ["PlanId"]="mu-pro-lifetime", ["DurationDays"]="30", ["Count"]="1", ["ValidDays"]="90", ["Reason"]="test lifetime plan code" });
+        Check(planCodeResponse.IsSuccessStatusCode, "Admin generates plan-bound lifetime CDK through Razor form");
+        using (var codeScope = factory.Services.CreateScope())
+        {
+            var codeDb = codeScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Check(await codeDb.MembershipCodes.AnyAsync(x => x.PlanSnapshotJson.Contains("mu-pro-lifetime") && x.DurationDays==0), "Admin plan selection persisted as immutable lifetime snapshot");
+        }
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -168,7 +175,7 @@ internal static class AdminConsoleTests
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var plan = await db.Plans.SingleAsync();
+            var plan = await db.Plans.SingleAsync(x => x.Name == "测试套餐");
             planId = plan.Id;
             Check(plan.PriceMinor == 1990 && !plan.Enabled, "Plan price normalized and new plan starts unpublished");
             Check((await db.FeatureDefinitions.SingleAsync(feature => feature.Key == "game.launch")).MinimumTier == "pro", "Feature policy persisted");
@@ -182,7 +189,7 @@ internal static class AdminConsoleTests
             "Sub-cent prices rejected without mutation");
         using (var scope = factory.Services.CreateScope())
         {
-            var plan = await scope.ServiceProvider.GetRequiredService<AppDbContext>().Plans.SingleAsync();
+            var plan = await scope.ServiceProvider.GetRequiredService<AppDbContext>().Plans.SingleAsync(x => x.Id == planId);
             Check(plan.PriceMinor == 12345 && plan.DurationDays == 60 && plan.Enabled, "Plan edit persisted and invalid edit ignored");
         }
         var paymentConfig = factory.Services.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();

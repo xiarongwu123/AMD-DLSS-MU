@@ -45,7 +45,7 @@ public static class ApiEndpoints
         var authenticated = api.MapGroup("").RequireAuthorization("Client");
         authenticated.MapPost("/account/redeem", async (RedeemMembershipRequest input, ClaimsPrincipal user, MembershipCodeService codes, AccountService accounts) =>
         {
-            await codes.RedeemAsync(UserId(user), input.Code);
+            await codes.RedeemAsync(UserId(user), input.Code, input.PlanId);
             return Results.Ok(await accounts.SnapshotAsync(UserId(user)));
         }).RequireRateLimiting("auth");
         authenticated.MapGet("/account/me", async (ClaimsPrincipal user, AccountService accounts) => Results.Ok(await accounts.SnapshotAsync(UserId(user))));
@@ -84,7 +84,8 @@ public static class ApiEndpoints
         api.MapGet("/plans", async (AppDbContext db, ManualOrderService orders) => Results.Ok(new
         {
             items = await db.Plans.AsNoTracking().Where(x => x.Enabled).OrderBy(x=>x.Id=="mu-pro-monthly" ? 0 : x.Id=="mu-pro-lifetime" ? 1 : x.Id=="mu-pro-assisted" ? 2 : 3).ThenBy(x=>x.PriceMinor).Select(x => new { x.Id, x.Name, x.DurationDays, x.GrantsMembership, x.ConfigurationSessions, x.PriceMinor, x.Currency }).ToArrayAsync(),
-            paymentsEnabled = await orders.AvailableAsync(), paymentMethod = await orders.AvailableAsync() ? "manual" : null
+            paymentsEnabled = await orders.AvailableAsync(), paymentMethod = "cdk", cdkPlanMatching = true,
+            payment = await orders.AvailableAsync() ? orders.PaymentDetails : null
         }));
         authenticated.MapPost("/orders", async (CreateOrderRequest input, ClaimsPrincipal user, ManualOrderService orders, CancellationToken ct) =>
         {

@@ -2,7 +2,7 @@
 @model Mu.Server.Pages.Admin.CodesModel
 @{ ViewData["Title"] = "CDK 兑换码"; }
 <h1>CDK 兑换码</h1>
-<p class="muted">生成 Pro 会员兑换码，每码限用一次；已有会员从当前有效期续期。完整兑换码仅在生成后显示一次，请立即保存。</p>
+<p class="muted">按套餐生成兑换码（含终身、Plus、远程指导），或生成普通高级会员天数码。每码限用一次；套餐权益在生成时固定。完整兑换码仅在生成后显示一次，请立即保存。</p>
 <div asp-validation-summary="All" role="alert"></div>
 @if (Model.Generated.Length > 0)
 {
@@ -13,6 +13,7 @@
 }
 <section class="card"><h2>生成兑换码</h2>
     <form method="post" class="row">
+        <div><label asp-for="PlanId">绑定套餐</label><select asp-for="PlanId"><option value="">自定义高级会员天数</option>@foreach (var plan in Model.Plans) { <option value="@plan.Id">@plan.Name</option> }</select></div>
         <div><label asp-for="DurationDays">会员天数</label><input asp-for="DurationDays" type="number" min="1" max="3650" required /></div>
         <div><label asp-for="Count">数量</label><input asp-for="Count" type="number" min="1" max="100" required /></div>
         <div><label asp-for="ValidDays">兑换有效期（天）</label><input asp-for="ValidDays" type="number" min="1" max="3650" required /></div>
@@ -23,9 +24,10 @@
 <h2>最近 100 个兑换码</h2>
 @foreach (var item in Model.Items)
 {
+    var planName = string.IsNullOrEmpty(item.PlanSnapshotJson) ? $"{item.DurationDays} 天高级会员" : System.Text.Json.JsonSerializer.Deserialize<Mu.Server.Services.CodePlanSnapshot>(item.PlanSnapshotJson)?.Name ?? "套餐兑换码";
     var status = item.RedeemedAt != null ? "已兑换" : item.RevokedAt != null ? "已停用" : item.ExpiresAt <= DateTimeOffset.UtcNow.ToUnixTimeSeconds() ? "已过期" : "未兑换";
     <section class="card">
-        <p>编号：@item.Id · @item.DurationDays 天 · @status</p>
+        <p>编号：@item.Id · @planName · @status</p>
         <p>生成：@Mu.Server.Pages.Admin.AdminPageModel.FormatTime(item.CreatedAt) · 兑换截止：@Mu.Server.Pages.Admin.AdminPageModel.FormatTime(item.ExpiresAt)</p>
         @if (item.RedeemedAt != null)
         {
