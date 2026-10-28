@@ -9,13 +9,14 @@ const member: State = { ...emptyState, account: { id: "a", email: "a@test", memb
   features: [{ key: "schemes.premium.configure", allowed: true }, { key: "schemes.game.view", allowed: true }] } };
 const props = { gameId: "g", gameTitle: "当前游戏", selected: "base" as const, state: emptyState, disabled: false, onSelect: vi.fn(), onUpgrade: vi.fn(), onUseRecommendation: vi.fn() };
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
-describe("七个直接选择的方案", () => {
-  it("展示两个免费、五个付费，主推作者调校且 AMD 喜鹊不重复", () => {
+describe("八个直接选择的方案", () => {
+  it("展示两个免费、六个付费，主推作者调校且 AMD 喜鹊不重复", () => {
     render(<SchemeChoices {...props}/>);
-    expect(screen.getAllByRole("button", { pressed: false })).toHaveLength(6);
+    expect(screen.getAllByRole("button", { pressed: false })).toHaveLength(7);
     expect(screen.getByRole("button", { name: /作者调校版/ }).className).toContain("scheme-author-featured");
     expect(screen.getAllByRole("button", { name: /AMD 大力喜鹊/ })).toHaveLength(1);
     expect(screen.queryByText("喜鹊外置版")).toBeNull();
+    expect(screen.getByRole("button", { name: /60系显卡专用/ }).textContent).toContain("高级会员");
     expect(screen.getByRole("button", { name: /老游戏专用版/ })).toBeTruthy();
     expect(rpc).not.toHaveBeenCalled();
   });

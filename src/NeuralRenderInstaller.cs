@@ -133,7 +133,7 @@ public static class NeuralRenderInstaller
         input.Position = 0; var bytes = new byte[checked((int)end)]; input.ReadExactly(bytes);
         return Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
     }
-    static List<SourceFile> UserFiles(string resources, string gameRoot, string backend)
+    static List<SourceFile> UserFiles(string resources, string gameRoot, string backend, bool allowBundledSource = false)
     {
         var result = new List<SourceFile>();
         void Add(string name, string path) { Core.RejectLinks(path); result.Add(new(name, path, Core.Hash(path), "user-supplied")); }
@@ -154,7 +154,10 @@ public static class NeuralRenderInstaller
             var weights = Find(resources, gameRoot, "dlssnr_on_amd_weights.bin") ?? throw new IOException("Daniel 缺少 dlssnr_on_amd_weights.bin，请导入你有权使用的权重。");
             if (new FileInfo(weights).Length is < 1048576 or > 536870912) throw new IOException("Daniel 权重大小异常或不完整。");
             Add("dlssnr_on_amd_weights.bin", weights);
-            var nv = Find(resources, gameRoot, "nvngx_dlssnr.dll") ?? throw new IOException("内置 DLSS 5 文件尚未准备好，请重新运行一键配置。");
+            var nv = Find(resources, gameRoot, "nvngx_dlssnr.dll");
+            // A dry-run must not reject the source the installer itself will release.
+            if (nv == null && allowBundledSource && CanPrepareMochizukiModel) return result;
+            if (nv == null) throw new IOException("内置 DLSS 5 文件尚未准备好，请重新运行一键配置。");
             Core.ValidateDll(nv);
             if (Core.Hash(nv) != NvidiaSourceHash && Core.Hash(nv) != Core.BundledDllSha256) throw new IOException("NVIDIA DLL 不在已核验的 310.8.0 文件列表中。");
             Add("nvngx_dlssnr.dll", nv);
@@ -182,7 +185,7 @@ public static class NeuralRenderInstaller
         // time. Never ask the player for the incompatible RDNA4 loose assets.
         if (plan.Backend == NeuralBackends.LmxxfRdna3) return [];
         if (plan.Backend == "mochizuki") return MissingMochizukiResources(exe, CanPrepareMochizukiModel);
-        try { UserFiles(Resources, Path.GetDirectoryName(exe)!, plan.Backend); return []; }
+        try { UserFiles(Resources, Path.GetDirectoryName(exe)!, plan.Backend, allowBundledSource: true); return []; }
         catch (IOException error) { return [error.Message]; }
     }
     internal static string[] MissingMochizukiResources(string exe, bool canPrepare)
@@ -255,8 +258,7 @@ public static class NeuralRenderInstaller
             // The pinned upstream script accepts one 310.8.0 file hash. MU's bundled
             // 310.8.0 DLL has different metadata but produces the same verified model.
             var source = await File.ReadAllTextAsync(Path.Combine(package, "mochizuki-model.py"), token);
-            if (source.Split(NvidiaSourceHash).Length != 2) throw new IOException("上游模型提取脚本已变化，已停止以免生成错误模型。");
-            await File.WriteAllTextAsync(script, source.Replace(NvidiaSourceHash, Core.BundledDllSha256, StringComparison.Ordinal), token);
+            await File.WriteAllTextAsync(script, ModelExtractionScript(source), token);
             var python = await PreparePythonAsync(progress, token);
             var info = new System.Diagnostics.ProcessStartInfo(python) { UseShellExecute = false, CreateNoWindow = true,
                 RedirectStandardOutput = true, RedirectStandardError = true, WorkingDirectory = package };
@@ -269,18 +271,63 @@ public static class NeuralRenderInstaller
             catch { try { process.Kill(true); } catch { } throw; }
             await Task.WhenAll(stdout, stderr);
             if (process.ExitCode != 0 || !File.Exists(output) || new FileInfo(output).Length != 147756560 || Core.Hash(output) != MochizukiModelHash)
-                throw new IOException("模型自动提取或校验失败，游戏文件尚未修改。" + (await stderr).Trim().Split('\n').LastOrDefault());
+            {
+                var message = ModelFailureMessage(process.ExitCode, await stderr, await stdout);
+                try
+                {
+                    var log = Path.Combine(Resources, "model-preparation-" + Guid.NewGuid().ToString("N") + ".log");
+                    Core.RejectLinks(log); await File.WriteAllTextAsync(log, message, CancellationToken.None);
+                    message += "\n诊断日志：" + log;
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+                throw new IOException(message);
+            }
             token.ThrowIfCancellationRequested();
             PromoteMochizukiModel(output);
             progress.Report("Mochizuki 模型已自动准备并通过校验。");
         }
         finally
         {
-            if (File.Exists(script)) File.Delete(script);
-            if (File.Exists(nv)) File.Delete(nv);
-            if (Directory.Exists(modelStage)) Directory.Delete(modelStage, true);
+            // Cleanup must not replace the original extraction failure (for example,
+            // while security software still has a temporary model file open).
+            foreach (var path in new[] { script, nv, modelStage })
+            {
+                try
+                {
+                    if (File.Exists(path)) File.Delete(path);
+                    else if (Directory.Exists(path)) Directory.Delete(path, true);
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+            }
         }
     }
+    internal static string ModelExtractionScript(string source)
+    {
+        const string original = "[sys.executable, '-X', 'utf8', str(vendor / script), *map(str, params)]";
+        // Python's embedded _pth isolation excludes the script directory. Each
+        // child needs the verified model-tools folder, including sibling imports
+        // in unpack_preblock/unpack_postblock. Keep the interpreter isolated.
+        const string runner = "import pathlib,runpy,sys;sys.argv=sys.argv[1:];sys.path.insert(0,str(pathlib.Path(sys.argv[0]).resolve().parent));runpy.run_path(sys.argv[0],run_name='__main__')";
+        if (source.Split(NvidiaSourceHash).Length != 2 || source.Split(original).Length != 2)
+            throw new IOException("上游模型提取脚本已变化，已停止以免生成错误模型。");
+        return source.Replace(NvidiaSourceHash, Core.BundledDllSha256, StringComparison.Ordinal)
+            .Replace(original, "[sys.executable, '-X', 'utf8', '-c', \"" + runner + "\", str(vendor / script), *map(str, params)]", StringComparison.Ordinal);
+    }
+
+    internal static string ModelFailureMessage(int exitCode, string stderr, string stdout)
+    {
+        static string Bounded(string value)
+        {
+            value = value.Trim();
+            return value.Length <= 12000 ? value : value[..3000] + "\n…中间输出已省略…\n" + value[^9000..];
+        }
+        var details = string.IsNullOrWhiteSpace(stderr) && string.IsNullOrWhiteSpace(stdout)
+            ? "提取程序未输出详细原因，请检查组件完整性及安全软件拦截记录。"
+            : (string.IsNullOrWhiteSpace(stderr) ? "" : "\n错误输出：\n" + Bounded(stderr)) +
+              (string.IsNullOrWhiteSpace(stdout) ? "" : "\n执行输出：\n" + Bounded(stdout));
+        return "模型自动提取或校验失败，游戏文件尚未修改。退出码：" + exitCode + "\n" + details;
+    }
+
     internal static void PromoteMochizukiModel(string output)
     {
         Core.RejectLinks(output);

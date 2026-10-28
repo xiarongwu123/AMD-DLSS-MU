@@ -77,7 +77,7 @@ public sealed partial class MainForm
         var matching=rules.Where(r=>r.Scheme==scheme&&r.Backend==backend&&CompatibilityRuleEngine.Match(r,env,DateTimeOffset.UtcNow))
             .OrderByDescending(r=>CompatibilityRuleEngine.Priority(r,env)).FirstOrDefault();
         var cap=CapabilityCatalog.For(scheme,Core.IsX86(exe)?32:64,backend);
-        if(Number(args,"mode",-1)==0){cap=new("base","原有Daniel模式","0.6.0",false,false,["dx12"],[64]);matching=null;}
+        if(Number(args,"mode",-1)==0&&scheme!="rx6000"){cap=new("base","原有Daniel模式","0.6.0",false,false,["dx12"],[64]);matching=null;}
         var errors=HardConstraintEvaluator.Evaluate(env,cap,backend,matching,rules,DateTimeOffset.UtcNow,true);
         if(scheme is "author" or "compat" or "online")
         {
@@ -89,7 +89,7 @@ public sealed partial class MainForm
         }
         var hard=errors.Where(e=>e.State is "BLOCKED" or "REQUIRE_ACTION").ToArray();
         if(hard.Length>0)throw new IOException(string.Join("\n",hard.Select(e=>$"[{e.Code}] {e.Message}")));
-        if(smartInstallingCandidate==null&&errors.Any(e=>e.State=="UNVERIFIED")&&await UiMessageAsync(
+        if(smartInstallingCandidate==null&&errors.Any(e=>e.State=="UNVERIFIED"&&e.Code!="ANTI_CHEAT")&&await UiMessageAsync(
             string.Join("\n",errors.Select(e=>e.Message))+"\n此方案缺少验证，是否仍主动尝试？","未验证配置",MessageBoxButtons.YesNo,"确认尝试",MessageBoxDefaultButton.Button2)!=DialogResult.Yes)
             throw new IOException("已取消未验证配置，游戏文件未改动。");
         smartPreflightExe=exe;smartPreflightBackend=backend;
@@ -172,7 +172,7 @@ public sealed partial class MainForm
             }
         else
         {
-            var mode=candidate.Scheme switch{"fps"=>4,"legacy"=>config.Bitness==32?5:8,"standard"=>2,_=>6};
+            var mode=candidate.Scheme switch{"rx6000"=>0,"fps"=>4,"legacy"=>config.Bitness==32?5:8,"standard"=>2,_=>6};
             var installArgs=JsonSerializer.SerializeToElement(new{gameId=Arg(args,"gameId"),mode,scheme=candidate.Scheme=="standard"?"":candidate.Scheme,
                 confirmedApi=Arg(args,"confirmedApi"),confirmedInput=Arg(args,"confirmedInput"),windowed=Arg(args,"windowed"),
                 x86Api=InstallationContext.BridgeApi(mode,config.GraphicsApi),vulkan=config.GraphicsApi=="vulkan",fgInput="nofg",

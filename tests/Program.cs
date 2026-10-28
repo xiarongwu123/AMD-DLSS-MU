@@ -4,6 +4,21 @@ using Mu.Presets;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+if(args is ["verify-rx6000-staging",var rxInstaller,var rxModel,var rxDestination])
+{
+    Rx6000InstallValidation.Run(rxInstaller,rxModel,rxDestination);return;
+}
+
+if(args is ["prepare-audit-model-script",var scriptSource,var scriptTarget])
+{
+    File.WriteAllText(scriptTarget,NeuralRenderInstaller.ModelExtractionScript(File.ReadAllText(scriptSource)));
+    Console.WriteLine("Adapted pinned extraction script.");return;
+}
+
+if(args is ["verify-audit"]) { AuditRegressionTests.Run(); AmdMagpieEffectGroupTests.Run(); return; }
+
+if(args is ["verify-amd-effect-groups"]) { AmdMagpieEffectGroupTests.Run(); return; }
+
 if(args is ["verify-amdnr-rdna3-archive",var rdna3Archive,var rdna3ArchiveTarget])
 {
     var stage=Path.Combine(Path.GetFullPath(rdna3ArchiveTarget),"package");
@@ -31,6 +46,8 @@ if (args is ["verify-neural", var nrPackage, var nrDestination])
     NeuralRenderTests.Run(); NeuralRenderTests.RealPackage(nrPackage, nrDestination); return;
 }
 NeuralRenderTests.Run();
+AuditRegressionTests.Run();
+AmdMagpieEffectGroupTests.Run();
 AmdNrRdna3Tests.Run();
 RenderSchemeTests.Run();
 BugRegressionTests.Run();

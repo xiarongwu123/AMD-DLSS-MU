@@ -31,9 +31,9 @@ Mochizuki 1/2/3 Pass 分别标为标准/增强/高质量；4–8 为实验，9�
 | OptiScaler NR Host、匹配的 lmxxf/Mochizuki Runtime、计算模块、shader、开源依赖 | 从上游固定的官方 Release 下载；随游戏部署 LICENSE、NOTICE 和 Licenses，源码链接指向固定提交 |
 | Daniel Runtime、NVIDIA DLL、NR 模型/权重 | 用户合法取得后通过本机资源入口导入；本方案不把它们重新托管或嵌入客户端 |
 
-此方案不会使用旧方案内置的 NVIDIA DLL 自动填补资源，也不会执行 Daniel 的安装器。Daniel 只接受上游白名单的 0.6.0 PE image；附加设置 overlay 不计入 PE image 身份，但复制完整文件，并记录完整文件 SHA256。权重按上游的大小边界检查；没有固定权重认证资料，不能称为完整模型认证。
+Mochizuki 可从 MU 内置且固定摘要的 310.8.0 DLL 自动提取模型，并按目标模型 SHA256 校验。多后端方案不会执行 Daniel 的安装器；Daniel 分支仍需用户导入配套 Runtime 与权重，NVIDIA DLL 可由 MU 内置资源准备。Daniel 只接受上游白名单的 0.6.0 PE image；附加设置 overlay 不计入 PE image 身份，但复制完整文件，并记录完整文件 SHA256。权重按上游的大小边界检查；没有固定权重认证资料，不能称为完整模型认证。
 
-Mochizuki 模型要求 147,756,560 字节，SHA256 `2b41c888cf4155b8958c665ba64018ab0bd25c85fc71a2b6db86d0d04d1f7fbd`；用于提取的 310.8.0 源 DLL 要求 SHA256 `e16bcf15e16e13f527491cdf7845b2fe6521a738d8f7c9c721866a8496e1fc8e`。这与旧方案内置的另一份 310.8 DLL 摘要不同，不能混用作 Mochizuki 提取源。
+Mochizuki 模型要求 147,756,560 字节，SHA256 `2b41c888cf4155b8958c665ba64018ab0bd25c85fc71a2b6db86d0d04d1f7fbd`；用于提取的 310.8.0 源 DLL 要求 SHA256 `e16bcf15e16e13f527491cdf7845b2fe6521a738d8f7c9c721866a8496e1fc8e`。MU 内置另一份 310.8.0 DLL 摘要为 `8270b350cd82de5ce89806872cdd6b6a9249b80836b91bbeb3573470744cc206`，经实际提取可生成上述完全一致的模型。MU 在固定脚本适配中替换源摘要，并为隔离 Python 子脚本加入配套模块路径；最终模型摘要不放宽。
 
 lmxxf 用户模型按上游 block0 标记检查并对逐文件复制做 SHA256 一致性校验；尚无完整内容认证数据，因此界面不声称完整模型已经通过上游认证。没有模型则停止安装，不显示“已启用”。
 

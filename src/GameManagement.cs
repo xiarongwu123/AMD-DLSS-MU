@@ -11,6 +11,7 @@ public record GameRecord(string Exe, int Mode, string Version, DateTime Installe
     string Phase, List<ManagedFile> Files)
 {
     public NeuralInstallManifest? Neural { get; init; }
+    public string? Scheme { get; init; }
 }
 public record Compatibility(bool Blocked, string Summary, string[] Details)
 {

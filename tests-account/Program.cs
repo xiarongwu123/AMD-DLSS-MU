@@ -9,6 +9,20 @@ void Check(bool condition, string label)
     if (!condition) throw new Exception("FAILED: " + label);
     passed++; Console.WriteLine("PASS " + label);
 }
+// Simulate concurrent encrypted writes without invoking Windows DPAPI on macOS.
+var tokenFolder = Path.Combine(Path.GetTempPath(), "mu-token-audit-" + Guid.NewGuid().ToString("N"));
+Directory.CreateDirectory(tokenFolder);
+try
+{
+    var tokenPath = Path.Combine(tokenFolder, "session.bin");
+    await Task.WhenAll(Enumerable.Range(1, 16).Select(n => Task.Run(() =>
+        new AccountTokenStore(tokenPath).WriteProtected(Enumerable.Repeat((byte)n, 256).ToArray()))));
+    var protectedBytes = File.ReadAllBytes(tokenPath);
+    Check(protectedBytes.Length == 256 && protectedBytes.All(b => b == protectedBytes[0]), "concurrent token writes remain atomic");
+    Check(!Directory.EnumerateFiles(tokenFolder, "*.tmp*").Any(), "concurrent token writes leave no shared temporary file");
+}
+finally { Directory.Delete(tokenFolder, true); }
+
 var account = new AccountSnapshot("user-1", "player@example.com", new("standard", null),
     [new("library.manage", true, "standard", true)], false);
 SessionResponse Session(string suffix = "1", bool expired = false) => new("access-" + suffix, "refresh-" + suffix,

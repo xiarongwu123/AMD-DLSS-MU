@@ -28,6 +28,12 @@ public sealed record InstallationContext(string Scheme = "", string ConfirmedApi
         }, new JsonSerializerOptions(JsonSerializerDefaults.Web));
     }
 
+    public NeuralOptions ConfirmNeuralApi(NeuralOptions options) => options.GraphicsApi == "auto" &&
+        ConfirmedApi is "dx11" or "dx12" or "vulkan" ? options with { GraphicsApi = ConfirmedApi } : options;
+
+    public string ConfirmBridgeApi(int mode, string requested) => BridgeApi(mode,
+        requested == "auto" && ConfirmedApi is "dx8" or "dx9" or "dx11" or "opengl" ? ConfirmedApi : requested);
+
     public static string BridgeApi(int mode, string api)
     {
         // DX12/Vulkan belong to the modern routes, never the ReShade bridge.

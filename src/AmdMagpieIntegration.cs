@@ -144,10 +144,39 @@ public static class AmdMagpieIntegration
             if(!File.Exists(config)){Directory.CreateDirectory(Path.GetDirectoryName(config)!);File.WriteAllText(config,MagpieIntegration.ConfigJson);}
             var ini=Path.Combine(folder,"dlssnr_on_amd.ini");Core.RejectLinks(ini);
             if(!File.Exists(ini))File.WriteAllText(ini,"");
-            MagpieIntegration.EnsureDefaultEffect(folder,token);
+            EnsureAmdEffectGroup(folder,token);
             return exe;
         },token);
     }
+    internal static void EnsureAmdEffectGroup(string folder, CancellationToken token)
+    {
+        foreach (var effect in AmdMagpieEffectGroups.Effects)
+        {
+            var file = Path.Combine(folder, "effects", effect.Replace('\\', Path.DirectorySeparatorChar) + ".hlsl");
+            Core.RejectLinks(file);
+            if (!File.Exists(file)) throw new IOException("AMD 喜鹊缺少预设滤镜：" + effect + "，未修改效果组。");
+        }
+        var config = Path.Combine(folder, "config", "v4e", "config.json");
+        Core.RejectLinks(config); token.ThrowIfCancellationRequested();
+        var original = File.ReadAllText(config);
+        System.Text.Json.Nodes.JsonObject data;
+        try { data = System.Text.Json.Nodes.JsonNode.Parse(original) as System.Text.Json.Nodes.JsonObject
+            ?? throw new IOException("AMD 喜鹊配置格式无效。"); }
+        catch (JsonException e) { throw new IOException("AMD 喜鹊配置无法读取，未覆盖原配置。", e); }
+        var next = AmdMagpieEffectGroups.Migrate(data);
+        if (System.Text.Json.Nodes.JsonNode.DeepEquals(data, next)) return;
+        var temporary = config + ".mu-" + Guid.NewGuid().ToString("N");
+        try
+        {
+            File.WriteAllText(temporary, next.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            token.ThrowIfCancellationRequested();
+            if (File.ReadAllText(config) != original) throw new IOException("AMD 喜鹊配置被其他程序修改，请退出工具后重试。");
+            File.Copy(config, config + ".before-amd-dlss5-" + Guid.NewGuid().ToString("N") + ".bak", false);
+            File.Move(temporary, config, true);
+        }
+        finally { if (File.Exists(temporary)) File.Delete(temporary); }
+    }
+
     static string ValidateInstalledPayload(string directory,CancellationToken token)
     {
         var exe=MagpieIntegration.ValidateInstallation(directory,token);

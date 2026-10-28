@@ -7,6 +7,7 @@ namespace AmdNrAssistant;
 
 public static class DownloadSources
 {
+    public static bool IsCompleteState(string state) => state is "已完成 · 校验通过" or "已完成 · 已打开工具";
     public static readonly AsyncLocal<DownloadSession?> CurrentSession = new();
     public static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(45);
     public static readonly TimeSpan ReadIdleTimeout = TimeSpan.FromSeconds(90);
@@ -228,6 +229,7 @@ public sealed class DownloadSession : IDisposable
         DownloadSnapshot snapshot;
         lock (gate)
         {
+            if (disposed) return;
             if (state is "连接中" or "下载中") transferState = state;
             snapshot = new(resume != null && state is ("连接中" or "下载中") ? "已暂停" : state, percent, size, detail);
             if (snapshot == current) return;

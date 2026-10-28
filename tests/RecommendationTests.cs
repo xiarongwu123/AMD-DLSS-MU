@@ -24,6 +24,13 @@ static class RecommendationTests
     public static async Task RunAsync()
     {
         var env=Environment();var rule=Rule();
+        var rx6000Env=Environment(gpu:"RX 6750 GRE",arch:"rdna2");
+        var rx6000=Evaluate(rx6000Env).Candidates.Single(c=>c.Scheme=="rx6000");
+        Check(rx6000.Premium&&!rx6000.External&&rx6000.Configuration.Backend=="daniel"&&rx6000.Configuration.ComponentVersion=="0.6.0","RX6000 is a paid fixed Daniel 0.6 game deployment");
+        Check(!rx6000.Issues.Any(i=>i.Code=="MISSING_RESOURCE"),"RX6000 should acquire runtime/model through fixed official installer");
+        Check(Evaluate(Environment(gpu:"RX 7900 XT",arch:"rdna3")).Candidates.Single(c=>c.Scheme=="rx6000").Issues.Any(i=>i.Code=="ARCH_INCOMPATIBLE"&&i.State=="BLOCKED"),"RX6000 route accepted RX7000");
+        Check(Evaluate(rx6000Env with{Fields=new(rx6000Env.Fields){["bitness"]=new("32","CONFIRMED","PE")}}).Candidates.Single(c=>c.Scheme=="rx6000").State=="BLOCKED","RX6000 x64 installer accepted 32bit game");
+        Check(Evaluate(rx6000Env with{Fields=new(rx6000Env.Fields){["api"]=new("dx11","CONFIRMED","fixture")}}).Candidates.Single(c=>c.Scheme=="rx6000").Issues.Any(i=>i.Code=="API_INCOMPATIBLE"),"RX6000 fixed DX12 route accepted DX11");
         var result=Evaluate(env,rule);
         Check(result.Recommended is {Scheme:"author",Automatic:true},"RDNA4 exact validated rule can recommend Mochizuki");
         Check(result.Recommended!.Configuration.Passes==1,"Mochizuki defaults to one pass");
@@ -40,6 +47,8 @@ static class RecommendationTests
         var bitnessOnly = HardConstraintEvaluator.Evaluate(env with { Fields = new(env.Fields) { ["bitness"] = new("32","CONFIRMED","PE") } }, CapabilityCatalog.For("fps"), "daniel", null, [], Now, true);
         Check(bitnessOnly.Any(i=>i.Code=="BITNESS_UNVERIFIED"&&i.State=="UNVERIFIED")&&!bitnessOnly.Any(i=>i.Code=="BITNESS_MISMATCH"),"x86 is advisory for manual selection instead of a blanket block");
         Check(!legacy.Candidates.Single(x=>x.Scheme=="fps").Automatic,"unverified x86 components must not be auto-recommended");
+        var manualOnline=HardConstraintEvaluator.Evaluate(env with{AntiCheat=["EasyAntiCheat"]},CapabilityCatalog.For("online"),"daniel",null,[],Now,true);
+        Check(manualOnline.Any(i=>i.Code=="ANTI_CHEAT"&&i.State=="UNVERIFIED")&&!manualOnline.Any(i=>i.Code=="ANTI_CHEAT"&&i.State=="BLOCKED"),"manual anti-cheat warning must reach the explicit acknowledgement instead of permanent block");
         var missing=env with{Resources=new(){["hip"]=true}};
         Check(Evaluate(missing,rule).Recommended==null&&Evaluate(missing,rule).Candidates.Any(x=>x.Issues.Any(i=>i.Code=="MISSING_RESOURCE")),"missing runtime/model is require-action");
         Check(Evaluate(env with{Conflicts=["dxgi.dll"]},rule).Recommended==null,"unknown proxy never overwritten");

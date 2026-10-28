@@ -1396,7 +1396,7 @@ public sealed partial class MainForm : Form
             list.RemoveAll(g => removed.Contains(Path.GetFullPath(g.ExePath)));
             libraryGames = list;
             telemetryMonitor?.SetGames(libraryGames);
-            libraryStateCache.Clear();
+            InvalidateLibraryState();
             selectedCard = null;
             while (games.Controls.Count > 0) { var card = games.Controls[0]; games.Controls.Remove(card); card.Dispose(); }
 
@@ -1492,6 +1492,7 @@ public sealed partial class MainForm : Form
                 }
 
                 game.CoverPath = local;
+                reactGamesSnapshot = null;
 
                 var card = games.Controls
                     .Cast<Control>()
@@ -1725,14 +1726,15 @@ public sealed partial class MainForm : Form
         if (busy) return false;
         var targetExe = selectedGame;
         var chosenMode = SelectedInstallMode;
-        var chosenX86Api=x86GraphicsApi;
-        var chosenNeuralOptions = neuralOptions;
+        var chosenX86Api=(context ?? new InstallationContext()).ConfirmBridgeApi((int)chosenMode, x86GraphicsApi);
+        var chosenNeuralOptions = (context ?? new InstallationContext()).ConfirmNeuralApi(neuralOptions);
+        x86GraphicsApi=chosenX86Api; neuralOptions=chosenNeuralOptions;
         var chosenVulkan = optiVulkan;
         var chosenFgInput = optiFgInput;
         var chosenContext = context ?? new InstallationContext();
         var chosenCandidate = smartInstallingCandidate;
         var chosenRevision = smartInstallingRevision;
-        var featureKey = RenderSchemes.PremiumMode((int)chosenMode) ? "schemes.premium.configure" : chosenMode == InstallMode.OptiScalerStandard ? "optiscaler.configure" : "dlss.configure";
+        var featureKey = RenderSchemes.PremiumSelection((int)chosenMode, chosenContext.Scheme) ? "schemes.premium.configure" : chosenMode == InstallMode.OptiScalerStandard ? "optiscaler.configure" : "dlss.configure";
         if (!await RequireFeatureAsync(featureKey) || busy) return false;
         using var downloadSession = BeginDownloadSession(Path.GetFileNameWithoutExtension(targetExe) + " · " + (chosenMode == InstallMode.X86Bridge ? "32位神经渲染桥接" : chosenMode == InstallMode.Official ? "模式一组件" : "OptiScaler"), async () =>
         {
@@ -1930,9 +1932,12 @@ public sealed partial class MainForm : Form
             status.Text = "正在准备游戏目录…";
 
             if (!await RequireFeatureAsync(featureKey)) return false;
+            if (chosenContext.Scheme == "rx6000") await ValidateSmartBeforeWriteAsync(targetExe);
             Core.CheckPe(targetExe, false); // This payload contains x64 DLLs; validate before any file writes.
             fileTransaction = BeginAccountTransaction();
             GameManagement.Begin(targetExe, 0);
+            if (chosenContext.Scheme == "rx6000")
+                GameManagement.Save(GameManagement.Read(targetExe)! with { Scheme = "rx6000" });
             Diagnostics.Record(targetExe, "game-files", "staging");
 
             Core.Stage(

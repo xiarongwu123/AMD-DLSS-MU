@@ -33,8 +33,13 @@ public sealed class AccountTokenStore : IAccountTokenStore
         byte[] encrypted;
         try { encrypted = Transform(clear, true); }
         finally { CryptographicOperations.ZeroMemory(clear); }
+        WriteProtected(encrypted);
+    }
+
+    internal void WriteProtected(byte[] encrypted)
+    {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        var temporary = path + ".tmp";
+        var temporary = path + ".tmp-" + Guid.NewGuid().ToString("N");
         try { File.WriteAllBytes(temporary, encrypted); File.Move(temporary, path, true); }
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }

@@ -30,8 +30,8 @@ internal static class AmdMagpieTests
             using(var parsed=JsonDocument.Parse(File.ReadAllText(config)))
             {
                 var selected=parsed.RootElement.GetProperty("profiles")[0].GetProperty("scalingMode").GetInt32();
-                Check(parsed.RootElement.GetProperty("scalingModes")[selected].GetProperty("effects")[0].GetProperty("name").GetString()==MagpieIntegration.DefaultEffect,
-                    "portable configuration selects the real DLSSNR effect");
+                Check(parsed.RootElement.GetProperty("scalingModes")[selected].GetProperty("effects")[0].GetProperty("name").GetString()==AmdMagpieEffectGroups.Effects[0],
+                    "portable configuration selects the AMD FSR/XeSS preset");
             }
             var custom=File.ReadAllText(config).Replace("\"zh-cn\"","\"en-us\"");File.WriteAllText(config,custom);
             var ini=Path.Combine(AmdMagpieIntegration.Installation,"dlssnr_on_amd.ini");

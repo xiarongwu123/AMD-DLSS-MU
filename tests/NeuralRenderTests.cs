@@ -48,6 +48,11 @@ internal static class NeuralRenderTests
             Check(File.ReadAllText(Path.Combine(game, "dlssnr.bin")) == "other model", "Preflight modified game files");
         }
         finally { NeuralRenderInstaller.ResourcesOverride = previousResources; if (Directory.Exists(modelTestRoot)) Directory.Delete(modelTestRoot, true); }
+        var extractor = "expected = '" + NeuralRenderInstaller.NvidiaSourceHash + "'\nreturn subprocess.run([sys.executable, '-X', 'utf8', str(vendor / script), *map(str, params)])";
+        var adapted = NeuralRenderInstaller.ModelExtractionScript(extractor);
+        Check(adapted.Contains(Core.BundledDllSha256) && adapted.Contains("sys.path.insert(0,") && adapted.Contains("runpy.run_path") && adapted.Contains("'-c'"), "Embedded Python children cannot import sibling unpack modules");
+        Reject(()=>NeuralRenderInstaller.ModelExtractionScript(extractor.Replace("str(vendor / script)","script")), "Changed upstream child invocation adapted without review");
+        Reject(()=>NeuralRenderInstaller.ModelExtractionScript(extractor + extractor), "Ambiguous extraction script accepted");
         var now = DateTimeOffset.UtcNow;
         var mochi = NeuralRenderPlanner.Select("steam:1", "AMD Radeon RX 9070 XT", "dx12", null, new(), now);
         Check(mochi.Backend == "daniel" && mochi.Passes == 1 && mochi.Status == "unverified", "GPU generation alone must not choose Mochizuki");

@@ -106,7 +106,7 @@ describe("推荐目标与真实配置命令", () => {
     expect(
       (screen.getByRole("button", { name: "打开 Daniel 0.8 官方版" }) as HTMLButtonElement)
         .disabled,
-    ).toBe(true);
+    ).toBe(false);
     resolve(recommendation);
     await screen.findByText("AMD RX 7900 XT");
     expect(

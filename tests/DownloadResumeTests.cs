@@ -80,6 +80,8 @@ public static class DownloadResumeTests
 
     public static async Task Run(string root, Action<bool, string> assert)
     {
+        assert(DownloadSources.IsCompleteState("已完成 · 校验通过") && DownloadSources.IsCompleteState("已完成 · 已打开工具"), "tool launch and package verification both count as completed downloads");
+        assert(!DownloadSources.IsCompleteState("已取消") && !DownloadSources.IsCompleteState("下载失败"), "cancelled or failed launch is not completed");
         using (var control = new DownloadSession())
         {
             assert(control.IsTransferActive, "new connecting session is cancellable");
@@ -102,6 +104,10 @@ public static class DownloadResumeTests
             validation.Report("正在校验", 100, 100, "hashing"); validation.TogglePause();
             assert(!validation.Paused && !validation.IsTransferActive, "file verification cannot be mistaken for a paused transfer");
         }
+        var finished = new DownloadSession();
+        var lateReports = 0; finished.Changed = _ => lateReports++;
+        finished.Dispose(); finished.Report("下载中", 80, 100, "late callback");
+        assert(lateReports == 0 && !finished.IsTransferActive, "disposed transfers ignore delayed progress callbacks");
         var bytes = "verified resumable package"u8.ToArray();
         var hash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
         const string direct = "https://download.example/package.zip";

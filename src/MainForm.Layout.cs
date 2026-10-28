@@ -157,7 +157,7 @@ public sealed partial class MainForm
     }
     void RefreshHome()
     {
-        libraryStateCache.Clear();
+        InvalidateLibraryState();
         if (reactReady) { PublishReactState(); return; }
         foreach (Control card in games.Controls)
         {

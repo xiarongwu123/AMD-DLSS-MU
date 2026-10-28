@@ -48,7 +48,7 @@ public sealed record SmartCompatibilityRule
 }
 public static class RecommendationRuleSchema
 {
-    public static readonly string[] Schemes = ["base", "fps", "author", "compat", "online", "amd-magpie", "legacy", "standard"];
+    public static readonly string[] Schemes = ["base", "fps", "author", "compat", "online", "amd-magpie", "legacy", "rx6000", "standard"];
     public static readonly string[] Apis = ["dx8", "dx9", "dx11", "dx12", "vulkan", "opengl"];
     public static readonly string[] Proxies = ["external", "dxgi.dll", "winmm.dll", "d3d12.dll", "winhttp.dll", "wininet.dll", "dbghelp.dll", "d3d9.dll", "opengl32.dll"];
     public static bool Id(string value) => value != null && Regex.IsMatch(value,"^[a-zA-Z0-9:_-]{1,100}$");
@@ -75,7 +75,7 @@ public static class RecommendationRuleSchema
             throw new InvalidDataException("AMDNR RDNA3 规则必须限定64位兼容版与RDNA3，不能套用其他宿主的兼容开关。");
         var cap=CapabilityCatalog.For(r.Scheme,r.Bitness,r.Backend);
         if(!cap.Apis.Contains(r.Api)||!cap.Bitness.Contains(r.Bitness))throw new InvalidDataException("规则接口或位数不受现有安装器支持。");
-        if(r.Scheme is "base" or "fps" or "online" or "amd-magpie" or "legacy" && r.Backend!="daniel" || r.Scheme=="standard"&&r.Backend!="none")
+        if(r.Scheme is "base" or "fps" or "online" or "amd-magpie" or "legacy" or "rx6000" && r.Backend!="daniel" || r.Scheme=="standard"&&r.Backend!="none")
             throw new InvalidDataException("固定路线不能替换后端。");
         var fixedProxy=cap.External?"external":r.Scheme=="legacy"?r.Api=="opengl"?"opengl32.dll":r.Api is "dx8" or "dx9"?"d3d9.dll":"dxgi.dll":r.Scheme=="fps"?"dxgi.dll":r.Scheme=="standard"?r.Api=="vulkan"?"winmm.dll":"dxgi.dll":null;
         if(fixedProxy!=null&&r.Proxy!=fixedProxy)throw new InvalidDataException("代理DLL与当前固定安装路径不匹配。");
@@ -96,6 +96,7 @@ public static class CapabilityCatalog
     public static SchemeCapability For(string id,int bits=64,string? backend=null) => backend==Mu.Neural.NeuralBackends.LmxxfRdna3
         ? For(id,bits) with { Version=Mu.Neural.NeuralBackends.AmdNrVersion } : id switch {
         "base"=>new(id,"基础稳定版","0.8.0",false,true,["dx12"],[64]),
+        "rx6000"=>new(id,"60系显卡专用","0.6.0",true,false,["dx12"],[64]),
         "fps"=>new(id,"高帧率版","1.10.3.1+10.6",false,false,["dx12"],[64]),
         "author"=>new(id,"作者调校版","1.12.1",true,false,["dx11","dx12","vulkan"],[64]),
         "compat"=>new(id,"兼容版","1.12.1",true,false,["dx11","dx12","vulkan"],[64]),

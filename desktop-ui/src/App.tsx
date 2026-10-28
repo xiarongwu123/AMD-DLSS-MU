@@ -34,6 +34,7 @@ import { CommunityPanel } from "./CommunityPanel";
 import { SmartDialog, DiagnosticsDialog, modeName } from "./SmartDialog";
 import { AccountPage } from "./AccountPage";
 import { canUseMemberFeature } from "./membership";
+import { isDownloadComplete, magpieDownload } from "./downloadState";
 import { AccountBadge, LoginTransition, prepareLoginMotion } from "./AccountMotion";
 import { WishesPage } from "./WishesPage";
 import { FirstUseGuide } from "./FirstUseGuide";
@@ -112,6 +113,9 @@ export default function App() {
       if (event === "state") {
         setState(data as State);
         setReady(true);
+      }
+      if (event === "statePatch") {
+        setState(previous => ({ ...previous, ...(data as Partial<State>), games: previous.games }));
       }
       if (event === "prompt") setPrompt(data as Prompt);
       if (event === "toast") notify((data as { message: string }).message);
@@ -250,6 +254,7 @@ export default function App() {
         "removeGame",
       ].includes(p),
     );
+  const currentMagpieDownload = magpieDownload(state.downloads, pending.includes("amdMagpie") ? "amdMagpie" : "magpie");
   const gameCard = (game: Game, index = 0) => (
     <article
       key={`${filter}-${game.id}`}
@@ -642,8 +647,8 @@ export default function App() {
                   </p>
                   {(pending.includes("magpie") || pending.includes("amdMagpie")) && (
                     <Progress
-                      percent={state.downloads[0]?.percent || 0}
-                      unknown={!state.downloads[0]}
+                      percent={currentMagpieDownload?.percent || 0}
+                      unknown={!currentMagpieDownload}
                     />
                   )}
                   <div className="feature-grid">
@@ -715,14 +720,14 @@ export default function App() {
                 </button>
               </div>
               {!state.downloads.some(
-                (d) => doneTab === (d.state === "已完成 · 校验通过"),
+                (d) => doneTab === (isDownloadComplete(d.state)),
               ) ? (
                 <Empty title={doneTab ? "暂无完成记录" : "没有正在下载的任务"}>
                   选择游戏并配置方案后，所需组件会出现在这里。
                 </Empty>
               ) : (
                 state.downloads
-                  .filter((d) => doneTab === (d.state === "已完成 · 校验通过"))
+                  .filter((d) => doneTab === (isDownloadComplete(d.state)))
                   .map((d) => (
                     <section className="panel download-row" key={d.id}>
                       <div className="page-heading">

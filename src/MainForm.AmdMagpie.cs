@@ -28,7 +28,7 @@ public sealed partial class MainForm
                 using var process=Process.Start(new ProcessStartInfo(exe){WorkingDirectory=Path.GetDirectoryName(exe)!,UseShellExecute=true});
                 if(process==null)throw new IOException("未能启动 AMD 大力喜鹊。");
                 magpieProgress.Indeterminate=false;magpieProgress.Value=100;
-                Phase("已打开 AMD 大力喜鹊。请在工具内选择效果，切回窗口游戏按其主页快捷键启用；打开工具不代表效果已生效。");
+                Phase("已打开 AMD 大力喜鹊，已准备 MU-AMD-DLSS5 效果组。请在工具内确认选择该组，切回窗口游戏按其主页快捷键启用；打开工具不代表效果已生效。");
                 session.Report("已完成 · 已打开工具",100,AmdMagpieIntegration.Size,"完整包与配套组件已校验");
                 return true;
             }

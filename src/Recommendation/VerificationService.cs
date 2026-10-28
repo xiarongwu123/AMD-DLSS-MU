@@ -10,7 +10,8 @@ public static class VerificationService
         var installed=record is {Phase:"installed"};var loaded=false;var active=false;
         if(candidate!=null&&record!=null)
         {
-            var expected=candidate.Scheme switch{"fps"=>4,"legacy"=>candidate.Configuration.Bitness==32?5:8,"standard"=>2,_=>6};
+            var expected=candidate.Scheme switch{"rx6000"=>0,"fps"=>4,"legacy"=>candidate.Configuration.Bitness==32?5:8,"standard"=>2,_=>6};
+            if(candidate.Scheme=="rx6000"&&(record.Scheme!="rx6000"||record.Version!=Core.ReviewedTag))installed=false;
             if(record.Mode!=expected||record.Neural!=null&&record.Neural.PackageVersion!=candidate.Configuration.ComponentVersion)installed=false;
         }
         if(candidate!=null&&installed&&candidate.Configuration.Ini.Count>0)

@@ -2,21 +2,23 @@ namespace AmdNrAssistant;
 
 public static class RenderSchemes
 {
-    public static readonly string[] Paid = ["compat", "author", "online", "amd-magpie", "legacy", "game"];
+    public static readonly string[] Paid = ["compat", "author", "online", "amd-magpie", "legacy", "rx6000", "game"];
     public static bool PremiumMode(int mode) => mode is 5 or 6 or 8;
+    public static bool PremiumSelection(int mode, string scheme) => PremiumMode(mode) || Paid.Contains(scheme, StringComparer.Ordinal);
     public static string PreflightBackend(string scheme, int mode, string architecture, string requested)
     {
         if (scheme == "standard") return "none";
         if (mode != 6) return "daniel"; // Original modes never acquire the new host.
-        var backend = scheme == "author" ? "mochizuki" : scheme is "compat" or "online" ? requested : "daniel";
+        var backend = requested != "auto" ? requested : scheme == "author" ? "mochizuki" : scheme is "compat" or "online" ? "auto" : "daniel";
         return backend != "auto" ? backend : scheme == "compat" && architecture == "rdna3" ? Mu.Neural.NeuralBackends.LmxxfRdna3 : "daniel";
     }
     public static void Validate(string scheme, int mode, bool x86)
     {
+        if (scheme == "rx6000" && x86) throw new IOException("60系显卡专用使用64位 Daniel 0.6.0 组件；32位游戏请使用老游戏专用版。");
         if (scheme.Length == 0) return; // legacy callers still pass through mode authorization
         var expected = scheme switch
         {
-            "base" => 0, "fps" => 4, "compat" or "author" or "online" or "game" => 6,
+            "base" or "rx6000" => 0, "fps" => 4, "compat" or "author" or "online" or "game" => 6,
             "legacy" => x86 ? 5 : 8,
             _ => throw new IOException("未知方案；AMD 大力喜鹊通过独立工具入口启动。")
         };

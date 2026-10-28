@@ -63,6 +63,12 @@ export function SmartDialog({
   const [gamePreset, setGamePreset] = useState(false);
   const [info, setInfo] = useState("");
   const [smartContext,setSmartContext]=useState<SmartContext>({confirmedApi:"",confirmedInput:"",windowed:""});
+  const confirmContext = useCallback((value: SmartContext) => {
+    setSmartContext(value);
+    if (["dx11", "dx12", "vulkan"].includes(value.confirmedApi))
+      setNeural(previous => previous.graphicsApi === value.confirmedApi ? previous : { ...previous, graphicsApi: value.confirmedApi });
+    if (["dx8", "dx9", "dx11", "opengl"].includes(value.confirmedApi)) setX86Api(value.confirmedApi);
+  }, []);
   const pendingScheme = useRef<SchemeId | null>(null);
   const detectionStarted = useRef(false);
   useEffect(() => {
@@ -76,19 +82,22 @@ export function SmartDialog({
   }, [game.id, game.mode, game.state, initialTab]);
   const [x86Api,setX86Api]=useState("auto");
   const is32Bit=result?.is32Bit===true;
-  const mode = scheme === "legacy" ? is32Bit ? 5 : 8 : scheme && !["base", "fps"].includes(scheme) ? 6 : selectedMode(goal, custom);
+  const mode = scheme === "rx6000" ? 0 : scheme === "legacy" ? is32Bit ? 5 : 8 : scheme && !["base", "fps"].includes(scheme) ? 6 : selectedMode(goal, custom);
+  const externalScheme = scheme === "base" || scheme === "amd-magpie";
+  const launching = useRef(false);
   const missingNeuralResources = mode === 6 && scheme !== "amd-magpie" && resourceCheck?.options === neural && !!resourceCheck.result?.missingResources.length;
   const chooseScheme = useCallback((id: SchemeId) => {
     const item = schemes.find(s => s.id === id)!;
     if (item.premium && !canUsePremium(state)) { pendingScheme.current = id; setPurchase(true); return; }
     pendingScheme.current = null;
     setScheme(id); setGamePreset(false); setError("");
-    if (id === "base" || id === "fps") setGoal(id === "base" ? "quality" : "performance");
+    if (id === "base" || id === "fps" || id === "rx6000") setGoal(id === "fps" ? "performance" : "quality");
     else {
       setGoal("custom"); setCustom(id === "legacy" ? is32Bit ? 5 : 8 : 6);
-      setNeural({ ...defaultNeuralOptions, backend: id === "author" ? "mochizuki" : id === "compat" ? "auto" : "daniel" });
+      setNeural({ ...defaultNeuralOptions, backend: id === "author" ? "mochizuki" : id === "compat" ? "auto" : "daniel",
+        graphicsApi: ["dx11", "dx12", "vulkan"].includes(smartContext.confirmedApi) ? smartContext.confirmedApi : "auto" });
     }
-  }, [state, is32Bit]);
+  }, [state, is32Bit, smartContext.confirmedApi]);
   useEffect(() => {
     if (pendingScheme.current && canUsePremium(state)) { const next = pendingScheme.current; pendingScheme.current = null; setPurchase(false); chooseScheme(next); }
   }, [state, chooseScheme]);
@@ -125,7 +134,7 @@ export function SmartDialog({
     setError("");
     setInfo("");
     try {
-      if ([5, 6, 8].includes(mode) && scheme !== "base" && !canUsePremium(state)) { setPurchase(true); return; }
+      if ((scheme === "rx6000" || [5, 6, 8].includes(mode) && scheme !== "base") && !canUsePremium(state)) { setPurchase(true); return; }
       if (scheme === "base") {
         if (!await rpc<boolean>("daniel08",{gameId:game.id})) return;
         setInfo("已打开 Daniel 0.8 官方安装器。请在 NeuralHub 中导入自己的 DLL 并配置游戏；此操作不会将游戏直接标记为已配置。");
@@ -212,11 +221,11 @@ export function SmartDialog({
             charge
             data-guide="configure"
             disabled={
-              checking ||
+              (!externalScheme && checking) ||
               working || state.busy ||
               missingNeuralResources ||
               (game.state === "Configured" && scheme !== "base" && scheme !== "amd-magpie") ||
-              (!result && goal !== "custom")
+              (!externalScheme && !result && goal !== "custom")
             }
             onClick={configure}
           >
@@ -241,7 +250,7 @@ export function SmartDialog({
       </div>
       {completion && tab === "recommend" ? <section className="neural-success">
         <CheckCircle2 size={42} className="accent" />
-        <h2>DLSS 5 神经渲染已启用</h2>
+        <h2>DLSS 5 神经渲染配置已部署</h2>
         <span className="badge">{completion.statusLabel}</span>
         <dl className="neural-receipt">
           <div><dt>当前后端</dt><dd>{completion.backend === "daniel" ? "Daniel" : completion.backend === "mochizuki" ? "Mochizuki" : completion.backend === "lmxxf-rdna3" ? "lmxxf · AMDNR RDNA3" : "lmxxf"}</dd></div>
@@ -252,7 +261,13 @@ export function SmartDialog({
         <p>文件已部署并校验；实际画质、性能与稳定性需进入游戏验证。</p>
         {completion.backend === "mochizuki" && <p className="muted">首次启动可能编译数分钟，请在游戏内按 Insert 查看进度。</p>}
         <div className="neural-success-actions">
-          <Button primary disabled={working} onClick={async () => { try { await rpc("launch", { gameId: game.id }); onComplete(); } catch (e) { setError((e as Error).message); } }}>启动游戏</Button>
+          <Button primary disabled={working} onClick={async () => {
+            if (launching.current) return;
+            launching.current = true; setWorking(true); setError("");
+            try { await rpc("launch", { gameId: game.id }); onClose(); }
+            catch (e) { setError((e as Error).message); }
+            finally { launching.current = false; setWorking(false); }
+          }}>启动游戏</Button>
           <Button disabled={working} onClick={() => setEditAdvanced(v => !v)}>高级设置</Button>
           <Button disabled={working} onClick={() => restoreNeural(true)}>切换方案</Button>
           <Button disabled={working} onClick={() => restoreNeural()}>恢复之前配置</Button>
@@ -277,9 +292,10 @@ export function SmartDialog({
             <span className="badge">{result ? "检测完成" : "待确认"}</span>
           </div>
           <SchemeChoices gameId={game.id} gameTitle={game.title} state={state} selected={scheme} disabled={working}
-            onSelect={chooseScheme} onUpgrade={() => setPurchase(true)} onContextChange={setSmartContext}
+            onSelect={chooseScheme} onUpgrade={() => setPurchase(true)} onContextChange={confirmContext}
             onUseRecommendation={options => { setScheme(options.backend === "mochizuki" ? "author" : "compat"); setGamePreset(true); setGoal("custom"); setCustom(6); setNeural({ ...defaultNeuralOptions, ...options }); }} />
-          {scheme && !["base", "fps"].includes(scheme) && <p className="scheme-paid-selection"><strong>{schemes.find(s => s.id === scheme)?.name}</strong> · {scheme === "author" ? "Mochizuki 实验配置；本游戏未发布实测预设时不承诺最佳效果。" : scheme === "online" ? "不绕过反作弊，继续配置前需要知悉风险。" : scheme === "amd-magpie" ? "首次自动下载完整包并打开独立工具，后续校验后直接打开；效果在 AMD 喜鹊内设置，不修改游戏文件。" : "具体兼容性与效果需进入游戏验证。"}</p>}
+          {scheme && !["base", "fps"].includes(scheme) && <p className="scheme-paid-selection"><strong>{schemes.find(s => s.id === scheme)?.name}</strong> · {scheme === "rx6000" ? "Daniel 0.6.0 · AMD RX 6000（RDNA2）适用。受显卡性能限制，无法保证帧率表现和游戏兼容性。需 Windows 11、HIP 7.2 和64位 DX12 游戏。将打开 Daniel 0.6.0 安装窗口，请在窗口中确认游戏并完成安装；MU 随后校验文件，实际效果仍需进游戏验证。" : scheme === "author" ? "Mochizuki 实验配置；本游戏未发布实测预设时不承诺最佳效果。" : scheme === "online" ? "不绕过反作弊，继续配置前需要知悉风险。" : scheme === "amd-magpie" ? "首次自动下载完整包并打开独立工具，后续校验后直接打开；效果在 AMD 喜鹊内设置，不修改游戏文件。" : "具体兼容性与效果需进入游戏验证。"}</p>}
+          {scheme === "rx6000" && <label className="smart-goal-field"><span>确认本游戏实际使用的图形接口</span><select aria-label="60系显卡游戏图形接口" value={smartContext.confirmedApi} disabled={working} onChange={e => confirmContext({ ...smartContext, confirmedApi: e.target.value })}><option value="">请选择实际接口</option><option value="dx12">DirectX 12</option></select></label>}
           {mode === 6 && scheme !== "amd-magpie" && canUsePremium(state) && <NeuralSettings gameId={game.id} options={neural} onChange={setNeural} onResourceCheck={onResourceCheck} disabled={working} />}
           <details className="scheme-custom-toggle"><summary>原有目标与自定义设置</summary>
           <h4 className="field-heading">你更在意什么？</h4>

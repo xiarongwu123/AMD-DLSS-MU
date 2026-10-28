@@ -120,7 +120,7 @@ public static class MagpieIntegration
         var config = Path.Combine(appDirectory, "config", "v4e", "config.json");
         var marker = Path.Combine(appDirectory, "config", "v4e", "mu-dlssnr-default-v1.json");
         Core.RejectLinks(config); Core.RejectLinks(marker);
-        if (File.Exists(marker)) return;
+        var initialized = File.Exists(marker);
         token.ThrowIfCancellationRequested();
         var original = File.ReadAllText(config);
         JsonObject data;
@@ -129,6 +129,7 @@ public static class MagpieIntegration
         if (data["scalingModes"] is not JsonArray modes || data["profiles"] is not JsonArray profiles ||
             profiles.Count == 0 || profiles[0] is not JsonObject defaultProfile)
             throw new IOException("大力喜鹊配置结构不匹配，未覆盖原配置。");
+        var before = data.DeepClone();
         var index = -1;
         for (int i = 0; i < modes.Count; i++)
         {
@@ -141,7 +142,11 @@ public static class MagpieIntegration
             index = modes.Count;
             modes.Add(JsonNode.Parse("""{"name":"MU · DLSSNR AI Filter","effects":[{"name":"DLSSNR\\DLSSNR_AI_Filter"}]}"""));
         }
-        defaultProfile["scalingMode"] = index;
+        if (!initialized) defaultProfile["scalingMode"] = index;
+        else if (defaultProfile["scalingMode"] is System.Text.Json.Nodes.JsonValue selected &&
+            selected.TryGetValue<int>(out var savedIndex) && savedIndex >= modes.Count)
+            defaultProfile["scalingMode"] = index;
+        if (initialized && JsonNode.DeepEquals(before, data)) return;
         var next = data.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
         var temporary = config + ".mu-" + Guid.NewGuid().ToString("N");
         try

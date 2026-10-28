@@ -36,6 +36,10 @@ static class BugRegressionTests
             Check(InstallationContext.BridgeApi(mode, "dx9") == "dx9", "legacy bridge loses its selected renderer");
             Reject(() => InstallationContext.BridgeApi(mode, "dx12"), "bridge accepted unsupported DX12 payload");
         }
+        Check(new InstallationContext(ConfirmedApi:"dx12").ConfirmNeuralApi(new()).GraphicsApi=="dx12", "confirmed renderer lost before neural install");
+        Check(new InstallationContext(ConfirmedApi:"dx12").ConfirmNeuralApi(new(GraphicsApi:"vulkan")).GraphicsApi=="vulkan", "explicit advanced renderer replaced by stale context");
+        Check(new InstallationContext(ConfirmedApi:"dx9").ConfirmBridgeApi(5,"auto")=="dx9", "confirmed legacy renderer lost before bridge install");
+        Check(new InstallationContext(ConfirmedApi:"dx12").ConfirmBridgeApi(6,"auto")=="auto", "modern context leaked into bridge path");
         InstallationContext context;
         using (var request = JsonDocument.Parse("""{"scheme":"fps","confirmedApi":"dx12","confirmedInput":"dlss","windowed":"true"}"""))
             context = InstallationContext.Read(request.RootElement);

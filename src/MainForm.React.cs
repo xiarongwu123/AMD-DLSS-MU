@@ -23,6 +23,27 @@ public sealed partial class MainForm
     bool reactAccountMutation;
     bool reactReady;
     string lastReactState = "";
+    int reactGamesRevision;
+    int publishedReactGamesRevision = -1;
+    GameCandidate[] reactGameCandidates = Array.Empty<GameCandidate>();
+    object[]? reactGamesSnapshot;
+
+    void InvalidateLibraryState()
+    {
+        libraryStateCache.Clear();
+        reactGamesSnapshot = null;
+    }
+
+    object[] ReactGames()
+    {
+        if (reactGamesSnapshot != null && reactGameCandidates.SequenceEqual(libraryGames)) return reactGamesSnapshot;
+        reactGameCandidates = libraryGames.ToArray();
+        reactGamesSnapshot = libraryGames.Select(g => (object)new { id = ReactGameId(g.ExePath), g.Title,
+            searchTerms = GameSearch.Terms(g.Title, g.SteamAppId, g.InstallDirectory),
+            cover = ReactCover(g), state = GetLibraryState(g).ToString(), mode = GameManagement.Read(g.ExePath)?.Mode, g.SteamAppId }).ToArray();
+        reactGamesRevision++;
+        return reactGamesSnapshot;
+    }
     string? reactFailure;
     readonly HashSet<string> reactRequests = new();
 
@@ -128,12 +149,16 @@ public sealed partial class MainForm
         if (!reactReady || reactView?.CoreWebView2 == null || !IsReactOrigin(reactView.Source?.AbsoluteUri)) return;
         reactView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(new { @event = name, data }, reactJson));
     }
-    object ReactState() => new
+    object ReactState()
+    {
+        var state = JsonSerializer.SerializeToElement(ReactStatusState(), reactJson).EnumerateObject()
+            .ToDictionary(p => p.Name, p => (object?)p.Value);
+        state["games"] = ReactGames();
+        return state;
+    }
+    object ReactStatusState() => new
     {
         version = AutoUpdate.DisplayVersion, page = activePage switch { 1 => "library", 2 => "about", 3 => "downloads", 4 => "help", 5 => "settings", 6 => "account", 7 => "magpie", 8 => "wishes", _ => "home" },
-        games = libraryGames.Select(g => new { id = ReactGameId(g.ExePath), g.Title,
-            searchTerms = GameSearch.Terms(g.Title, g.SteamAppId, g.InstallDirectory),
-            cover = ReactCover(g), state = GetLibraryState(g).ToString(), mode = GameManagement.Read(g.ExePath)?.Mode, g.SteamAppId }).ToArray(),
         account = accountClient.Account, online = accountClient.IsOnline, reconnecting = accountClient.IsReconnecting, viewAvailable = accountClient.CanKeepVerifiedView,
         busy=busy||smartApplying, scanning = !scan.Enabled, status = ReactAccountStatus(status.Text), accountFeedback = ReactAccountStatus(accountFeedback),
         magpiePreparing,
@@ -196,7 +221,19 @@ public sealed partial class MainForm
     void PublishReactState(bool force = false)
     {
         if (!reactReady) return;
-        try { var json = JsonSerializer.Serialize(ReactState(), reactJson); if (!force && json == lastReactState) return; lastReactState = json; ReactEvent("state", JsonSerializer.Deserialize<JsonElement>(json)); }
+        try
+        {
+            // Poll only lightweight status. Disk reads and cover payloads belong to library changes.
+            ReactGames();
+            var state = ReactStatusState();
+            var json = JsonSerializer.Serialize(state, reactJson);
+            var gamesChanged = publishedReactGamesRevision != reactGamesRevision;
+            if (!force && !gamesChanged && json == lastReactState) return;
+            if (force || gamesChanged) ReactEvent("state", ReactState());
+            else ReactEvent("statePatch", state);
+            lastReactState = json;
+            publishedReactGamesRevision = reactGamesRevision;
+        }
         catch (Exception e) { Diagnostics.Record(selectedGame ?? "", "react-state", "error", e.Message); }
     }
     async void ReactMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
@@ -271,7 +308,7 @@ public sealed partial class MainForm
                 if (busy || reactMutation || !scan.Enabled) throw new IOException("请等待当前操作完成。");
                 var removedExe = ReactGame(args); GameLibrary.Remove(removedExe);
                 libraryGames.RemoveAll(g => g.ExePath.Equals(removedExe, StringComparison.OrdinalIgnoreCase));
-                reactCoverCache.Clear(); libraryStateCache.Clear(); telemetryMonitor?.SetGames(libraryGames);
+                reactCoverCache.Clear(); InvalidateLibraryState(); telemetryMonitor?.SetGames(libraryGames);
                 if (selectedGame == removedExe) selectedGame = null;
                 return null;
             case "presetSnapshot":
@@ -394,7 +431,7 @@ public sealed partial class MainForm
                     var localPreset = preset with { Item = preset.Item with { GameKey = ReactPresetGameKey(exe), GameName = ReactPresetGameName(exe) } };
                     await Task.Run(() => CommunityPresetConfig.Apply(exe, localPreset), lifetime.Token);
                     status.Text = "已应用社区方案：" + preset.Item.Title + "。效果请在游戏中确认。";
-                    libraryStateCache.Clear();
+                    InvalidateLibraryState();
                     return null;
                 }
                 finally { reactMutation = false; }
@@ -407,7 +444,7 @@ public sealed partial class MainForm
                     if(picker.ShowDialog(this)!=DialogResult.OK)return null;
                     var exe=GameManagement.ResolveGameExecutable(picker.FileName); Core.ValidateGame(exe); GameLibrary.AddManual(exe);
                     if(!libraryGames.Any(g=>g.ExePath.Equals(exe,StringComparison.OrdinalIgnoreCase))) libraryGames.Add(new GameCandidate {Title=Path.GetFileNameWithoutExtension(exe),ExePath=exe,InstallDirectory=Path.GetDirectoryName(exe)!});
-                    telemetryMonitor?.SetGames(libraryGames); libraryStateCache.Clear(); return ReactGameId(exe);
+                    telemetryMonitor?.SetGames(libraryGames); InvalidateLibraryState(); return ReactGameId(exe);
                 }
             case "dropGames":
                 await ReactAuthorize("library.manage"); if(busy || reactMutation)throw new IOException("请等待当前操作完成。");
@@ -416,7 +453,7 @@ public sealed partial class MainForm
                     var exe = GameManagement.ResolveGameExecutable(file.Path); Core.ValidateGame(exe); GameLibrary.AddManual(exe);
                     if(!libraryGames.Any(g=>g.ExePath.Equals(exe,StringComparison.OrdinalIgnoreCase)))libraryGames.Add(new GameCandidate { Title=Path.GetFileNameWithoutExtension(exe),ExePath=exe,InstallDirectory=Path.GetDirectoryName(exe)! });
                 }
-                telemetryMonitor?.SetGames(libraryGames);libraryStateCache.Clear();return null;
+                telemetryMonitor?.SetGames(libraryGames);InvalidateLibraryState();return null;
             case "recommend":
                 await ReactAuthorize("library.manage"); var target=ReactGame(args);
                 ReactEvent("detection",new {gameId=Arg(args,"gameId"),stage="正在读取显卡与专用显存"});
@@ -482,9 +519,9 @@ public sealed partial class MainForm
                     await Task.Run(() => NeuralRenderInstaller.UpdateSettings(exe, plan), lifetime.Token);
                     return NeuralReceipt(GameManagement.Read(exe));
                 }
-                finally { reactMutation = false; libraryStateCache.Clear(); }
+                finally { reactMutation = false; InvalidateLibraryState(); }
             }
-            case "magpie": await StartMagpieAsync(); return null;
+            case "magpie": return await StartMagpieAsync();
             case "amdMagpie": return await StartAmdMagpieAsync();
             case "configure": case "restore": case "daniel08": case "update":
                 if (reactMutation || busy || smartApplying && !smartExecutingInstall) throw new IOException("请等待当前操作完成。");
@@ -499,11 +536,11 @@ public sealed partial class MainForm
                         var manualScheme=Arg(args,"scheme");
                         if(manualScheme.Length==0||manualScheme=="game")manualScheme=mode switch{4=>"fps",5 or 8=>"legacy",2=>"standard",_=>"compat"};
                         await ManualSmartPreflightAsync(configureExe,manualScheme,args);
-                        if (RenderSchemes.PremiumMode(mode)) await ReactAuthorize("schemes.premium.configure");
+                        if (RenderSchemes.PremiumSelection(mode, Arg(args,"scheme"))) await ReactAuthorize("schemes.premium.configure");
                         selectedGame=configureExe; installMode.SelectedIndex=mode==8?5:mode==6?4:mode==0?0:mode==4?2:mode==5?3:1;
-                        neuralOptions = ReadNeuralOptions(args);
+                        neuralOptions = InstallationContext.Read(args).ConfirmNeuralApi(ReadNeuralOptions(args));
                         if(neuralOptions.Backend=="auto"&&smartPreflightBackend!=null)neuralOptions=neuralOptions with{Backend=smartPreflightBackend};
-                        x86GraphicsApi=InstallationContext.BridgeApi(mode,Arg(args,"x86Api","auto"));
+                        x86GraphicsApi=InstallationContext.Read(args).ConfirmBridgeApi(mode,Arg(args,"x86Api","auto"));
                         optiVulkan=Flag(args,"vulkan");optiFgInput=Arg(args,"fgInput","nofg"); if(optiFgInput is not ("nofg" or "fsrfg" or "dlssg"))throw new IOException("未知帧生成入口。");
                         var installedSuccessfully=await InstallAsync(InstallationContext.Read(args));
                         if(reactFailure!=null)throw new IOException(reactFailure);
@@ -519,7 +556,7 @@ public sealed partial class MainForm
                     else await CheckAppUpdateAsync(false);
                     return null;
                 }
-                finally { reactMutation=false; smartPreflightExe=null; smartPreflightBackend=null; libraryStateCache.Clear(); }
+                finally { reactMutation=false; smartPreflightExe=null; smartPreflightBackend=null; InvalidateLibraryState(); }
             case "downloadAction":
                 var row=downloadRows.FirstOrDefault(r=>r.Id==Arg(args,"id")) ?? throw new IOException("下载任务不存在。");
                 switch(Arg(args,"action"))

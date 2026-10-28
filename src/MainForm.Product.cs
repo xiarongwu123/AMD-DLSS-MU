@@ -152,7 +152,7 @@ public sealed partial class MainForm
     {
         SwitchPage(1);
         status.Text = GameManagement.Read(exe)?.Neural is { } neural
-            ? $"DLSS 5 神经渲染已启用 · {neural.Backend} · {neural.Passes} Pass · {neural.Proxy}。实际效果需进入游戏验证。"
+            ? $"DLSS 5 神经渲染配置已部署 · {neural.Backend} · {neural.Passes} Pass · {neural.Proxy}。实际效果需进入游戏验证。"
             : GameManagement.Read(exe)?.Mode == 5
             ? "32位桥接已部署 · 游戏内 Home 打开面板，Ctrl+End 切换神经渲染；实际效果待验证。"
             : GameManagement.Read(exe)?.Mode == 4
@@ -399,7 +399,12 @@ public sealed partial class MainForm
         var actions = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 42 };
         var pause = Action("暂停", "Pause", async (_, _) => { if (!session.Paused || await RequireFeatureAsync(featureKey)) session.TogglePause(); }); pause.Width = 76;
         var cancel = Action("取消", "Cancel", (_, _) => session.Cancel()); cancel.Width = 76;
-        var again = Action("重试", "Retry", async (_, _) => { if (!independent && busy) { MessageBox.Show(this, "请等待当前操作结束。", Text); return; } await retry(); }); again.Width = 76;
+        var again = Action("重试", "Retry", async (_, _) =>
+        {
+            if (!independent && busy) { MessageBox.Show(this, "请等待当前操作结束。", Text); return; }
+            try { await retry(); }
+            catch (Exception e) { await UiMessageAsync(e.Message, "下载任务重试失败"); }
+        }); again.Width = 76;
         var row = new DownloadRow { Independent = independent, RetryAction = retry, FeatureKey = featureKey, Session = session, Card = card, Info = info, Bar = bar, Pause = pause, Cancel = cancel, Retry = again, Title = title };
         var detail = Action("详情", "Details", (_, _) => ShowDownloadDetails(row)); detail.Width = 76;
         actions.Controls.AddRange(new Control[] { pause, cancel, again, detail });
@@ -423,7 +428,7 @@ public sealed partial class MainForm
     }
     void RenderDownloads()
     {
-        foreach (var row in downloadRows) row.Card.Visible = showCompleted == (row.State == "已完成 · 校验通过");
+        foreach (var row in downloadRows) row.Card.Visible = showCompleted == (DownloadSources.IsCompleteState(row.State));
         var empty = downloadList.Controls.Find("empty", false).FirstOrDefault();
         if (empty == null) { empty = new Label { Name = "empty", AutoSize = true, MaximumSize = new Size(560, 0), ForeColor = muted, Padding = new Padding(12, 36, 12, 36) }; downloadList.Controls.Add(empty); }
         empty.Text = showCompleted ? "暂无完成记录。" : "没有正在下载的任务。\n\n选择游戏并配置图形方案后，所需组件会出现在这里。";

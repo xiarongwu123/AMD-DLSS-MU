@@ -20,7 +20,7 @@ public static class CandidateGenerator
                 try{config=ParameterResolver.Resolve(cap,e,rule,backend);}catch(InvalidDataException){continue;}
                 var state=issues.Any(i=>i.State=="BLOCKED")?"BLOCKED":issues.Any(i=>i.State=="REQUIRE_ACTION")?"REQUIRE_ACTION":issues.Any(i=>i.State=="UNVERIFIED")||rule==null||rule.Validation=="unverified"?"UNVERIFIED":"ELIGIBLE";
                 var ranking=state is "BLOCKED" or "REQUIRE_ACTION"?(Score:0d,Trusted:false,Level:state=="BLOCKED"?"已阻止":"需要处理"):RecommendationScoringEngine.Score(rule,e,goal,id,weights,now);
-                var auto=state=="ELIGIBLE"&&(rule?.FailureCodes.Length??0)==0&&ranking.Trusted&&ranking.Score>=85&&rule?.Validation!="experimental";
+                var auto=id!="rx6000"&&state=="ELIGIBLE"&&(rule?.FailureCodes.Length??0)==0&&ranking.Trusted&&ranking.Score>=85&&rule?.Validation!="experimental";
                 var reasons=new List<string>{rule==null?"没有当前游戏、构建和设备的完整验证规则。":rule.Description, "此分数是兼容证据评分，不是成功率或FPS预测。"};
                 if(rule!=null)reasons.Add("依据："+rule.Source+" · "+rule.VerifiedAt.ToString("yyyy-MM-dd"));
                 if(cap.External)reasons.Add(id=="base"?"外部管理：打开NeuralHub不代表游戏已配置。":"外置窗口处理，不向游戏目录部署注入文件。");

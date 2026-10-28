@@ -20,12 +20,18 @@ public sealed record PresetList(PresetItem[] Items, int Total, int Page = 1, int
 public static class PresetResources
 {
     public const int MaxAttachmentBytes = 10 * 1024 * 1024;
+    static bool ReservedWindowsName(string name)
+    {
+        var stem = name.Split('.')[0].TrimEnd(' ', '.').ToUpperInvariant();
+        return stem is "CON" or "PRN" or "AUX" or "NUL" ||
+            stem.Length == 4 && (stem.StartsWith("COM") || stem.StartsWith("LPT")) && stem[3] is >= '1' and <= '9';
+    }
     public static readonly string[] Extensions = [".zip", ".7z", ".rar", ".ini", ".json", ".txt", ".cfg", ".fx", ".fxh", ".preset"];
     public static byte[] ValidateAttachment(PresetAttachmentUpload input)
     {
         if (string.IsNullOrWhiteSpace(input.Name) || input.Name.Length > 120 || input.Name != Path.GetFileName(input.Name)
             || input.Name.IndexOfAny(['/', '\\', ':', '<', '>', '"', '|', '?', '*']) >= 0 || input.Name.Any(char.IsControl)
-            || input.Name.EndsWith('.') || input.Name.EndsWith(' ') || !Extensions.Contains(Path.GetExtension(input.Name).ToLowerInvariant())
+            || ReservedWindowsName(input.Name) || input.Name.EndsWith('.') || input.Name.EndsWith(' ') || !Extensions.Contains(Path.GetExtension(input.Name).ToLowerInvariant())
             || string.IsNullOrEmpty(input.Data) || input.Data.Length > (MaxAttachmentBytes + 2) / 3 * 4)
             throw new InvalidDataException("附件格式无效，请上传10 MB以内的压缩包、配置或着色器文件。");
         byte[] bytes;
@@ -96,16 +102,16 @@ public static class PresetRules
             if (!values.TryGetValue("NrBackend", out var backend) || backend is not ("daniel" or "lmxxf" or "mochizuki")) throw new InvalidDataException("方案缺少有效 NR 后端。");
             foreach (var (key, value) in values)
             {
-                if (key == "NrBackend") continue;
-                var valid = key switch
+                if (key.Equals("NrBackend", StringComparison.OrdinalIgnoreCase)) continue;
+                var valid = key.ToLowerInvariant() switch
                 {
-                    "Passes" => int.TryParse(value, out var n) && n is >= 1 and <= 3,
-                    "MochizukiPasses" => int.TryParse(value, out var n) && n is >= 1 and <= 30,
-                    "MochizukiMaxPasses" => int.TryParse(value, out var n) && n == 0,
-                    "MochizukiDynamicResolution" => int.TryParse(value, out var n) && n is >= 0 and <= 2,
-                    "MochizukiModelScale" => double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var n) && double.IsFinite(n) && n is >= .25 and <= 1,
-                    "MochizukiHistoryStrength" => double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var n) && double.IsFinite(n) && n is >= 0 and <= 1,
-                    "Enabled" or "RunBeforeSR" => value == "true",
+                    "passes" => int.TryParse(value, out var n) && n is >= 1 and <= 3,
+                    "mochizukipasses" => int.TryParse(value, out var n) && n is >= 1 and <= 30,
+                    "mochizukimaxpasses" => int.TryParse(value, out var n) && n == 0,
+                    "mochizukidynamicresolution" => int.TryParse(value, out var n) && n is >= 0 and <= 2,
+                    "mochizukimodelscale" => double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var n) && double.IsFinite(n) && n is >= .25 and <= 1,
+                    "mochizukihistorystrength" => double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var n) && double.IsFinite(n) && n is >= 0 and <= 1,
+                    "enabled" or "runbeforesr" => value == "true",
                     _ => value is "true" or "false"
                 };
                 if (!valid) throw new InvalidDataException("神经渲染方案参数越界：" + key);
