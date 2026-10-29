@@ -33,3 +33,7 @@ desktop-ui/*.tsbuildinfo
 
 # Paid supported-game catalog is supplied privately during server deployment.
 server/private/
+
+# Large version-pinned build inputs are attached to GitHub Releases.
+assets/high-quality-w08g5.zip
+assets/dlssnr.bin

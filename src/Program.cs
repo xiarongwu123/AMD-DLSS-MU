@@ -13,6 +13,9 @@ internal static class Program
     static void Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
+#if MU_NVIDIA_AUTHOR_TEST
+        MessageBox.Show("这是 2.2.8-preview.1 N卡测试版。\n请手动选择作者调校版（Mochizuki），确认游戏实际图形接口后配置。\n仅测试资源准备、部署与恢复，不代表游戏可在 N 卡启用 AMD 神经渲染。", "MU 预发布测试版");
+#endif
         if (args.Length == 1 && args[0] == "--apply-update")
         {
             try { AutoUpdate.ApplyAsync().GetAwaiter().GetResult(); }
@@ -32,6 +35,11 @@ internal static class Program
         }
         try
         {
+            if (args.Length == 1 && args[0] == "--test-author-resources")
+            {
+                Application.Run(new AuthorResourcesTestForm());
+                return;
+            }
             var form = new MainForm();
             if (args.Length == 2 && args[0] == "--update-health")
                 form.Shown += (_, _) => { try { AutoUpdate.ConfirmStartup(args[1]); } catch { /* Updater will roll back without a health acknowledgement. */ } };
@@ -1801,6 +1809,7 @@ public sealed partial class MainForm : Form
             }
             if(chosenMode==InstallMode.X86Bridge) { await InstallX86BridgeAsync(targetExe); return IsConfigured(targetExe); }
             if(chosenMode==InstallMode.LegacyBridge) { await InstallLegacyBridgeAsync(targetExe); return IsConfigured(targetExe); }
+            if(chosenContext.Scheme=="high-quality") { await InstallHighQualityAsync(targetExe,chosenContext); return IsConfigured(targetExe); }
             if(chosenMode==InstallMode.NeuralRendering) { await InstallNeuralRenderAsync(targetExe); return IsConfigured(targetExe); }
             if (chosenMode == InstallMode.OptiScalerStandard)
             {

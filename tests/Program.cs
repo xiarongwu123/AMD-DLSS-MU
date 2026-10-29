@@ -4,6 +4,8 @@ using Mu.Presets;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+if(args is ["verify-high-quality"]) { await HighQualityTests.Run(); return; }
+
 if(args is ["verify-rx6000-staging",var rxInstaller,var rxModel,var rxDestination])
 {
     Rx6000InstallValidation.Run(rxInstaller,rxModel,rxDestination);return;

@@ -12,6 +12,26 @@ internal static class NeuralRenderTests
     { try { action(); } catch (Exception e) when (e is IOException or InvalidDataException or ArgumentException or OperationCanceledException) { count++; return; } throw new Exception(message); }
     public static void Run()
     {
+#if MU_NVIDIA_AUTHOR_TEST
+        var testPlan = NeuralRenderPlanner.Select("steam:1", "NVIDIA RTX 5060", "dx12", null, new(Backend: "mochizuki"), DateTimeOffset.UtcNow);
+        Check(testPlan.Status == "unverified" && testPlan.Notices.Any(n => n.Contains("N卡预发布测试")), "NVIDIA test incorrectly treated as verified");
+        Reject(() => NeuralRenderPlanner.Select("steam:1", "NVIDIA RTX 5060", "dx12", null, new(Backend: "daniel"), DateTimeOffset.UtcNow), "NVIDIA Daniel accidentally allowed");
+        var bundledCache = Path.Combine(Directory.GetCurrentDirectory(), "bundled-model-test-" + Guid.NewGuid().ToString("N"));
+        var oldCache = NeuralRenderInstaller.ResourcesOverride;
+        try
+        {
+            NeuralRenderInstaller.ResourcesOverride = bundledCache;
+            NeuralRenderInstaller.PrepareModelAsync("no-package-needed", new InlineProgress(_ => { }), CancellationToken.None).GetAwaiter().GetResult();
+            var model = Path.Combine(bundledCache, "dlssnr-amd", "dlssnr.bin");
+            Check(Core.Hash(model) == NeuralRenderInstaller.MochizukiModelHash, "Bundled model failed real import");
+            var stamp = File.GetLastWriteTimeUtc(model);
+            NeuralRenderInstaller.PrepareModelAsync("no-package-needed", new InlineProgress(_ => { }), CancellationToken.None).GetAwaiter().GetResult();
+            Check(File.GetLastWriteTimeUtc(model) == stamp, "Valid model bundledCache was overwritten");
+        }
+        finally { NeuralRenderInstaller.ResourcesOverride = oldCache; if (Directory.Exists(bundledCache)) Directory.Delete(bundledCache, true); }
+#else
+        Reject(() => NeuralRenderPlanner.Select("steam:1", "NVIDIA RTX 5060", "dx12", null, new(Backend: "mochizuki"), DateTimeOffset.UtcNow), "Release NVIDIA gate accidentally opened");
+#endif
         var original = "; keep\r\n[XeFG]\r\nInterpolationCount=4\r\n[FrameGen]\r\nEnabled=true\r\n[DlssNr]\r\n Enabled = false ; note\r\nNrBackend=daniel\r\n[User]\r\nMine = hello\r\n";
         var patched = ManagedIni.Set(original, "DlssNr", "Enabled", "true");
         Check(patched == original.Replace("Enabled = false", "Enabled = true"), "INI changed unrelated lines/comments/newlines");

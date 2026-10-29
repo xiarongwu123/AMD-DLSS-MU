@@ -66,7 +66,7 @@ public static class GameManagement
     }
     public static readonly string[] Loaders = Core.ProxyNames.Concat(new[] { "d3d11.dll", "d3d12.dll", "nvngx.dll", "OptiScaler.dll", "dlss5-neural.addon64" }).Distinct().ToArray();
     public static bool IsTracked(string name) => Tracked(name);
-    static bool Tracked(string name) => SafeRelative(name) && (NeuralRenderInstaller.ManagedPath(name) || LegacyBridge.Managed.Contains(name,StringComparer.OrdinalIgnoreCase) || X86Bridge.Managed.Contains(name,StringComparer.OrdinalIgnoreCase) || name.Replace('\\', '/').StartsWith("Licenses/", StringComparison.OrdinalIgnoreCase) && new[] { ".txt", ".md" }.Contains(Path.GetExtension(name).ToLowerInvariant()) ||
+    static bool Tracked(string name) => SafeRelative(name) && (HighQualityInstaller.ManagedPath(name) || NeuralRenderInstaller.ManagedPath(name) || LegacyBridge.Managed.Contains(name,StringComparer.OrdinalIgnoreCase) || X86Bridge.Managed.Contains(name,StringComparer.OrdinalIgnoreCase) || name.Replace('\\', '/').StartsWith("Licenses/", StringComparison.OrdinalIgnoreCase) && new[] { ".txt", ".md" }.Contains(Path.GetExtension(name).ToLowerInvariant()) ||
         name.Replace('\\', '/').StartsWith("OptiScaler/", StringComparison.OrdinalIgnoreCase) &&
         new[] { ".dll", ".ini", ".asi" }.Contains(Path.GetExtension(name).ToLowerInvariant()) ||
         name.Replace('\\', '/').Equals("D3D12_Optiscaler/D3D12Core.dll", StringComparison.OrdinalIgnoreCase) ||

@@ -1,12 +1,13 @@
 import { useState, useEffect, useId } from "react";
 import { Eye, EyeOff, Mail, LockKeyhole, Check } from "lucide-react";
-import { Button, Modal, Loading } from "./components";
+import { Button, Modal } from "./components";
 import { rpc } from "./bridge";
 import { PaymentCodes } from "./PaymentCodes";
 import { PlanWall } from "./PlanWall";
+import { membershipPlans, membershipFeatures, membershipPayment } from "./membershipCatalog";
 import { membershipName } from "./membership";
 import "./purchase.css";
-import type { State, Plan, Order } from "./types";
+import type { State } from "./types";
 export function AccountPage({
   state,
   notify,
@@ -416,7 +417,6 @@ export function AccountPage({
   );
 }
 export function PurchaseDialog({
-  state,
   initialPlanId = "",
   onClose,
   notify,
@@ -427,10 +427,9 @@ export function PurchaseDialog({
   notify: (s: string) => void;
 }) {
   const cdkFormId = useId();
-  const [plans, setPlans] = useState<Plan[] | null>(null);
-  const [plan, setPlan] = useState(initialPlanId);
-  const [payment, setPayment] = useState<Order["payment"]>(null);
-  const [matching, setMatching] = useState(false);
+  const plans = membershipPlans;
+  const payment = membershipPayment;
+  const [plan, setPlan] = useState(() => plans.some(p => p.id === initialPlanId) ? initialPlanId : plans[0].id);
   const [redeeming, setRedeeming] = useState(false);
   const [cdk, setCdk] = useState("");
   const [error, setError] = useState("");
@@ -439,17 +438,13 @@ export function PurchaseDialog({
   const refresh = async () => {
     setBusy(true); setError("");
     try {
-      const data = await rpc<{ items: Plan[]; cdkPlanMatching?: boolean; payment?: Order["payment"] }>("plans");
-      setPlans(data.items); setMatching(data.cdkPlanMatching === true); setPayment(data.payment ?? null);
-      setPlan(value => data.items.some(p => p.id === value) ? value : data.items[0]?.id ?? "");
       await rpc("refreshAccount");
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   };
-  useEffect(() => { void refresh(); }, []);
-  const selected = plans?.find(p => p.id === plan);
+  const selected = plans.find(p => p.id === plan);
   async function redeem() {
-    if (busy || success || !matching || !selected || !cdk.trim()) return;
+    if (busy || success || !selected || !cdk.trim()) return;
     setBusy(true); setError("");
     try {
       await rpc("redeemMembership", { code: cdk.trim(), planId: selected!.id });
@@ -463,12 +458,12 @@ export function PurchaseDialog({
   return <Modal title="开通高级会员" wide className="purchase-modal" onClose={() => { if (!busy) onClose(); }} footer={<>
     <Button onClick={refresh} disabled={busy}>刷新状态</Button>
     {success ? <Button primary onClick={onClose}>完成</Button> : redeeming
-      ? <Button primary type="submit" form={cdkFormId} disabled={busy || !cdk.trim() || !selected || !matching}>{busy ? "正在校验…" : "校验 CDK · 兑换权益"}</Button>
-      : <Button primary disabled={busy || !selected || !matching} onClick={() => { setRedeeming(true); setError(""); }}>支付完成 校验CDK</Button>}
+      ? <Button primary type="submit" form={cdkFormId} disabled={busy || !cdk.trim() || !selected}>{busy ? "正在校验…" : "校验 CDK · 兑换权益"}</Button>
+      : <Button primary disabled={busy || !selected} onClick={() => { setRedeeming(true); setError(""); }}>支付完成 校验CDK</Button>}
   </>}>
-    {!plans && !error ? <Loading/> : <>
+    <>
       {!redeeming && !success && <>
-        <PlanWall plans={plans || []} selected={plan} onSelect={value => { setPlan(value); setError(""); }} features={state.account?.features || []} disabled={busy}/>
+        <PlanWall plans={plans} selected={plan} onSelect={value => { setPlan(value); setError(""); }} features={membershipFeatures} disabled={busy}/>
         {selected && payment && <PaymentCodes payment={payment} amountMinor={selected.priceMinor} cdk/>}
         {selected && !payment && <p className="muted">当前未提供在线收款码，请联系微信 xrwCoder 获取付款方式；已有 CDK 可直接校验。</p>}
         <p className="purchase-manual-note">支付成功后添加微信 <strong>xrwCoder</strong>，发送付款凭证和所选套餐，获取会员 CDK。付款不会自动开通，不自动续费或扣款。</p>
@@ -481,9 +476,8 @@ export function PurchaseDialog({
         <Button type="button" disabled={busy} onClick={() => { setRedeeming(false); setCdk(""); setError(""); }}>返回套餐选择</Button>
       </form>}
       {success && <div className="purchase-service"><Check/><h3>兑换成功，权益已更新</h3><p>{selected?.name}已兑换。请在账户页面查看会员有效期与剩余远程指导次数。</p></div>}
-      {!matching && plans && <p role="alert">当前后台尚不支持套餐 CDK 校验，请先联系管理员更新后台。已有会员身份不受影响，请勿重复付款。</p>}
       <Button disabled={busy} onClick={() => navigator.clipboard.writeText("xrwCoder").then(() => notify("微信号已复制")).catch(() => setError("复制失败，请手动添加微信 xrwCoder。"))}>复制微信 xrwCoder</Button>
-    </>}
+    </>
     {error && <p role="alert" className="error">{error}</p>}
   </Modal>;
 }

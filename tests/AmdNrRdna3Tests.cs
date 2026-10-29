@@ -64,7 +64,7 @@ static class AmdNrRdna3Tests
         Reject(() => RecommendationRuleSchema.Validate(rule with { ComponentVersion = "1.12.1" }), "Host version mismatch permitted");
         Reject(() => RecommendationRuleSchema.Validate(rule with { Architectures = ["rdna2"] }), "Remote rule expands RX6000 support");
         var candidates = CandidateGenerator.Generate(env, [], new(), "stability", now, "compat");
-        Check(candidates.Single().Configuration.Backend == plan.Backend && !candidates.Single().Automatic, "Unverified generic route automatically endorsed");
+        Check(candidates.Length == 0, "Removed compatibility route still generated");
         var pin = AmdNrRdna3Package.Pin();
         Check(pin.Version == plan.PackageVersion && pin.Size == 1008053921 && pin.Files.ContainsKey("LmxxfNrRuntime.pak"), "Real resource pin missing");
         Check(!pin.Files.Keys.Any(n => n.Contains("Launcher", StringComparison.OrdinalIgnoreCase) || n.StartsWith("FSR4Fast/")), "Optional programs included");

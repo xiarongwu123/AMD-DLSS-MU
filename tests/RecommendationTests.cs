@@ -23,6 +23,16 @@ static class RecommendationTests
     static RecommendationResult Evaluate(EnvironmentSnapshot e,params SmartCompatibilityRule[] rules)=>RecommendationService.Evaluate(e,rules,new(),"fixture","remote",Now.AddDays(1),"quality",Now);
     public static async Task RunAsync()
     {
+        var nv = Environment() with { Fields = new(Environment().Fields) { ["gpuVendor"] = new("NVIDIA", "CONFIRMED", "fixture"), ["architecture"] = new("unknown", "INFERRED", "fixture") } };
+        var nvManual = HardConstraintEvaluator.Evaluate(nv, CapabilityCatalog.For("author"), "mochizuki", null, [], Now, true);
+#if MU_NVIDIA_AUTHOR_TEST
+        Check(!nvManual.Any(i => i.Code is "GPU_INCOMPATIBLE" or "ARCH_INCOMPATIBLE" or "ARCH_UNKNOWN"), "NVIDIA manual test still blocked by GPU");
+        Check(nvManual.Any(i => i.Code == "NVIDIA_TEST_ONLY"), "Test notice missing");
+#else
+        Check(nvManual.Any(i => i.Code == "GPU_INCOMPATIBLE"), "Release manual GPU check removed");
+#endif
+        Check(HardConstraintEvaluator.Evaluate(nv, CapabilityCatalog.For("author"), "mochizuki", null, [], Now).Any(i => i.Code == "GPU_INCOMPATIBLE"), "NVIDIA automatic recommendation allowed");
+        Check(HardConstraintEvaluator.Evaluate(nv, CapabilityCatalog.For("compat"), "mochizuki", null, [], Now, true).Any(i => i.Code == "GPU_INCOMPATIBLE"), "Other scheme GPU check removed");
         var env=Environment();var rule=Rule();
         var rx6000Env=Environment(gpu:"RX 6750 GRE",arch:"rdna2");
         var rx6000=Evaluate(rx6000Env).Candidates.Single(c=>c.Scheme=="rx6000");
@@ -36,14 +46,14 @@ static class RecommendationTests
         Check(result.Recommended!.Configuration.Passes==1,"Mochizuki defaults to one pass");
         Check(!Evaluate(Environment(gpu:"RX 7900 XT",arch:"rdna3"),rule).Candidates.Any(x=>x.Scheme=="author"&&x.Automatic),"RDNA3 does not match RDNA4 rule");
         var daniel=Rule("compat","RX 7900 XT","rdna3");
-        Check(Evaluate(Environment(gpu:"RX 7900 XT",arch:"rdna3"),rule,daniel).Recommended?.Scheme=="compat","same game different GPU chooses supported rule");
+        Check(Evaluate(Environment(gpu:"RX 7900 XT",arch:"rdna3"),rule,daniel).Recommended==null,"removed compat rule must not be recommended");
         Check(Evaluate(Environment(game:"steam:2"),rule).Recommended==null,"same GPU different game has no fabricated match");
         Check(Evaluate(Environment(build:"B"),rule).Recommended==null,"new game build invalidates prior rule");
         var blocked=rule with{BlockedDrivers=["31.0.1.2"]};
         Check(Evaluate(env,blocked).Candidates.Where(x=>x.Scheme=="author").All(x=>x.State=="BLOCKED"&&x.Score==0),"driver blacklist blocks before scoring");
         var facts=new Dictionary<string,Observation>(env.Fields){["bitness"]=new("32","CONFIRMED","PE"),["api"]=new("dx9","CONFIRMED","fixture")};
-        var legacy=Evaluate(env with{Fields=facts});var bridge=legacy.Candidates.Single(x=>x.Scheme=="legacy");
-        Check(bridge.Configuration.Bitness==32&&bridge.Configuration.Proxy=="d3d9.dll"&&bridge.Configuration.ComponentVersion.Contains("0.7.12"),"x86 DX9 uses 32bit bridge capability");
+        var legacy=Evaluate(env with{Fields=facts});
+        Check(!legacy.Candidates.Any(x=>x.Scheme is "legacy" or "compat" or "amd-magpie"),"removed schemes leaked into recommendation");
         var bitnessOnly = HardConstraintEvaluator.Evaluate(env with { Fields = new(env.Fields) { ["bitness"] = new("32","CONFIRMED","PE") } }, CapabilityCatalog.For("fps"), "daniel", null, [], Now, true);
         Check(bitnessOnly.Any(i=>i.Code=="BITNESS_UNVERIFIED"&&i.State=="UNVERIFIED")&&!bitnessOnly.Any(i=>i.Code=="BITNESS_MISMATCH"),"x86 is advisory for manual selection instead of a blanket block");
         Check(!legacy.Candidates.Single(x=>x.Scheme=="fps").Automatic,"unverified x86 components must not be auto-recommended");
@@ -75,7 +85,7 @@ static class RecommendationTests
         Check(Evaluate(env,fps).Candidates.Single(x=>x.Scheme=="fps").Configuration.Ini["XeFG"]["InterpolationCount"]=="1","XeFG remains 2X");
         var fallback=RecommendationFallbackEngine.Diagnose(["ANTI_CHEAT"],result.Recommended,result.Candidates,[rule]);
         Check(fallback.AlternativeIds.Length==0,"anti-cheat never triggers bypass alternatives");
-        var fixedRule=daniel with{Fixes=["MODEL_COMPILE_FAILED"]};
+        var fixedRule=Rule("online","RX 7900 XT","rdna3") with{Fixes=["MODEL_COMPILE_FAILED"]};
         var alt=Evaluate(Environment(gpu:"RX 7900 XT",arch:"rdna3"),fixedRule);
         Check(RecommendationFallbackEngine.Diagnose(["MODEL_COMPILE_FAILED"],null,alt.Candidates,[fixedRule]).AlternativeIds.Length==1,"only explicit verified targeted fix becomes fallback");
         await CacheAndFilesAsync(env,rule);

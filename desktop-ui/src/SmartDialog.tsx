@@ -32,7 +32,6 @@ export function SmartDialog({
   initialTab = "recommend",
   initialUpload = false,
   cardOrigin,
-  onStartAmdMagpie,
 }: {
   game: Game;
   state: State;
@@ -62,6 +61,7 @@ export function SmartDialog({
   const [purchase, setPurchase] = useState(false);
   const [gamePreset, setGamePreset] = useState(false);
   const [info, setInfo] = useState("");
+  const [qualityRoute,setQualityRoute]=useState("auto");
   const [smartContext,setSmartContext]=useState<SmartContext>({confirmedApi:"",confirmedInput:"",windowed:""});
   const confirmContext = useCallback((value: SmartContext) => {
     setSmartContext(value);
@@ -82,10 +82,10 @@ export function SmartDialog({
   }, [game.id, game.mode, game.state, initialTab]);
   const [x86Api,setX86Api]=useState("auto");
   const is32Bit=result?.is32Bit===true;
-  const mode = scheme === "rx6000" ? 0 : scheme === "legacy" ? is32Bit ? 5 : 8 : scheme && !["base", "fps"].includes(scheme) ? 6 : selectedMode(goal, custom);
-  const externalScheme = scheme === "base" || scheme === "amd-magpie";
+  const mode = scheme === "rx6000" ? 0 : scheme && !["base", "fps"].includes(scheme) ? 6 : selectedMode(goal, custom);
+  const externalScheme = scheme === "base";
   const launching = useRef(false);
-  const missingNeuralResources = mode === 6 && scheme !== "amd-magpie" && resourceCheck?.options === neural && !!resourceCheck.result?.missingResources.length;
+  const missingNeuralResources = mode === 6 && scheme !== "high-quality" && resourceCheck?.options === neural && !!resourceCheck.result?.missingResources.length;
   const chooseScheme = useCallback((id: SchemeId) => {
     const item = schemes.find(s => s.id === id)!;
     if (item.premium && !canUsePremium(state)) { pendingScheme.current = id; setPurchase(true); return; }
@@ -93,8 +93,8 @@ export function SmartDialog({
     setScheme(id); setGamePreset(false); setError("");
     if (id === "base" || id === "fps" || id === "rx6000") setGoal(id === "fps" ? "performance" : "quality");
     else {
-      setGoal("custom"); setCustom(id === "legacy" ? is32Bit ? 5 : 8 : 6);
-      setNeural({ ...defaultNeuralOptions, backend: id === "author" ? "mochizuki" : id === "compat" ? "auto" : "daniel",
+      setGoal("custom"); setCustom(6);
+      setNeural({ ...defaultNeuralOptions, backend: id === "author" ? "mochizuki" : "daniel",
         graphicsApi: ["dx11", "dx12", "vulkan"].includes(smartContext.confirmedApi) ? smartContext.confirmedApi : "auto" });
     }
   }, [state, is32Bit, smartContext.confirmedApi]);
@@ -140,15 +140,11 @@ export function SmartDialog({
         setInfo("已打开 Daniel 0.8 官方安装器。请在 NeuralHub 中导入自己的 DLL 并配置游戏；此操作不会将游戏直接标记为已配置。");
         return;
       }
-      if (scheme === "amd-magpie") {
-        if (onStartAmdMagpie) { onStartAmdMagpie(); return; }
-        if(await rpc<boolean>("amdMagpie"))setInfo("已打开 AMD 大力喜鹊，请在工具内选择效果并按其主页快捷键启用；游戏文件未修改，实际效果需在游戏中确认。");
-        return;
-      }
       const receipt = await rpc<NeuralReceipt | null>("configure", {
         gameId: game.id,
         ...smartContext,
-        confirmedApi:[5,8].includes(mode)&&x86Api!=="auto"?x86Api:mode===6&&neural.graphicsApi!=="auto"?neural.graphicsApi:mode===2&&vulkan?"vulkan":smartContext.confirmedApi,
+        ...(scheme === "high-quality" ? { qualityRoute } : {}),
+        confirmedApi:scheme==="high-quality"?smartContext.confirmedApi:[5,8].includes(mode)&&x86Api!=="auto"?x86Api:mode===6&&neural.graphicsApi!=="auto"?neural.graphicsApi:mode===2&&vulkan?"vulkan":smartContext.confirmedApi,
         mode,
         ...(scheme ? { scheme: gamePreset ? "game" : scheme } : {}),
         ...([5,8].includes(mode) ? {x86Api} : {}),
@@ -156,7 +152,7 @@ export function SmartDialog({
         vulkan: mode === 2 && vulkan,
         fgInput: mode === 2 ? fgInput : "nofg",
       });
-      if (mode === 6) {
+      if (mode === 6 && scheme !== "high-quality") {
         if (!receipt) throw new Error("未收到安装完成记录，请查看一键排查；未确认配置成功。");
         setCompletion(receipt);
         setNeural({ ...receipt.options, backend: receipt.backend, proxy: receipt.proxy, graphicsApi: receipt.graphicsApi });
@@ -224,7 +220,7 @@ export function SmartDialog({
               (!externalScheme && checking) ||
               working || state.busy ||
               missingNeuralResources ||
-              (game.state === "Configured" && scheme !== "base" && scheme !== "amd-magpie") ||
+              (game.state === "Configured" && scheme !== "base") ||
               (!externalScheme && !result && goal !== "custom")
             }
             onClick={configure}
@@ -232,7 +228,6 @@ export function SmartDialog({
             {working
               ? "正在配置…"
               : scheme === "base" ? "打开 Daniel 0.8 官方版"
-              : scheme === "amd-magpie" ? "开启 AMD 大力喜鹊"
               : missingNeuralResources ? "需先补齐资源"
               : game.state === "Configured"
                 ? "请先恢复再切换"
@@ -292,11 +287,16 @@ export function SmartDialog({
             <span className="badge">{result ? "检测完成" : "待确认"}</span>
           </div>
           <SchemeChoices gameId={game.id} gameTitle={game.title} state={state} selected={scheme} disabled={working}
-            onSelect={chooseScheme} onUpgrade={() => setPurchase(true)} onContextChange={confirmContext}
-            onUseRecommendation={options => { setScheme(options.backend === "mochizuki" ? "author" : "compat"); setGamePreset(true); setGoal("custom"); setCustom(6); setNeural({ ...defaultNeuralOptions, ...options }); }} />
-          {scheme && !["base", "fps"].includes(scheme) && <p className="scheme-paid-selection"><strong>{schemes.find(s => s.id === scheme)?.name}</strong> · {scheme === "rx6000" ? "Daniel 0.6.0 · AMD RX 6000（RDNA2）适用。受显卡性能限制，无法保证帧率表现和游戏兼容性。需 Windows 11、HIP 7.2 和64位 DX12 游戏。将打开 Daniel 0.6.0 安装窗口，请在窗口中确认游戏并完成安装；MU 随后校验文件，实际效果仍需进游戏验证。" : scheme === "author" ? "Mochizuki 实验配置；本游戏未发布实测预设时不承诺最佳效果。" : scheme === "online" ? "不绕过反作弊，继续配置前需要知悉风险。" : scheme === "amd-magpie" ? "首次自动下载完整包并打开独立工具，后续校验后直接打开；效果在 AMD 喜鹊内设置，不修改游戏文件。" : "具体兼容性与效果需进入游戏验证。"}</p>}
+            onSelect={chooseScheme} onUpgrade={() => setPurchase(true)} onContextChange={confirmContext} />
+          {scheme && !["base", "fps"].includes(scheme) && <p className="scheme-paid-selection"><strong>{schemes.find(s => s.id === scheme)?.name}</strong> · {scheme === "high-quality" ? "70系首选 · 支持 RX 7000 / 9000。望月 0.0.8-w08g5 · 实验性。默认 CC_SMALL_FP8 + RenoDX，内置完整/轻量模型。需要 AMD 驱动 26.9+、64位游戏；RX 7000 需在游戏内确认 ACO 已成功启用。模型不需要 Python 提取。" : scheme === "rx6000" ? "Daniel 0.6.0 · AMD RX 6000（RDNA2）适用。受显卡性能限制，无法保证帧率表现和游戏兼容性。需 Windows 11、HIP 7.2 和64位 DX12 游戏。将打开 Daniel 0.6.0 安装窗口，请在窗口中确认游戏并完成安装；MU 随后校验文件，实际效果仍需进游戏验证。" : scheme === "author" ? "90系推荐 · Mochizuki 实验配置；本游戏未发布实测预设时不承诺最佳效果。" : scheme === "online" ? "不绕过反作弊，继续配置前需要知悉风险。" : "具体兼容性与效果需进入游戏验证。"}</p>}
+          {scheme === "high-quality" && <div className="smart-goal-field">
+            <label>游戏实际图形接口<select aria-label="画质增强图形接口" value={smartContext.confirmedApi} disabled={working} onChange={e=>confirmContext({...smartContext,confirmedApi:e.target.value})}><option value="">请选择</option>{["dx9","dx10","dx11","dx12","vulkan"].map(api=><option key={api} value={api}>{api.toUpperCase()}</option>)}</select></label>
+            <label>游戏超分选项<select aria-label="画质增强超分输入" value={smartContext.confirmedInput} disabled={working} onChange={e=>confirmContext({...smartContext,confirmedInput:e.target.value})}><option value="">请选择</option><option value="dlss">DLSS</option><option value="fsr">FSR</option><option value="xess">XeSS</option><option value="none">没有超分选项</option></select></label>
+            <label>接入方式<select aria-label="画质增强接入方式" value={qualityRoute} disabled={working} onChange={e=>setQualityRoute(e.target.value)}><option value="auto">根据以上选项自动匹配</option><option value="optiscaler">OptiScaler</option><option value="reshade">ReShade</option></select></label>
+            <p>首次先使用默认轻量网络。安装完成不代表 NR 已运行；可在游戏内查看状态与切换模型。此预览方案不用于反作弊游戏。</p>
+          </div>}
           {scheme === "rx6000" && <label className="smart-goal-field"><span>确认本游戏实际使用的图形接口</span><select aria-label="60系显卡游戏图形接口" value={smartContext.confirmedApi} disabled={working} onChange={e => confirmContext({ ...smartContext, confirmedApi: e.target.value })}><option value="">请选择实际接口</option><option value="dx12">DirectX 12</option></select></label>}
-          {mode === 6 && scheme !== "amd-magpie" && canUsePremium(state) && <NeuralSettings gameId={game.id} options={neural} onChange={setNeural} onResourceCheck={onResourceCheck} disabled={working} />}
+          {mode === 6 && scheme !== "high-quality" && canUsePremium(state) && <NeuralSettings gameId={game.id} options={neural} onChange={setNeural} onResourceCheck={onResourceCheck} disabled={working} />}
           <details className="scheme-custom-toggle"><summary>原有目标与自定义设置</summary>
           <h4 className="field-heading">你更在意什么？</h4>
           <div className="goals" data-guide="goals">

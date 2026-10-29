@@ -63,7 +63,15 @@ public static class NeuralRenderPlanner
     {
         Validate(options);
         var series = GpuSeries(gpu); var notices = new List<string>();
-        if (series == "unknown") throw new IOException("未确认受支持的 AMD RX 6000/7000/9000 显卡，请检查显卡检测结果。");
+#if MU_NVIDIA_AUTHOR_TEST
+        var nvidiaTest = Regex.IsMatch(gpu, "NVIDIA|GeForce|RTX|GTX", RegexOptions.IgnoreCase) && options.Backend == "mochizuki";
+        if (nvidiaTest)
+            notices.Add("N卡预发布测试：仅验证下载、模型、部署和恢复流程；不代表 AMD 神经渲染能在 N 卡生效。");
+        if (series == "unknown" && !nvidiaTest) throw
+#else
+        if (series == "unknown") throw
+#endif
+            new IOException("未确认受支持的 AMD RX 6000/7000/9000 显卡，请检查显卡检测结果。");
         var api = options.GraphicsApi == "auto" ? detectedApi : options.GraphicsApi;
         if (!NeuralRules.Apis.Contains(api)) throw new IOException("未能唯一确认 DX11 / DX12 / Vulkan；请在高级设置中选择游戏实际接口。");
         NeuralGameRule? rule = null;

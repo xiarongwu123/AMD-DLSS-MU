@@ -55,6 +55,13 @@ public static class HardConstraintEvaluator
         if(!e.Field("driver").Known)Add("DRIVER_UNKNOWN","驱动版本未确认，无法排除版本冲突。");
         if(int.TryParse(e.Field("osBuild").Value,out var build)&&build<(c.Id is "amd-magpie" or "standard"||backend==Mu.Neural.NeuralBackends.LmxxfRdna3?19041:22000))Add("OS_VERSION","当前Windows构建低于固定运行库要求。","BLOCKED");
         if(e.Field("os").Value!="windows")Add("WINDOWS_REQUIRED","实际检测和部署需要Windows。","BLOCKED");
+#if MU_NVIDIA_AUTHOR_TEST
+        if (manual && c.Id == "author" && backend == "mochizuki" && gpu.Value.Equals("NVIDIA", StringComparison.OrdinalIgnoreCase))
+        {
+            issues.RemoveAll(i => i.Code is "GPU_INCOMPATIBLE" or "ARCH_UNKNOWN" or "ARCH_INCOMPATIBLE");
+            Add("NVIDIA_TEST_ONLY", "N卡预发布测试：仅验证资源与部署流程，不代表 AMD 后端可运行。", "UNVERIFIED");
+        }
+#endif
         return issues.ToArray();
     }
 }

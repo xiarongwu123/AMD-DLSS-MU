@@ -8,14 +8,14 @@ internal static class RenderSchemeTests
         void Reject(Action action,string name){try{action();}catch(IOException){count++;return;}throw new Exception(name);}
         Check(!RenderSchemes.PremiumMode(0)&&!RenderSchemes.PremiumMode(4),"default configuration modes must stay free");
         Check(RenderSchemes.PremiumMode(5)&&RenderSchemes.PremiumMode(6)&&RenderSchemes.PremiumMode(8),"bridge and multi-backend modes must require premium on direct RPC as well");
-        Check(RenderSchemes.Paid.Count(s=>s!="game")==6,"catalog must have six premium schemes plus the protected game recommendation action");
+        Check(RenderSchemes.Paid.Count(s=>s!="game")==4,"catalog must have four premium schemes plus the protected game recommendation action");
         Check(RenderSchemes.PremiumSelection(0,"rx6000"),"RX6000 shared installer must require premium despite original mode ID");
         Check(!RenderSchemes.PremiumSelection(0,"base")&&!RenderSchemes.PremiumSelection(0,""),"original free Daniel routes changed");
         RenderSchemes.Validate("rx6000",0,false);
         Reject(()=>RenderSchemes.Validate("rx6000",0,true),"RX6000 accepts an incompatible x86 game before installation");
         Reject(()=>RenderSchemes.Validate("rx6000",6,false),"RX6000 uses multi-backend installer instead of fixed Daniel 0.6");
-        RenderSchemes.Validate("fps",4,false);RenderSchemes.Validate("legacy",5,true);RenderSchemes.Validate("legacy",8,false);
-        RenderSchemes.Validate("base",0,true);RenderSchemes.Validate("fps",4,true);RenderSchemes.Validate("compat",6,true);
+        RenderSchemes.Validate("fps",4,false);Reject(()=>RenderSchemes.Validate("legacy",5,true),"removed x86 scheme still accepted");Reject(()=>RenderSchemes.Validate("legacy",8,false),"removed legacy scheme still accepted");
+        RenderSchemes.Validate("base",0,true);RenderSchemes.Validate("fps",4,true);Reject(()=>RenderSchemes.Validate("compat",6,true),"removed compatibility scheme still accepted");
         Reject(()=>RenderSchemes.Validate("fps",6,false),"premium mode disguised as free FPS scheme");
         Reject(()=>RenderSchemes.Validate("legacy",8,true),"x64 ReShade routed to a 32-bit game");
         Reject(()=>RenderSchemes.Validate("unknown",0,false),"unknown scheme accepted");

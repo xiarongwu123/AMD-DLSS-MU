@@ -6,7 +6,7 @@ public static class CandidateGenerator
     {
         var result=new List<RecommendationCandidate>();
         var bits=int.TryParse(e.Field("bitness").Value,out var b)?b:64;
-        foreach(var id in RecommendationRuleSchema.Schemes.Where(id=>scope==null||id==scope))
+        foreach(var id in RecommendationRuleSchema.Schemes.Where(id=>id is not ("compat" or "amd-magpie" or "legacy") && (scope==null||id==scope)))
         {
             var matches=rules.Where(r=>r.Scheme==id&&CompatibilityRuleEngine.Match(r,e,now)&&r.Parameters.Passes<9)
                 .OrderByDescending(r=>CompatibilityRuleEngine.Priority(r,e)).ThenByDescending(r=>r.VerifiedAt).ToArray();

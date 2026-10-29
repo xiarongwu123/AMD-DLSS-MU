@@ -5,13 +5,13 @@ namespace AmdNrAssistant;
 // Retain user confirmations separately from mutable UI fields so download retries
 // can run the same preflight against a freshly detected environment.
 public sealed record InstallationContext(string Scheme = "", string ConfirmedApi = "",
-    string ConfirmedInput = "", string Windowed = "")
+    string ConfirmedInput = "", string Windowed = "", string QualityRoute = "auto")
 {
     public static InstallationContext Read(JsonElement args)
     {
         string Text(string key) => args.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString() ?? "" : "";
-        return new(Text("scheme"), Text("confirmedApi"), Text("confirmedInput"), Text("windowed"));
+        return new(Text("scheme"), Text("confirmedApi"), Text("confirmedInput"), Text("windowed"), Text("qualityRoute")==""?"auto":Text("qualityRoute"));
     }
 
     public JsonElement Preflight(int mode, NeuralOptions options, string bridgeApi)
@@ -24,7 +24,7 @@ public sealed record InstallationContext(string Scheme = "", string ConfirmedApi
             mode, scheme, neural = options,
             confirmedApi = ConfirmedApi.Length > 0 ? ConfirmedApi
                 : bridgeApi != "auto" ? bridgeApi : options.GraphicsApi != "auto" ? options.GraphicsApi : "",
-            confirmedInput = ConfirmedInput, windowed = Windowed
+            confirmedInput = ConfirmedInput, windowed = Windowed, qualityRoute = QualityRoute
         }, new JsonSerializerOptions(JsonSerializerDefaults.Web));
     }
 

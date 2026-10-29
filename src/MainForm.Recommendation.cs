@@ -66,6 +66,19 @@ public sealed partial class MainForm
     {
         if(scheme=="base")return; // Opening an external manager does not deploy to the game.
         var env=await SmartEnvironmentAsync(exe,args);
+        if(scheme=="high-quality")
+        {
+            Core.CheckPe(exe,false);
+            if(env.Field("gpuVendor").Value!="AMD" || (env.Field("architecture").Value is not ("rdna3" or "rdna3.5" or "rdna4") && !System.Text.RegularExpressions.Regex.IsMatch(env.Field("gpuModel").Value,@"(7[468]0M|8[089]0M|80[56]0S)",System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
+                throw new IOException("画质增强版要求 RX 7000/RX 9000 或受支持的 RDNA3/3.5 核显。");
+            if(env.Running)throw new IOException("请先关闭游戏。");
+            if(env.Conflicts.Length>0)throw new IOException("请先恢复或卸载旧插件："+string.Join("、",env.Conflicts));
+            if(env.HasConfiguration)throw new IOException("请先恢复之前配置。");
+            if(!env.BackupReady||env.IntegrityFailed)throw new IOException("备份权限或文件完整性检查未通过。");
+            if(env.AntiCheat.Length>0)throw new IOException("此高质量预览方案不用于带反作弊的游戏，请选择其他游戏测试。");
+            _=HighQualityInstaller.Route(Arg(args,"confirmedApi"),Arg(args,"confirmedInput"),Arg(args,"qualityRoute","auto"));
+            smartPreflightExe=exe; smartPreflightBackend=null;return;
+        }
         var backend=RenderSchemes.PreflightBackend(scheme,Number(args,"mode",-1),env.Field("architecture").Value,ReadNeuralOptions(args).Backend);
         SmartCompatibilityRule[] rules=[];
         if(SmartMayRead)

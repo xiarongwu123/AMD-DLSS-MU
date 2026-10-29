@@ -43,7 +43,8 @@ export function SmartRecommendationPanel({gameId,gameTitle,state,disabled,select
       const value=await rpc<Result|null>("gameRecommendation",{...args,scope:wantedScope});
       if(request!==generation.current)return;
       if(!value?.environment||!Array.isArray(value.candidates))throw new Error("未收到真实检测结果。请使用 Windows 客户端；预览不会模拟推荐成功。");
-      setResult(value);
+      const available = (candidate: Candidate | null) => candidate && !["compat", "amd-magpie", "legacy"].includes(candidate.scheme) ? candidate : null;
+      setResult({...value,recommended:available(value.recommended),freeAlternative:available(value.freeAlternative),candidates:value.candidates.filter(candidate=>available(candidate)!==null)});
     }catch(e){if(request===generation.current)setError((e as Error).message);}
     finally{if(request===generation.current)setBusy(false);}
   }

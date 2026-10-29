@@ -6,7 +6,7 @@ import { rpc } from "./bridge";
 import type { State } from "./types";
 vi.mock("./bridge",()=>({rpc:vi.fn()}));
 const state={account:{id:"fixture",membership:{tier:"pro",expiresAt:null},features:[{key:"schemes.game.view",allowed:true},{key:"schemes.premium.configure",allowed:true}]}} as State;
-const candidate={id:"fixture:v1",scheme:"compat",name:"兼容版",state:"ELIGIBLE",score:95,level:"优先推荐",automatic:true,premium:true,external:false,
+const candidate={id:"fixture:v1",scheme:"author",name:"作者调校版",state:"ELIGIBLE",score:95,level:"优先推荐",automatic:true,premium:true,external:false,
  evidence:"verified",reasons:["测试专属构建匹配"],issues:[],configuration:{backend:"daniel",componentVersion:"1.12.1",proxy:"dxgi.dll",passes:1,graphicsApi:"dx12",ini:{DlssNr:{Enabled:"true"}}}};
 const result={planId:"test-plan",gameName:"fixture game",goal:"quality",ruleRevision:"r1",ruleSource:"remote",expiresUtc:"2099-01-01",environment:{fields:{gpuModel:{value:"fixture GPU",confidence:"CONFIRMED",source:"unit fixture"}}},recommended:candidate,freeAlternative:null,candidates:[candidate],notices:[]};
 function view(){return render(<SmartRecommendationPanel gameId="g" gameTitle="fixture" state={state} disabled={false} selected="fps" onUpgrade={()=>{}}/>);}
@@ -34,4 +34,13 @@ it("未勾选隐私同意不会上传，实验候选也不会默认允许应用"
  expect((screen.getByRole("button",{name:"确认尝试实验配置"}) as HTMLButtonElement).disabled).toBe(true);
  fireEvent.click(screen.getByText("反馈实际体验与匿名验证数据"));expect((screen.getByRole("button",{name:"上传本次验证"}) as HTMLButtonElement).disabled).toBe(true);
  expect(rpc).not.toHaveBeenCalledWith("recommendationFeedback",expect.anything());
+});
+
+it("旧结果中的已删除方案不展示也不能应用",async()=>{
+ const removed=["compat","amd-magpie","legacy"].map(scheme=>({...candidate,id:scheme,scheme,name:"已删除方案"}));
+ vi.mocked(rpc).mockResolvedValue({...result,recommended:removed[0],candidates:removed});view();
+ fireEvent.click(screen.getByRole("button",{name:"查看游戏专属方案"}));
+ await screen.findByText("当前游戏暂无已验证的自动配置");
+ fireEvent.click(screen.getByRole("button",{name:"查看其他方案与需要处理的条件"}));
+ expect(screen.queryByText("已删除方案")).toBeNull();expect(screen.queryByRole("button",{name:"一键应用"})).toBeNull();
 });

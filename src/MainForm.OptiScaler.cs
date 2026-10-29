@@ -3,6 +3,24 @@ using Mu.Compatibility;
 namespace AmdNrAssistant;
 public sealed partial class MainForm
 {
+    async Task InstallHighQualityAsync(string exe, InstallationContext context)
+    {
+        if(await UiMessageAsync("画质增强版要求 AMD Software 26.9 或更新。请先在 AMD 驱动软件中核对版本。\nRX 7000 必须成功启用 ACO 才有 NR 效果。\n已确认驱动版本满足要求，继续配置？","画质增强版 · 驱动确认",MessageBoxButtons.YesNo,"继续配置",MessageBoxDefaultButton.Button2)!=DialogResult.Yes)return;
+        using var operation=CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token,DownloadSources.CurrentSession.Value?.Token??CancellationToken.None);
+        var token=operation.Token;var route=HighQualityInstaller.Route(context.ConfirmedApi,context.ConfirmedInput,context.QualityRoute);
+        var progress=new Progress<string>(s=>status.Text=s);
+        var stage=await Task.Run(()=>HighQualityInstaller.PrepareAsync(route,progress,token),token);
+        try
+        {
+            if(!await RequireFeatureAsync("schemes.premium.configure"))return;
+            await ManualSmartPreflightAsync(exe,"high-quality",context.Preflight(6,new(),"auto"));
+            using var transaction=BeginAccountTransaction();
+            await Task.Run(()=>HighQualityInstaller.Install(exe,stage,route,token,progress),token);
+            InvalidateLibraryState();RefreshHome();
+            await UiMessageAsync("画质增强版文件已部署。\n默认 CC_SMALL_FP8 + RenoDX，两份模型已校验。\nOptiScaler 路线按 End 查看 NR；ReShade 路线按 Home 查看 Add-ons。\n请确认 ACO/NR 实际运行，首次准备可能需要等待。可在游戏库恢复之前配置。","部署完成 · 效果待验证",MessageBoxButtons.OK);
+        }
+        finally {try{Directory.Delete(stage,true);}catch(IOException){}catch(UnauthorizedAccessException){}}
+    }
     NeuralOptions neuralOptions = new();
     Task<CompatibilityGpu?>? neuralGpuRead;
     DateTime neuralGpuReadAt;

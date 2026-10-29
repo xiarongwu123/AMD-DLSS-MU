@@ -10,7 +10,7 @@ const featureNames: Record<string,string> = {
   "configuration.edit":"自定义配置", "diagnostics.use":"一键排查", "app.update":"软件更新",
   "compatibility.read":"兼容记录", "compatibility.submit":"提交实测反馈", "compatibility.public.read":"公开兼容记录",
   "games.supported.view":"100+ 实测支持游戏库",
-  "schemes.premium.configure":"五类高级方案 · 作者调校 / 兼容 / 网游 / AMD大力喜鹊 / 老游戏",
+  "schemes.premium.configure":"高级图形方案 · 画质增强 / 作者调校 / 网游 / 60系显卡专用",
   "schemes.game.view":"查看游戏专属推荐与配置参数"
 };
 export function PlanWall({plans,selected,onSelect,features,disabled}: {

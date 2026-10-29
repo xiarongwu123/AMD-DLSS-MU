@@ -16,7 +16,12 @@ public static class AutoUpdate
     public const string DownloadUrl = Website + "/download/file";
     public const string AssetName = "AMD-DLSS-MU.exe";
     public static Version CurrentVersion => typeof(AutoUpdate).Assembly.GetName().Version ?? new Version(0, 0, 0);
-    public static string DisplayVersion => CurrentVersion.ToString(3);
+    public static string DisplayVersion =>
+#if MU_NVIDIA_AUTHOR_TEST
+        "2.2.8-preview.1 · N卡流程测试";
+#else
+        typeof(AutoUpdate).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false).OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion.Split('+')[0] ?? CurrentVersion.ToString(3);
+#endif
     public static AppRelease? Parse(string json, Version current)
     {
         using var document = JsonDocument.Parse(json); var root = document.RootElement;

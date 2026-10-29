@@ -201,6 +201,7 @@ public static class NeuralRenderInstaller
         return model != null && new FileInfo(model).Length == 147756560 && Core.Hash(model) == MochizukiModelHash;
     }
     public static bool CanPrepareMochizukiModel =>
+        typeof(NeuralRenderInstaller).Assembly.GetManifestResourceInfo("Mu.Mochizuki.Model") != null ||
         typeof(NeuralRenderInstaller).Assembly.GetManifestResourceInfo("AmdNrAssistant.nvngx_dlssnr.dll") != null;
     public static string[] ResourcePreparation(string exe, NeuralPlan plan)
     {
@@ -208,7 +209,7 @@ public static class NeuralRenderInstaller
         if (plan.Backend == NeuralBackends.LmxxfRdna3)
             return ["首次配置需下载约 1 GB 的 AMDNR 配套运行库与内核包；MU 会校验文件并复用已下载的缓存。"];
         if (plan.Backend == "mochizuki" && !HasVerifiedMochizukiModel(exe) && CanPrepareMochizukiModel)
-            return ["Mochizuki 模型尚未就绪。点击一键配置后，MU 会下载配套组件，从内置 310.8.0 资源提取 dlssnr.bin 并校验；首次需要联网并等待数分钟。"];
+            return ["Mochizuki 模型尚未就绪。点击一键配置后，MU 会下载配套组件，优先使用内置 dlssnr.bin 并校验；首次需要联网下载配套运行组件。"];
         return [];
     }
     public static void EnsureBundledDll()
@@ -244,6 +245,24 @@ public static class NeuralRenderInstaller
         var existing = Find(Resources, Resources, "dlssnr-amd/dlssnr.bin", "dlssnr.bin");
         if (existing != null && new FileInfo(existing).Length == 147756560 && Core.Hash(existing) == MochizukiModelHash) return;
         if (existing != null) progress.Report("已有模型校验未通过，正在自动重新提取；原缓存将在新模型校验成功后备份。 ");
+        using var bundledModel = typeof(NeuralRenderInstaller).Assembly.GetManifestResourceStream("Mu.Mochizuki.Model");
+        if (bundledModel != null)
+        {
+            progress.Report("正在准备内置模型并校验，无需 Python 提取…");
+            var stage = Path.Combine(Resources, "model-stage-" + Guid.NewGuid().ToString("N"));
+            Core.RejectLinks(stage); Directory.CreateDirectory(stage);
+            var stagedModel = Path.Combine(stage, "dlssnr.bin");
+            try
+            {
+                await using (var file = new FileStream(stagedModel, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    await bundledModel.CopyToAsync(file, token);
+                token.ThrowIfCancellationRequested();
+                await Task.Run(() => PromoteMochizukiModel(stagedModel), token);
+                progress.Report("内置 Mochizuki 模型已准备并通过校验。");
+            }
+            finally { try { Directory.Delete(stage, true); } catch (IOException) { } catch (UnauthorizedAccessException) { } }
+            return;
+        }
         await Task.Run(() => ValidatePackage(package), token);
         progress.Report("正在从 MU 内置资源准备神经渲染模型，首次运行可能需要几分钟…");
         // Extract into a private stage, never truncate a cached or game-owned model.

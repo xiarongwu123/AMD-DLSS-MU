@@ -7,10 +7,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>AMD-DLSS-MU</AssemblyName>
-    <Version>2.2.7</Version>
-    <AssemblyVersion>2.2.7.0</AssemblyVersion>
-    <FileVersion>2.2.7.0</FileVersion>
-    <InformationalVersion>2.2.7</InformationalVersion>
+    <Version>2.2.8</Version>
+    <AssemblyVersion>2.2.8.0</AssemblyVersion>
+    <FileVersion>2.2.8.0</FileVersion>
+    <InformationalVersion>2.2.8</InformationalVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>../assets/amd-dlss-mu.ico</ApplicationIcon>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
@@ -58,4 +58,10 @@
   <ItemGroup><EmbeddedResource Include="../assets/x86-bridge-pins.json" LogicalName="Mu.X86Bridge.Pins" /></ItemGroup>
   <ItemGroup><EmbeddedResource Include="../assets/x86-bridge-LICENSE.txt" LogicalName="Licenses.X86Bridge" /></ItemGroup>
 <ItemGroup><EmbeddedResource Include="../assets/neural-rendering-1.12.1.json" LogicalName="Mu.NeuralRendering.Pins" />
-<EmbeddedResource Include="../assets/amdnr-rdna3-0.3.5.8.json" LogicalName="Mu.AmdNrRdna3.Pins" /></ItemGroup></Project>
+<EmbeddedResource Include="../assets/amdnr-rdna3-0.3.5.8.json" LogicalName="Mu.AmdNrRdna3.Pins" /></ItemGroup><PropertyGroup Condition="'$(NvidiaAuthorTest)' == 'true'">
+<DefineConstants>$(DefineConstants);MU_NVIDIA_AUTHOR_TEST</DefineConstants>
+<Version>2.2.8-preview.1</Version><AssemblyVersion>2.2.8.0</AssemblyVersion><FileVersion>2.2.8.0</FileVersion><InformationalVersion>2.2.8-preview.1</InformationalVersion>
+</PropertyGroup>
+<ItemGroup><EmbeddedResource Include="../assets/dlssnr.bin" LogicalName="Mu.Mochizuki.Model" /></ItemGroup>
+<ItemGroup><EmbeddedResource Include="../assets/high-quality-w08g5.zip" LogicalName="Mu.HighQuality.Package"/><EmbeddedResource Include="../assets/high-quality-w08g5.json" LogicalName="Mu.HighQuality.Pins"/></ItemGroup>
+</Project>

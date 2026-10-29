@@ -1,0 +1,15 @@
+{
+  "tag": "v2.2.8",
+  "package": {
+    "name": "high-quality-w08g5.zip",
+    "size": 388112160,
+    "sha256": "4b632a43cac5ed643d81d343a83e55174833c3b15fb9e894d575e198131c23d9",
+    "url": "https://github.com/xiarongwu123/AMD-DLSS-MU/releases/download/v2.2.8/high-quality-w08g5.zip"
+  },
+  "model": {
+    "entry": "dlssnr-amd/dlssnr.bin",
+    "name": "dlssnr.bin",
+    "size": 147756560,
+    "sha256": "2b41c888cf4155b8958c665ba64018ab0bd25c85fc71a2b6db86d0d04d1f7fbd"
+  }
+}
